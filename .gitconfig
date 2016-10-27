@@ -1,0 +1,49 @@
+[user]
+	name = Peter Zhang
+	email = peter_zhang@mentor.com
+[core]
+	excludefiles = /home/pzhang/.ignore_global
+
+[diff]
+	tool = kompare
+
+[difftool]
+	prompt = false
+
+[difftool "kompare"]
+	trustExitCode = true
+	cmd = `/usr/bin/kompare $LOCAL $REMOTE`
+
+[merge]
+	tool = kompare
+
+[mergetool]
+	prompt = false
+
+[mergetool "kompare"]
+	trustExitCode = true
+	cmd = `/usr/bin/kompare $LOCAL $REMOTE $MERGED`
+
+[alias]
+lg1 = log --graph --abbrev-commit --decorate --date=relative --format=format:'%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)' --all
+lg2 = log --graph --abbrev-commit --decorate --format=format:'%C(bold blue)%h%C(reset) - %C(bold cyan)%aD%C(reset) %C(bold green)(%ar)%C(reset)%C(bold yellow)%d%C(reset)%n''          %C(white)%s%C(reset) %C(dim white)- %an%C(reset)' --all
+lg = !"git lg1"
+ll = log --pretty=format:"%C(yellow)%h%Cred%d\\ %Creset%s%Cblue\\ [%cn-%cr]" --decorate --numstat
+dl = "!git ll -1"
+dlc = diff --cached HEAD^
+f = "!git ls-files | grep -i"
+gr = grep -Ii
+st = status
+co = checkout
+ci = commit -a
+br = branch
+ec = config --global -e
+wipe = !git add -A && git commit -qm 'WIPE SAVEPOINT' && git reset HEAD~1 --hard
+up = !git pull --rebase --prune
+master = checkout master
+rdiff = diff --stat origin/master 
+resetfile = checkout origin/master 
+hh = difftool HEAD^ HEAD
+pushdiff = difftool HEAD^ HEAD
+[push]
+	default = simple
