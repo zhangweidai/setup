@@ -126,7 +126,7 @@ inoremap <m-BS>   <C-O>h<C-O>daw
 inoremap <c-BS>   <C-O>h<C-O>daw
 " inoremap PP       <C-O>p
 
-set undodir=/home/peter/.vim/undo
+set undodir=$HOME/.undo
 set undofile 
 
 nmap <silent><S-Down> <C-T>

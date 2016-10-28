@@ -1,4 +1,20 @@
+
+# don't put duplicate lines or lines starting with space in the history.
+# See bash(1) for more options
+HISTCONTROL=ignoreboth
+
+# append to the history file, don't overwrite it
+shopt -s histappend
+
+# for setting history length see HISTSIZE and HISTFILESIZE in bash(1)
+HISTSIZE=1000
+HISTFILESIZE=2000
+
+# make less more friendly for non-text input files, see lesspipe(1)
+[ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
+
 alias hi="history"
+alias gvim="vim"
 alias b="cd .."
 alias bb="cd ../.."
 alias bbb="cd ../../.."
@@ -10,7 +26,7 @@ alias sl="ssh pzhang@skyline.wv.mentorg.com"
 alias st="git st -uno ."
 alias psx="ps -aux"
 alias grf='vimack.sh'
-alias ll='/bin/ls -all -h'
+alias ll='/bin/ls --color=always -all -h'
 alias ls='/bin/ls --color=always '
 alias vi='sh $HOME/setup/bin/gvimscript.sh '
 export TS="/tmp"

@@ -5,14 +5,10 @@
    n = split ($1, array, ":");
    if (n < 2)
    {
-#       x = split ($1, array, "-");
-#       if (x < 2)
-#          printf ("gvim %s ", array[1]);
-#       else
-         printf ("gvim %s +%d ", array[1], array[2]);
+      printf ("vim %s +%d ", array[1], array[2]);
    }
    else
    {
-      printf ("gvim %s +%d ", array[1], array[2]);
+      printf ("vim %s +%d ", array[1], array[2]);
    }
 }
