@@ -45,5 +45,3 @@ rdiff = diff --stat origin/master
 resetfile = checkout origin/master 
 hh = difftool HEAD^ HEAD
 pushdiff = difftool HEAD^ HEAD
-[push]
-	default = simple

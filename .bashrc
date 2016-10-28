@@ -115,6 +115,8 @@ if ! shopt -oq posix; then
     . /etc/bash_completion
   fi
 fi
+export PATH=/home/pzhang/apps/gvim8/vim/src/bin:${PATH}
+alias hi="history"
 alias b="cd .."
 alias vcs="vim ~/.bashrc"
 alias vrc="vim ~/.vimrc"
