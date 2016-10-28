@@ -4,6 +4,7 @@ alias bb="cd ../.."
 alias bbb="cd ../../.."
 alias bbbb="cd ../../../.."
 alias vcs="vim ~/.bashrc"
+alias vcsa="vim ~/.bash_aliases"
 alias vrc="vim ~/.vimrc"
 alias sl="ssh pzhang@skyline.wv.mentorg.com"
 alias st="git st -uno ."
@@ -11,7 +12,7 @@ alias psx="ps -aux"
 alias grf='vimack.sh'
 alias ll='/bin/ls -all -h'
 alias ls='/bin/ls --color=always '
-alias vi='sh /home/pzhang/scripts/gvimscript.sh '
+alias vi='sh $HOME/setup/bin/gvimscript.sh '
 export TS="/tmp"
 
 # get current branch in git repo
