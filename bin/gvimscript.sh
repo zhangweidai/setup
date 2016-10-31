@@ -1,3 +1,14 @@
-#!/bin/sh
+#!/bin/bash
 echo $1
-`echo $1 | awk -f $HOME/setup/bin/gvi_line`
+export myvim='vim'
+if [ $MGC_DEBUG_FLAGS -eq 1 ]; then
+    export myvim='gvim'
+fi
+export cmd=`echo $1 | awk -f $HOME/setup/bin/gvi_line`
+export cmd="$myvim $cmd"
+`$cmd`
+# 
+# `gvim echo $1 | awk -f $HOME/setup/bin/gvi_line`
+# else
+# `vim echo $1 | awk -f $HOME/setup/bin/gvi_line`
+# fi

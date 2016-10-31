@@ -31,35 +31,14 @@ void test(const QVariant & well, const QVariant & again)
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
-    qRegisterMetaType<Foo>("Foo");
 
-    Foo foo;
-    QVariant ffoo;
-    ffoo.setValue(foo);
-
-    Bar * bar = new Bar(&a);
-
-    QVariant fbar;
-    fbar.setValue(bar);
-
-    Foo foo2 = ffoo.value<Foo>();
-    Bar * bar2 = fbar.value<Bar*>();
-
-    bar->str();
-    bar2->str();
-
-    foo.str();
-    foo2.str();
-
-
-    // Create a document to write XML
+        // Create a document to write XML
     QDomDocument * document = new QDomDocument();
     QDomElement root = document->createElement("Analysis");
 
     QDomDocument * document2 = new QDomDocument();
     QDomElement root2 = document2->createElement("Analysis");
 
-/*
     Newvalue param("Param");
     param.set("vdd", 2);
 
@@ -106,7 +85,6 @@ int main(int argc, char *argv[])
     document2->appendChild(root2);
     qDebug()  << "\033[32m( "<<__FILE__<<"-"<<__LINE__<<"  document " << " \033[0m|\n" << document->toString() <<"|)";
     qDebug()  << "\033[32m( "<<__FILE__<<"-"<<__LINE__<<"  document " << " \033[0m|\n" << document2->toString() <<"|)";
-    */
 
     // Writing to a file
 //    QFile file2("/tmp/myXML.xml");
@@ -139,3 +117,126 @@ int main(int argc, char *argv[])
 
    return 0;
 }
+
+/*
+int helper();
+
+class Foo
+{
+public :
+    Foo();
+    ~Foo();
+    void str()
+    {
+        qDebug()  << "\033[32m( "<<__FILE__<<"-"<<__LINE__<<"  handle_ " << " \033[0m|" << handle_ <<"|)";
+    }
+    QString handle_;
+};
+Q_DECLARE_METATYPE(Foo)
+Q_DECLARE_METATYPE(Foo*)
+
+
+class Bar : public QObject
+{
+    Q_OBJECT
+
+public :
+    void str()
+    {
+        qDebug()  << "\033[32m( "<<__FILE__<<"-"<<__LINE__<<"  handle_ " << " \033[0m|" << handle_ <<"|)";
+    }
+
+Bar(QObject *p = NULL)
+    :QObject(p)
+{
+    int i = helper();
+    handle_ = "$"+ QString::number(i);
+}
+
+    Bar(const Bar & b) : QObject()
+    {
+        qDebug()<<"//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\" what ";
+    }
+
+    ~Bar()
+{
+    qDebug()<<"//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\" deleting bar ";
+}
+
+    QString handle_;
+};
+
+Q_DECLARE_METATYPE(Bar)
+Q_DECLARE_METATYPE(Bar*)
+
+QDebug operator<<(QDebug dbg, const Bar &message)
+{
+    dbg << "what";
+    return dbg;
+}
+
+QDebug operator<<(QDebug dbg, const Foo &message)
+{
+    dbg << "what";
+    return dbg;
+}
+
+
+Foo::Foo()
+{
+    static int i = 0;
+    handle_ = "$"+ QString::number(++i);
+}
+
+Foo::~Foo()
+{
+
+    qDebug()<<"//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\"deleting foo  ";
+}
+
+int helper()
+{
+    static int i = 0;
+    return ++i;
+}
+
+qRegisterMetaType<Foo>("Foo");
+    Foo foo;
+    QVariant ffoo;
+    ffoo.setValue(foo);
+
+    Bar * bar = new Bar(&a);
+
+    QVariant fbar;
+    fbar.setValue(bar);
+
+    Foo foo2 = ffoo.value<Foo>();
+    Bar * bar2 = fbar.value<Bar*>();
+
+    bar->str();
+    bar2->str();
+
+    foo.str();
+    foo2.str();
+    QList<Bar*> list;
+    list << bar;
+    foreach (auto what, list)
+        what->str();
+
+    QVariant value;
+    QMap<QString,QVariant> map;
+    map["bar"] = fbar; 
+
+    value.setValue(map);
+
+    QMap<QString,QVariant> map2 = value.toMap();
+    map2.insert("foo", ffoo);
+
+    value.setValue(map2);
+
+    qDebug()  << "\033[32m( "<<__FILE__<<"-"<<__LINE__<<"  map2  " << " \033[0m|" << map.size()  <<"|)";
+
+
+
+*/
+
