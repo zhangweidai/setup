@@ -1,4 +1,4 @@
-#!/bin/tcsh
+#!/bin/bash
 set retval = ""
 set retval = `which $1`
 if (! -e "$retval") then

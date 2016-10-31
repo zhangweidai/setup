@@ -1,2 +1,2 @@
-#!/bin/tcsh
+#!/bin/bash
 $HOME/setup/bin/gvimscript.sh `cat $TS/prevGrepResults.noColor | awk -v var="$1" 'FNR == var {print $1}'`
