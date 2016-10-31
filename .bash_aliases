@@ -83,5 +83,8 @@ function parse_git_dirty {
 	fi
 }
 
+bind '"\C-u": kill-whole-line'
+alias clipdir='echo -n `pwd` | xclip -i -sel p -f | xclip -i -f -sel c'
+bind '"\C-k":"clipdir\n"'
 export PATH="$HOME/setup/bin:$PATH"
 export PS1="\n\[\e[33m\][ \h \[\e[33m\]]\[\e[m\]\`parse_git_branch\` \w \n\W$ "
