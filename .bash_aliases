@@ -36,8 +36,7 @@ function parse_git_branch() {
 	BRANCH=`git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/'`
 	if [ ! "${BRANCH}" == "" ]
 	then
-		STAT=`parse_git_dirty`
-		echo "[${BRANCH}${STAT}]"
+		echo "[${BRANCH}]"
 	else
 		echo ""
 	fi
@@ -79,4 +78,4 @@ function parse_git_dirty {
 }
 
 export PATH="$HOME/setup/bin:$PATH"
-export PS1="\[\e[33m\][ \h \[\e[33m\]]\[\e[m\]\`parse_git_branch\` \w \n$ "
+export PS1="\n\[\e[33m\][ \h \[\e[33m\]]\[\e[m\]\`parse_git_branch\` \w \n\W$ "
