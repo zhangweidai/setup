@@ -13,6 +13,12 @@ HISTFILESIZE=2000
 # make less more friendly for non-text input files, see lesspipe(1)
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
+alias uplinux='sudo apt-get update; sudo apt-get upgrade; sudo apt-get dist-upgrade'
+alias dmouse='xinput disable "ETPS/2 Elantech Touchpad"'
+alias emouse='xinput enable "ETPS/2 Elantech Touchpad"'
+alias cds='cd $HOME/setup'
+alias mk='make'
+
 alias hi="history"
 alias gvim="vim"
 alias b="cd .."
