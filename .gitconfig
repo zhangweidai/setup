@@ -3,6 +3,7 @@
 	email = peter_zhang@mentor.com
 [core]
 	excludefiles = /home/pzhang/.ignore_global
+	askpass = git-gui--askpass
 
 [diff]
 	tool = kompare

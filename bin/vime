@@ -1,0 +1,19 @@
+#!/bin/tcsh
+set retval = ""
+set retval = `which $1`
+if (! -e "$retval") then
+   set retval = `alias $1`
+   if (! -e "$retval") then
+      set retval = `which $retval`
+      if (! -e "$retval") then
+         echo "Can't Find \n" `alias $1` 
+         exit
+      endif
+   endif
+endif
+
+
+echo "Editing " $retval
+vim $retval
+
+
