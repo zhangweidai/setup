@@ -39,7 +39,7 @@ public:
 
 public slots:
 
-        //tran.set(m);
+    //tran.set(m);
     void set(const QVariant & val);
     void set(const Newvalue & val);
 
@@ -58,11 +58,11 @@ private:
     QVariant thisValue_;
     QVector<Newvalue*> valList_;
     QVariant val_;
-    const Newvalue * nval_ = NULL;
     QString handle_;
 };
 
 Q_DECLARE_METATYPE(Newvalue)
 Q_DECLARE_METATYPE(Newvalue*)
+Q_DECLARE_METATYPE(const Newvalue*)
 
 #endif

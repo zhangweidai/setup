@@ -30,90 +30,95 @@ void test(const QVariant & well, const QVariant & again)
 
 int main(int argc, char *argv[])
 {
-    QCoreApplication a(argc, argv);
+   QCoreApplication a(argc, argv);
 
-        // Create a document to write XML
-    QDomDocument * document = new QDomDocument();
-    QDomElement root = document->createElement("Analysis");
+   // Create a document to write XML
+   QDomDocument * document = new QDomDocument();
+   QDomElement root = document->createElement("Analysis");
 
-    QDomDocument * document2 = new QDomDocument();
-    QDomElement root2 = document2->createElement("Analysis");
+   QDomDocument * document2 = new QDomDocument();
+   QDomElement root2 = document2->createElement("Analysis");
 
-    Newvalue param("Param");
-    param.set("vdd", 2);
+   qRegisterMetaType<Newvalue>("Newvalue");
 
-    Newvalue tran("Tran");
-    tran.set("mystop", 2);
-    tran.set("mybool", true);
-    tran.set("mystart", "2u");
+   Newvalue param("Param");
+   param.set("vdd", 2);
 
-    QMap<QString, QVariant> m;
-    m.insert("map1", "3u");
-    m.insert("map2", "23u");
-    m.insert("map3", "13u");
+   Newvalue tran("Tran");
+   tran.set("mystop", 2);
+   tran.set("mybool", true);
+   tran.set("mystart", "2u");
 
-    tran.set(m);
-    tran.set("mymm", m);
+   Newvalue * dc = new Newvalue("Dc");
+   dc->set("one", 1);
 
-    Newvalue ac("Ac", m);
+   QMap<QString, QVariant> m;
+   m.insert("map1", "3u");
+   m.insert("map2", "23u");
+   m.insert("map3", "13u");
 
-    QVariantList vals;
-    vals << QString("str");
-    vals << QVariant(1);
-    vals << QVariant(true);
-    tran.set("myvalues", vals);
-    tran.set("myparam", param);
+   tran.set(m);
+   tran.set("mymm", m);
 
-    auto mybool = tran.get("mybool");
-    test(mybool, true);
+   Newvalue ac("Ac", m);
 
-    auto tranvalue = tran.get("mystop");
-    test(tranvalue, 2);
+   QVariantList vals;
+   vals << QString("str");
+   vals << QVariant(1);
+   vals << QVariant(true);
+   tran.set("myvalues", vals);
+   tran.set("myparam", param);
 
-    auto map1 = tran.get(QVariantList() << "mymm");
-    test(map1, m);
+   auto mybool = tran.get("mybool");
+   test(mybool, true);
 
-    auto map1value = tran.get(QVariantList() << "mymm"  << "map1");
-    test(map1value, "3u");
+   auto tranvalue = tran.get("mystop");
+   test(tranvalue, 2);
 
-    tran.exportXml(document, &root);
-    ac.exportXml(document, &root);
-    param.exportXml(document, &root);
+   auto map1 = tran.get(QVariantList() << "mymm");
+   test(map1, m);
 
-    // Adding the root element to the docuemnt
-    document->appendChild(root);
-    document2->appendChild(root2);
-    qDebug()  << "\033[32m( "<<__FILE__<<"-"<<__LINE__<<"  document " << " \033[0m|\n" << document->toString() <<"|)";
-    qDebug()  << "\033[32m( "<<__FILE__<<"-"<<__LINE__<<"  document " << " \033[0m|\n" << document2->toString() <<"|)";
+   auto map1value = tran.get(QVariantList() << "mymm"  << "map1");
+   test(map1value, "3u");
 
-    // Writing to a file
-//    QFile file2("/tmp/myXML.xml");
-//    if(!file2.open(QIODevice::WriteOnly | QIODevice::Text))
-//    {
-//        qDebug() << "Open the file for writing failed";
-//    }
-//    else
-//    {
-//        QTextStream stream(&file2);
-//        stream << document.toString();
-//        qDebug()  << "\033[32m( "<<__FILE__<<"-"<<__LINE__<<"  document " << " \033[0m|" << document.toString() <<"|)";
-//        file2.close();
-//        qDebug() << "Writing is done";
-//    }
-//
-//    QFile file("/tmp/myXLM.xml");
-//    if(!file.open(QIODevice::WriteOnly | QIODevice::Text))
-//    {
-//        qDebug() << "Open the file for writing failed";
-//    }
-//    else
-//    {
-//        QTextStream stream(&file);
-//        stream << document.toString();
-//        qDebug()  << "\033[32m( "<<__FILE__<<"-"<<__LINE__<<"  document " << " \033[0m|" << document.toString() <<"|)";
-//        file.close();
-//        qDebug() << "Writing is done";
-//    }
+   tran.exportXml(document, &root);
+   ac.exportXml(document, &root);
+   param.exportXml(document, &root);
+
+   // Adding the root element to the docuemnt
+   document->appendChild(root);
+   document2->appendChild(root2);
+   qDebug()  << "\033[32m( "<<__FILE__<<"-"<<__LINE__<<"  document " << " \033[0m|\n" << document->toString() <<"|)";
+   qDebug()  << "\033[32m( "<<__FILE__<<"-"<<__LINE__<<"  document " << " \033[0m|\n" << document2->toString() <<"|)";
+
+   // Writing to a file
+   //    QFile file2("/tmp/myXML.xml");
+   //    if(!file2.open(QIODevice::WriteOnly | QIODevice::Text))
+   //    {
+   //        qDebug() << "Open the file for writing failed";
+   //    }
+   //    else
+   //    {
+   //        QTextStream stream(&file2);
+   //        stream << document.toString();
+   //        qDebug()  << "\033[32m( "<<__FILE__<<"-"<<__LINE__<<"  document " << " \033[0m|" << document.toString() <<"|)";
+   //        file2.close();
+   //        qDebug() << "Writing is done";
+   //    }
+   //
+   //    QFile file("/tmp/myXLM.xml");
+   //    if(!file.open(QIODevice::WriteOnly | QIODevice::Text))
+   //    {
+   //        qDebug() << "Open the file for writing failed";
+   //    }
+   //    else
+   //    {
+   //        QTextStream stream(&file);
+   //        stream << document.toString();
+   //        qDebug()  << "\033[32m( "<<__FILE__<<"-"<<__LINE__<<"  document " << " \033[0m|" << document.toString() <<"|)";
+   //        file.close();
+   //        qDebug() << "Writing is done";
+   //    }
 
    return 0;
 }

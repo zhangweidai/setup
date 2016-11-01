@@ -71,9 +71,8 @@ map <c-p>         "*p
 imap <S-Insert>   <Esc>"*p
 nmap <c-space>    bywostd::cout<<"\033[32m//Dbg-"<<__FILE__<<"\""<< __LINE__<<" <Esc>pA "<<"\033[0m"<<<Esc>pA <<std::endl;<Esc>
 nmap <leader><F2> oqDebug()<<"\033[32m//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\"  "<<"\033[0m";<Esc>
-nmap <leader>b    :write!<cr>:!cd '%:p:h'; mk<CR>
-nmap <leader>bb   :write!<cr>:!cd '%:p:h'; cd .. ; mk<CR>
-nmap <leader>d    :write!<cr>:!cd '%:p:h'; mkd<CR>
+nmap <leader>b    :write!<cr>:!cd '%:p:h'; make<CR>
+nmap <leader>bb   :write!<cr>:!cd '%:p:h'; cd .. ; make<CR>
 nmap <leader>f    :echo expand('%:p')<Esc>
 nmap <leader>r    :NERDTreeFind<CR>
 nmap <leader>w    :!

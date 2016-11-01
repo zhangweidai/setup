@@ -34,7 +34,8 @@ alias psx="ps -aux"
 alias grf='vimack.sh'
 alias ll='/bin/ls --color=always -all -h'
 alias ls='/bin/ls --color=always '
-alias vi='sh $HOME/setup/bin/gvimscript.sh '
+alias vi='bash $HOME/setup/bin/gvimscript.sh '
+alias kill='kill -9'
 export TS="/tmp"
 
 # get current branch in git repo

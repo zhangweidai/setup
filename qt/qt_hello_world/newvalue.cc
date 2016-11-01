@@ -33,7 +33,8 @@ Newvalue::Newvalue(const QString & key)
 Newvalue::Newvalue(const QVariant & key, const Newvalue & value)
 {
     thisValue_.setValue(key);
-    nval_ = (&value);
+    const Newvalue * p = & value;
+    val_.setValue(p);
 }
 
 Newvalue::Newvalue(const QVariant & key, const QVariant & value)
@@ -66,7 +67,6 @@ Newvalue::Newvalue(const Newvalue & rhs)
 {
     valList_ = rhs.valList_;
     val_ = rhs.val_;
-    nval_ = rhs.nval_;
     handle_ = rhs.handle_;
     thisValue_ = rhs.thisValue_;
 }
@@ -84,11 +84,13 @@ QVariant Newvalue::value() { return val_; }
 void Newvalue::exportXml(QDomDocument* doc, QDomElement* element) const
 {
     QString label = (val_.isNull()) ? thisValue_.toString() : "field";
-    if (nval_ != NULL)
+    if (val_.canConvert<Newvalue*>())
     {
         QDomElement valElement = doc->createElement(label);
         element->appendChild(valElement);
-        valElement.setAttribute(thisValue_.toString(), nval_->handle());
+        Newvalue * nval = val_.value<Newvalue*>();
+        std::cout<<"\033[32m//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\" so far so good "<<"\033[0m"<<std::endl;
+        valElement.setAttribute(thisValue_.toString(), nval->handle());
         return;
     }
 
@@ -143,14 +145,13 @@ void Newvalue::set(const QVariant & val)
     }
 
     val_.setValue(val);
-    nval_ = NULL;
 }
 
 void Newvalue::set(const Newvalue & val)
 {
     qDebug()<<"//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\" set zero ";
-    nval_ = (&val);
-    val_.setValue(QVariant());
+    const Newvalue * p = &val;
+    val_.setValue(p);
 }
 
 //tran.set("myparam", param);
