@@ -84,6 +84,7 @@ function parse_git_dirty {
 	fi
 }
 
+alias filesThatContain="grep -Rl" 
 bind '"\C-u": kill-whole-line'
 alias clipdir='echo -n `pwd` | xclip -i -sel p -f | xclip -i -f -sel c'
 bind '"\C-k":"clipdir\n"'

@@ -6,7 +6,7 @@ if [ "$bar" == "" ];
 then
    ag --hidden --follow -C 1 "$1" >& $TS/prevGrepResults
    else
-   rg -i --hidden --follow --color always -C 1 "$1" --no-heading -n >& $TS/prevGrepResults
+   rg  --hidden --follow --color always -C 1 "$1" --no-heading -n >& $TS/prevGrepResults
 fi
 
 cat -n $TS/prevGrepResults
