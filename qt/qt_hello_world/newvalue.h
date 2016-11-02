@@ -8,7 +8,7 @@
 #include <QDomDocument>
 #include <QDebug>
 
-class Newvalue : public QObject
+class NewValue : public QObject
 {
     Q_OBJECT
 
@@ -19,15 +19,15 @@ public:
 
     QString variantToString(const QVariant & key) const;
 
-    Newvalue(const QString & key);
-    Newvalue(const QVariant & key, const Newvalue & value);
-    Newvalue(const QVariant & key, const QVariant & value);
-    Newvalue(const char * key, const QVariant & value);
-    Newvalue(const QString & key, const QVariant & value);
-    Newvalue(QObject *p = NULL);
-    Newvalue(const Newvalue & rhs);
+    NewValue(const QString & key);
+    NewValue(const QVariant & key, const NewValue & value);
+    NewValue(const QVariant & key, const QVariant & value);
+    NewValue(const char * key, const QVariant & value);
+    NewValue(const QString & key, const QVariant & value);
+    NewValue(QObject *p = NULL);
+    NewValue(const NewValue & rhs);
 
-    ~Newvalue();
+    ~NewValue();
 
 public:
     QString handle() const;
@@ -41,10 +41,10 @@ public slots:
 
     //tran.set(m);
     void set(const QVariant & val);
-    void set(const Newvalue & val);
+    void set(const NewValue & val);
 
     //tran.set("myparam", param);
-    void set(const QVariant & key, const Newvalue & val);
+    void set(const QVariant & key, const NewValue & val);
 
     //param.get("vdd");
     QVariant get(const QVariant & key);
@@ -56,13 +56,13 @@ public slots:
 
 private:
     QVariant thisValue_;
-    QVector<Newvalue*> valList_;
+    QVector<NewValue*> valList_;
     QVariant val_;
     QString handle_;
 };
 
-Q_DECLARE_METATYPE(Newvalue)
-Q_DECLARE_METATYPE(Newvalue*)
-Q_DECLARE_METATYPE(const Newvalue*)
+Q_DECLARE_METATYPE(NewValue)
+Q_DECLARE_METATYPE(NewValue*)
+Q_DECLARE_METATYPE(const NewValue*)
 
 #endif

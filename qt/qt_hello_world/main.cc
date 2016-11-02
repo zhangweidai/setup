@@ -39,17 +39,20 @@ int main(int argc, char *argv[])
    QDomDocument * document2 = new QDomDocument();
    QDomElement root2 = document2->createElement("Analysis");
 
-   qRegisterMetaType<Newvalue>("Newvalue");
+   qRegisterMetaType<NewValue>("NewValue");
 
-   Newvalue param("Param");
-   param.set("vdd", 2);
+   NewValue param("Param");
+   param.set("fdd", 2);
 
-   Newvalue tran("Tran");
+   auto vdd = param.get("vdd");
+   test(2, vdd);
+
+   NewValue tran("Tran");
    tran.set("mystop", 2);
    tran.set("mybool", true);
    tran.set("mystart", "2u");
 
-   Newvalue * dc = new Newvalue("Dc");
+   NewValue * dc = new NewValue("Dc");
    dc->set("one", 1);
 
    QMap<QString, QVariant> m;
@@ -60,7 +63,7 @@ int main(int argc, char *argv[])
    tran.set(m);
    tran.set("mymm", m);
 
-   Newvalue ac("Ac", m);
+   NewValue ac("Ac", m);
 
    QVariantList vals;
    vals << QString("str");

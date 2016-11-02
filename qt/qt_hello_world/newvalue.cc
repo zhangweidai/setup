@@ -4,18 +4,18 @@
 #include <QDebug>
 #include "newvalue.h"
 
-bool Newvalue::hasHandle() const
+bool NewValue::hasHandle() const
 {
     return !handle_.isEmpty();
 }
 
-void Newvalue::setHandle(const QString & key)
+void NewValue::setHandle(const QString & key)
 {
     static int i = 0;
     handle_ = key + "$"+ QString::number(++i);
 }
 
-QString Newvalue::variantToString(const QVariant & key) const
+QString NewValue::variantToString(const QVariant & key) const
 {
     if (!key.toString().isEmpty())
         return key.toString();
@@ -24,45 +24,45 @@ QString Newvalue::variantToString(const QVariant & key) const
     return list.join(",");
 }
 
-Newvalue::Newvalue(const QString & key)
+NewValue::NewValue(const QString & key)
 {
     setHandle(key);
     thisValue_.setValue(key);
 }
 
-Newvalue::Newvalue(const QVariant & key, const Newvalue & value)
+NewValue::NewValue(const QVariant & key, const NewValue & value)
 {
     thisValue_.setValue(key);
-    const Newvalue * p = & value;
+    const NewValue * p = & value;
     val_.setValue(p);
 }
 
-Newvalue::Newvalue(const QVariant & key, const QVariant & value)
+NewValue::NewValue(const QVariant & key, const QVariant & value)
 {
     thisValue_.setValue(key);
     val_.setValue(value);
 }
 
-Newvalue::Newvalue(const char * key, const QVariant & value)
+NewValue::NewValue(const char * key, const QVariant & value)
 {
     setHandle(key);
     thisValue_.setValue(QString::fromStdString(key));
     set(value);
 }
 
-Newvalue::Newvalue(const QString & key, const QVariant & value)
+NewValue::NewValue(const QString & key, const QVariant & value)
 {
     setHandle(key);
     thisValue_.setValue(key);
     val_.setValue(value);
 }
 
-Newvalue::Newvalue(QObject *p):QObject(p)
+NewValue::NewValue(QObject *p):QObject(p)
 {
     setHandle("void");
 }
 
-Newvalue::Newvalue(const Newvalue & rhs)
+NewValue::NewValue(const NewValue & rhs)
     :QObject(rhs.parent())
 {
     valList_ = rhs.valList_;
@@ -71,25 +71,24 @@ Newvalue::Newvalue(const Newvalue & rhs)
     thisValue_ = rhs.thisValue_;
 }
 
-Newvalue::~Newvalue() { }
+NewValue::~NewValue() { }
 
-QString Newvalue::handle() const
+QString NewValue::handle() const
 {
     return handle_;
 }
 
-QVariant Newvalue::key()   { return thisValue_; }
-QVariant Newvalue::value() { return val_; }
+QVariant NewValue::key()   { return thisValue_; }
+QVariant NewValue::value() { return val_; }
 
-void Newvalue::exportXml(QDomDocument* doc, QDomElement* element) const
+void NewValue::exportXml(QDomDocument* doc, QDomElement* element) const
 {
     QString label = (val_.isNull()) ? thisValue_.toString() : "field";
-    if (val_.canConvert<Newvalue*>())
+    if (val_.canConvert<NewValue*>())
     {
         QDomElement valElement = doc->createElement(label);
         element->appendChild(valElement);
-        Newvalue * nval = val_.value<Newvalue*>();
-        std::cout<<"\033[32m//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\" so far so good "<<"\033[0m"<<std::endl;
+        NewValue * nval = val_.value<NewValue*>();
         valElement.setAttribute(thisValue_.toString(), nval->handle());
         return;
     }
@@ -127,14 +126,14 @@ void Newvalue::exportXml(QDomDocument* doc, QDomElement* element) const
         p->exportXml(doc, &valElement);
 }
 
-void Newvalue::importXml(QDomDocument* doc, QDomElement* element) const
+void NewValue::importXml(QDomDocument* doc, QDomElement* element) const
 {
     Q_UNUSED(doc);
     Q_UNUSED(element);
 }
 
 //tran.set(m);
-void Newvalue::set(const QVariant & val)
+void NewValue::set(const QVariant & val)
 {
     auto mapval = val.toMap();
     if (mapval.size() > 0)
@@ -147,15 +146,15 @@ void Newvalue::set(const QVariant & val)
     val_.setValue(val);
 }
 
-void Newvalue::set(const Newvalue & val)
+void NewValue::set(const NewValue & val)
 {
     qDebug()<<"//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\" set zero ";
-    const Newvalue * p = &val;
+    const NewValue * p = &val;
     val_.setValue(p);
 }
 
 //tran.set("myparam", param);
-void Newvalue::set(const QVariant & key, const Newvalue & val)
+void NewValue::set(const QVariant & key, const NewValue & val)
 {
     // if new 
     bool added = false;
@@ -170,14 +169,14 @@ void Newvalue::set(const QVariant & key, const Newvalue & val)
 
     if (!added)
     {
-        Newvalue * newvar = new Newvalue(key, val);
+        NewValue * newvar = new NewValue(key, val);
         valList_ << newvar;
     }
 }
 
 
 //param.get("vdd");
-QVariant Newvalue::get(const QVariant & key)
+QVariant NewValue::get(const QVariant & key)
 {
     foreach (auto item, valList_)
     {
@@ -187,7 +186,7 @@ QVariant Newvalue::get(const QVariant & key)
     return QVariant();
 }
 
-QVariant Newvalue::get(const QVariantList & key)
+QVariant NewValue::get(const QVariantList & key)
 {
     if (key.size() == 1)
         return get(key[0]);
@@ -197,12 +196,12 @@ QVariant Newvalue::get(const QVariantList & key)
 
 
 //param.set("vdd", 2);
-void Newvalue::set(const QVariant & key, const QVariant & val)
+void NewValue::set(const QVariant & key, const QVariant & val)
 {
     auto mapval = val.toMap();
     if (mapval.size() > 0)
     {
-        Newvalue * newfromMap = new Newvalue(key, mapval);
+        NewValue * newfromMap = new NewValue(key, mapval);
         valList_ << newfromMap;
         return;
     }
@@ -219,7 +218,7 @@ void Newvalue::set(const QVariant & key, const QVariant & val)
     }
     if (!added)
     {
-        Newvalue * newvar =  new Newvalue(key, val);
+        NewValue * newvar =  new NewValue(key, val);
         valList_ << newvar;
     }
 }
