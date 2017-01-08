@@ -36,6 +36,8 @@ alias ll='/bin/ls --color=always -all -h'
 alias ls='/bin/ls --color=always '
 alias vi='bash $HOME/setup/bin/gvimscript.sh '
 alias kill='kill -9'
+alias vcin='vim ~/setup/notes'
+alias py='python'
 export TS="/tmp"
 
 # get current branch in git repo

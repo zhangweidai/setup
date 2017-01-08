@@ -255,11 +255,6 @@ bool SimValue::hasField(const StringVec& key)
     return localSt.ok();
 }
 
-QString SimValue::toStr()//const QString & bar)
-{
-    return (formStr());
-}
-
 void SimValue::setValue(const QString & key, const QString & value)
 {
     ValuePtr k = ValuePtr(new Value(key));
@@ -569,6 +564,7 @@ void SimValue::setType(SimSchemaField* sfieldP)
                 "Non matching types when replacing typeP with schemaFieldP"); // Assert that they match first
     type_ = sfieldP;
 }
+
 void SimValue::setState(StatePtr state)
 {
     state_ = state;
@@ -885,37 +881,3 @@ void TypeActivator::operator() (const ValMap& val) const
     }
 }
 
-SimValueProxy::SimValueProxy()
-{
-}
-
-SimValueProxy::SimValueProxy(
-    SimValuePtr ptr) :
-    ptr_(ptr)
-{
-}
-
-} // namespace simdb
-
-QDataStream& operator<<(QDataStream& out, const simdb::SimValueProxy& myObj)
-{
-    //Build a new sharedPtr so the reference sticks around
-    simdb::SimValuePtr* newPtr = new simdb::SimValuePtr(myObj.get());
-    //Convert to a streamable value
-    out << reinterpret_cast<quintptr>(newPtr);
-    return out;
-}
-
-QDataStream& operator>>(QDataStream& in, simdb::SimValueProxy& myObj)
-{
-    //Get the streamable value
-    quintptr ptr;
-    in >> ptr;
-    //Convert to a usable pointer
-    simdb::SimValuePtr* simPtr = reinterpret_cast<simdb::SimValuePtr*>(ptr);
-    //Create a shared pointer off of this value
-    myObj.set(simdb::SimValuePtr(*simPtr));
-    //Delete the streamed ptr
-    delete simPtr;
-    return in;
-}

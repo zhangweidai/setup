@@ -54,13 +54,6 @@ public slots:
     bool hasField(const QString & key);
 
     /*!
-       \brief Queries if the simdb::SimValue has a given field
-
-       \param[in] key the fieldname
-     */
-//    bool hasField(const QString& key);
-
-    /*!
        \brief Queries if the simdb::SimValue has a given nested field
 
        \param[in] key the field specification
@@ -88,9 +81,6 @@ public slots:
     void setField(ValuePtr key, SimValuePtr value);
 
     void setValue(const QString & key, const QString & value);
-
-    QString toStr();
-    //QString toStr(const QString & bar);
 
     /*!
        \brief Appends a given value to a given field (used with vector fields)
@@ -413,7 +403,6 @@ public:
     void migrate();
     //! \endcond
 
-#ifndef SWIG
 private:
     typedef unsigned short Flags;
     enum
@@ -434,12 +423,6 @@ private:
         INITIAL_STATE  = UNSET | ENABLED
     };
 
-
-    StateWptr         state_;
-    SimValueWptr      parent_;
-    SimType*          type_;
-    int               id_;
-    Flags             flags_;    // Flags associated with the value
 
 public slots:
     SimValue * new_SimValue()
@@ -835,7 +818,15 @@ private:
     friend struct simdb::ParentSetter;
     friend struct simdb::TypeActivator;
     friend class simdb::IdMgr;
-#endif
+
+private:
+    StateWptr         state_;
+    SimValueWptr      parent_;
+    SimType*          type_;
+    int               id_;
+    Flags             flags_;    // Flags associated with the value
+
+
 };
 
 /*!
@@ -927,7 +918,6 @@ struct TypeActivator : public boost::static_visitor<>
     void operator() (const ValMap& val) const;
 };
 
-#ifndef SWIG
 /*!
  * \brief Registers simDB related QMetaTypes for use later
  */
@@ -988,16 +978,10 @@ void SimValue::append(V value)
     append(v);
 }
 
-#endif
+} // end of namespace
 
-}
-
-#ifndef SWIG
 Q_DECLARE_METATYPE(simdb::SimValueProxy)
 Q_DECLARE_METATYPE(simdb::ModificationType)
-
-QDataStream& operator<<(QDataStream& out, const simdb::SimValueProxy& myObj);
-QDataStream& operator>>(QDataStream& in, simdb::SimValueProxy& myObj);
 
 #include <QtCore/QHash>
 template<typename ZZZ>
@@ -1006,6 +990,5 @@ uint qHash(const boost::shared_ptr<ZZZ>& ptr)
     return qHash(reinterpret_cast<quintptr>(ptr.get()));
 }
 
-#endif
 
 #endif

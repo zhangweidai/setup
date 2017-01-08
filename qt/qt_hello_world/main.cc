@@ -13,6 +13,7 @@
 #include <boost/format.hpp>
 #include <iostream>
 #include <string>
+#include <vector>
 #include <QVariant>
 #include <QTest>
 #include <boost/variant.hpp>
@@ -27,6 +28,8 @@ void test(const QVariant & well, const QVariant & again)
    QCOMPARE(well, again);
 }
 
+Q_DECLARE_METATYPE(std::string);
+Q_DECLARE_METATYPE(std::vector<std::string>);
 
 int main(int argc, char *argv[])
 {
@@ -40,9 +43,22 @@ int main(int argc, char *argv[])
    QDomElement root2 = document2->createElement("Analysis");
 
    qRegisterMetaType<NewValue>("NewValue");
+   qRegisterMetaType<std::vector<std::string> >("std::vector<std::string>");
+   qRegisterMetaType<std::string>("std::string");
+
+   QVariant var;
+   std::vector<std::string> what;
+   std::string strs = "asdfas";
+   what.push_back("one");
+   what.push_back(strs);
+   var.setValue(what);
+
+   auto newvar = var.value<std::vector<std::string> >();
+   newvar.push_back("one");
+   
 
    NewValue param("Param");
-   param.set("fdd", 2);
+   param.set("vdd", 2);
 
    auto vdd = param.get("vdd");
    test(2, vdd);
