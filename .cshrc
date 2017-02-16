@@ -21,8 +21,8 @@ alias vrc   "vi ~/.vimrc"
 alias cds 'cd /home/peter/qt'
 alias vpn '/opt/cisco/anyconnect/bin/vpnui &'
 
-setenv TITLE "%{\033]0;%~\007%}"
-set prompt="\n%{\033[36m%}[%n %m]%B${TITLE}%B %~\n%C%#%{\033[30m%} "
+#setenv TITLE "%{\033]0;%~\007%}"
+#set prompt="\n%{\033[36m%}[%n %m]%B${TITLE}%B %~\n%C%#%{\033[30m%} "
 
 alias skyline 'ssh pzhang@skyline.wv.mentorg.com'
 alias kona 'ssh pzhang@bdataos.wv.mentorg.com'
