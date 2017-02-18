@@ -160,9 +160,10 @@ for line in read:
         if len(second) != 2:
             continue;
 
-        process(second[0], float(second[2]), oneyear)
-        process(second[0], float(second[2]), twoyear)
-        process(second[0], float(second[2]), fiveyear)
+        print second
+#        process(second[0], float(second[2]), oneyear)
+#        process(second[0], float(second[2]), twoyear)
+#        process(second[0], float(second[2]), fiveyear)
 
 
 print "\n"
