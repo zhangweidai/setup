@@ -5,15 +5,16 @@ fixdel
 syntax on
 highlight comment ctermfg=white guifg=white
 
-let MRU_Max_Entries = 300
+let MRU_Max_Entries = 600
 
 set incsearch
+set smartcase
 set nu
 set et
 set hidden              " allow jumping without needing to save first
 set hlsearch            " Highlight my search results "
-set shiftwidth=3
-set tabstop=3
+set shiftwidth=4
+set tabstop=4
 set title
 set cul
 set autoindent
@@ -21,6 +22,7 @@ set cindent
 set lazyredraw
 set backspace=indent,eol,start
 set scrolloff=10
+set autochdir
 
 
 let comment_str = "# "
@@ -57,7 +59,7 @@ nmap (w           bi(<Esc>ea)<Esc>
 nmap ,g           :MRU<cr>
 nmap <F11>        olocal i;<Esc>ofor (i = 0; i < length(a); i = i + 1)<Esc>o{<Esc>o}<Esc>
 nmap <F12>        o$writeln($strcat("Dbg f: ", "<C-R>% : <Esc>:r! date<Esc><Esc>k<S-J>o : "));<Esc>k<S-J>
-nmap <F2>         ostd::cout<<"\033[32m//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\"  "<<"\033[0m"<<std::endl;<Esc>
+nmap <F2>         oqDebug()<<"//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\"  ";<Esc>
 nmap <F3>         ostd::cout<<"\033[33m//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\"  "<<"\033[0m"<<std::endl;<Esc>
 nmap <F4>         ostd::cout<<"\033[31m//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\"  "<<"\033[0m"<<std::endl;<Esc>
 nmap <F5>         ostd::cout<< " VAR: " << VAR <<std::endl;<Esc>
@@ -69,7 +71,7 @@ nmap <S-Left>     0dw<Esc>
 nmap <S-Right>    0i<Tab><Esc>
 nmap <c-l>        bywofor (i = 0; i < length(<Esc>pa); i = i + 1)<Esc>o{<Esc>o}<Esc>
 nmap <c-n>        nzz
-map <c-p>         "*p
+" map <c-p>         "*p
 imap <S-Insert>   <Esc>"*p
 nmap <c-space>    bywostd::cout<<"\033[32m//Dbg-"<<__FILE__<<"\""<< __LINE__<<" <Esc>pA "<<"\033[0m"<<<Esc>pA <<std::endl;<Esc>
 nmap <leader><F2> oqDebug()<<"\033[32m//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\"  "<<"\033[0m";<Esc>
@@ -80,9 +82,11 @@ nmap <leader>r    :NERDTreeFind<CR>
 nmap <leader>w    :!
 nmap <leader>a    :<Up><cr>
 nmap <leader>t    :NERDTree %<CR>
+nmap <leader>e    :NERDTree &<cr>
 nmap <leader>s    :sp<CR>
 nmap <leader>sp   :call Spellcheck()<CR>
 nmap <s-tab>      <c-w><up>
+nmap <space>      bywoqDebug()  << "\033[32m( "<<__FILE__<<"-"<<__LINE__<<"  <Esc>pA " << " \033[0m\|" << <Esc>pA <<"\|)";<Esc>15b
 nmap <tab>        <c-w>w
 nmap F            bywofunction $<Esc>pA(),invisible<cr>{<cr>}<Esc>kk3dd
 nmap XX           :q!<cr>
