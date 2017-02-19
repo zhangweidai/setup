@@ -781,6 +781,8 @@ function! s:MRU_Open_Window(...)
                 \ :call <SID>MRU_Select_File_Cmd('edit,newwin_vert')<CR>
     vnoremap <buffer> <silent> I
                 \ :call <SID>MRU_Select_File_Cmd('edit,newwin_vert')<CR>
+    map <buffer> <silent> <esc>
+                \ :q!<cr>
     nnoremap <buffer> <silent> t
                 \ :call <SID>MRU_Select_File_Cmd('edit,newtab')<CR>
     vnoremap <buffer> <silent> t
@@ -1036,4 +1038,3 @@ command! -nargs=? -complete=customlist,s:MRU_Complete Mru
 let &cpo = s:cpo_save
 unlet s:cpo_save
 
-" vim:set foldenable foldmethod=marker:

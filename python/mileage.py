@@ -88,7 +88,7 @@ def distance(a, b):
 
         note =  "{}{}".format(note, secondplace)
         return [locationtranslate[loc][1], note]
-
+kdfjdflksdfjsa;lfdf;lsdkajfaslf
     loca = locationtranslate[a-1][0]
     locb = locationtranslate[b-1][0]
 

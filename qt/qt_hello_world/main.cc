@@ -22,7 +22,6 @@
 
 using namespace std;
 
-
 void test(const QVariant & well, const QVariant & again)
 {
    QCOMPARE(well, again);
@@ -259,8 +258,5 @@ qRegisterMetaType<Foo>("Foo");
     value.setValue(map2);
 
     qDebug()  << "\033[32m( "<<__FILE__<<"-"<<__LINE__<<"  map2  " << " \033[0m|" << map.size()  <<"|)";
-
-
-
 */
 

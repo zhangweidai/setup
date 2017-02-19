@@ -1,4 +1,5 @@
 " Peter's Vim File "
+set t_Co=256
 execute pathogen#infect()
 
 fixdel
@@ -110,7 +111,7 @@ nmap <leader>se   :!gnome-terminal --working-directory '%:p:h' -x tcsh -c "grf '
 nmap <leader>sl   :!gnome-terminal --working-directory '%:p:h' -x tcsh -c "grf '<cword>'; /bin/tcsh -i"&<cr>
 nmap <leader>tkd  :!tkdiff '%' & <cr>
 nmap <silent> <leader><leader>t    :silent !gnome-terminal --working-directory '%:p:h'&<cr>
-nn <leader><leader><leader> :source ~/.vimrc<Esc> :source ~/.gvimrc<Esc>
+nn <leader><leader><leader> :source ~/.vimrc<Esc> 
 nmap <leader>go    :exe "!firefox -search '<cword>' &"<cr>
 
 " work specific
@@ -164,8 +165,8 @@ fu! Spellcheck()
 	setlocal spell spelllang=en_us
 endf
 
-au WinEnter,BufRead,BufNewFile *          set formatoptions-=o
-au WinEnter,BufRead,BufNewFile *          set formatoptions-=r
+" au WinEnter,BufRead,BufNewFile *          set formatoptions-=o
+" au WinEnter,BufRead,BufNewFile *          set formatoptions-=r
 set tags=/home/peter/Desktop/Qtilities-master/src/tags,/home/peter/qt-everywhere-commercial-src-4.7.4/src/tags
 
 call arpeggio#map('i', '', 0, 'jk', '<Esc>')
@@ -179,10 +180,9 @@ au WinEnter,BufRead,BufNewFile *   :cd %:p:h
    " :AnsiEsc
 "
 
-augroup myvimrc
-   au!
-   au BufWritePost .vimrc,_vimrc,vimrc,.gvimrc,_gvimrc,gvimrc so $MYVIMRC | if has('gui_running') | so $MYGVIMRC | endif
-augroup END
+set nofoldenable
 
 autocmd WinEnter,FocusGained * :setlocal number relativenumber
 autocmd WinLeave,FocusLost   * :setlocal number norelativenumber
+set laststatus=2
+let g:airline_theme='xtermlight'
