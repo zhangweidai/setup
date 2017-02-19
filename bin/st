@@ -1,0 +1,6 @@
+git status -uno ./
+git status -uno ./ > /tmp/delme.odd
+cat /tmp/delme.odd | grep modified | awk '{if ($1 == "#") {print $3} else {print $2}}' > /tmp/prevGrepResults.noColor
+
+git status -u . | grep -v Make | grep -v makefile | grep -v filt | grep -v pyc
+

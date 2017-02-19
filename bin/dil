@@ -1,0 +1,2 @@
+#!/bin/tcsh
+git difftool `cat $TS/prevGrepResults.noColor | awk -v var="$1" 'FNR == var {print $1}'`
