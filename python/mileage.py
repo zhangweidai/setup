@@ -1,5 +1,7 @@
 import datetime
 import random
+import locale
+locale.setlocale( locale.LC_ALL, '' )
 
 caroneProb = 80
 gohomeProbability = 44
@@ -14,8 +16,11 @@ dalog = []
 daydidntwork = 0
 persmile = 0
 
+appointSetup = [(30,0), (50,1), (10,2), (10,3),(5,4),(1,5)]
+appoints = []
+
 def startOver():
-    global car, miles, dalog, log, dates, date_1, daydidntwork, appointtotal, persmile
+    global car, miles, dalog, log, dates, date_1, daydidntwork, appointtotal, persmile, appoints
     persmile = 0
     daydidntwork = 0
     dalog = []
@@ -27,164 +32,10 @@ def startOver():
     date_1 = datetime.datetime.strptime("01/01/16", "%m/%d/%y")
     log = dict()
 
-appoints = []
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(0)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(1)
-appoints.append(2)
-appoints.append(2)
-appoints.append(2)
-appoints.append(2)
-appoints.append(2)
-appoints.append(2)
-appoints.append(2)
-appoints.append(2)
-appoints.append(2)
-appoints.append(2)
-appoints.append(2)
-appoints.append(2)
-appoints.append(2)
-appoints.append(2)
-appoints.append(2)
-appoints.append(2)
-appoints.append(2)
-appoints.append(3)
-appoints.append(3)
-appoints.append(3)
-appoints.append(3)
-appoints.append(3)
-appoints.append(3)
-appoints.append(3)
-appoints.append(3)
-appoints.append(3)
-appoints.append(3)
-appoints.append(3)
-appoints.append(3)
-appoints.append(3)
-appoints.append(3)
-appoints.append(4)
-appoints.append(4)
-appoints.append(4)
-appoints.append(4)
-appoints.append(5)
+    appoints = []
+    for i in appointSetup:
+        for x in range(0, i[0]):
+            appoints.append(i[1])
 
 possiblemiles = []
 possiblemiles.append(3)
@@ -493,38 +344,60 @@ avb = 0
 avc = 0
 lowest = 10000
 lowestlog = None
-last = 0
+lastAppointTotal = 0
 cd = 0
-while last != 316:
-    cd += 1
+def findAnswer(appointmentTotal):
+    global ava, avb, avc, cd, lastAppointTotal
+
+    ava = 0
+    avb = 0
+    avc = 0
+
+    while lastAppointTotal != appointmentTotal:
+        cd += 1
+        startOver();
+        while (date_1 < endofdate):
+            subtract()
+    
+        lastAppointTotal = appointtotal
+        print "{} and {}".format(lastAppointTotal, daydidntwork)
+        ava += daydidntwork
+        avb += miles
+        avc += appointtotal
+    
+    f = open('file', 'w')
+    for entry in dalog:
+        f.write("{}\n".format(entry))
+    print_stats()
+
+def print_stats():
+    print "days didnt work {}".format(daydidntwork)
+    print "work miles so far {}".format(miles)
+    print "personal miles {}".format(persmile)
+    print "number of appointments {}".format(lastAppointTotal)
+    print "income {}".format(locale.currency(lastAppointTotal * 34))
+    
+    if cd == 0:
+        return
+
+    print "avg days didnt work {}".format(ava/cd)
+    print "avg work miles so far {}".format(avb/cd)
+    print "avg number of appointments {}".format(avc/cd)
+    print "avg number of appointments per week {}".format((avc/cd)/52)
+    print "miles savings {}".format((avb/cd) * 0.54)
+    print "income {}".format((avc/cd) * 34)
+    print "income {}".format(((avc/cd) * 34)/24)
+    print "lowest appointment {}".format(lowest)
+    
+    print "average {}".format(sum(possiblemiles)/len(possiblemiles))
+
+def doonce():
+    global lastAppointTotal
     startOver();
     while (date_1 < endofdate):
         subtract()
+    lastAppointTotal = appointtotal
+    print_stats()
 
-    last = appointtotal
-    print "{} and {}".format(last, daydidntwork)
-    ava += daydidntwork
-    avb += miles
-    avc += appointtotal
-
-f = open('file', 'w')
-for entry in dalog:
-    f.write("{}\n".format(entry))
-
-print "days didnt work {}".format(daydidntwork)
-print "percent didnt work {}".format(daydidntwork/250.00)
-print "work miles so far {}".format(miles)
-print "number of appointments {}".format(last)
-print "personal miles {}".format(persmile)
-
-
-print "avg days didnt work {}".format(ava/cd)
-print "avg work miles so far {}".format(avb/cd)
-print "avg number of appointments {}".format(avc/cd)
-print "avg number of appointments per week {}".format((avc/cd)/52)
-print "miles savings {}".format((avb/cd) * 0.54)
-print "income {}".format((avc/cd) * 34)
-print "income {}".format(((avc/cd) * 34)/24)
-print "lowest appointment {}".format(lowest)
-
-print "average {}".format(sum(possiblemiles)/len(possiblemiles))
+findAnswer(316)
+#doonce()

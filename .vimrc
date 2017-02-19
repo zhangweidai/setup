@@ -1,4 +1,5 @@
 " Peter's Vim File "
+execute pathogen#infect()
 
 fixdel
 syntax on
@@ -20,6 +21,7 @@ set cindent
 set lazyredraw
 set backspace=indent,eol,start
 set scrolloff=10
+
 
 let comment_str = "# "
 
@@ -93,12 +95,12 @@ nmap s            :write!<cr>
 nmap <leader>]    [[=%''zz
 map m $
 map <m-up>        0i<C-r>=comment_str<Esc><Esc>j
+map ??            0i<C-r>=comment_str<Esc><Esc>j
 map <m-down>      0xxj
 map <m-h>         0xxx
 map <m-l>         0i<tab><Esc>
 imap <m-h>        <Esc>0xxx
 imap <m-l>        <Esc>0i<tab><Esc>
-map ??            :silent !howd 
 nmap <leader>se   :!gnome-terminal --working-directory '%:p:h' -x tcsh -c "grf '<cword>'; /bin/tcsh -i"&<cr>
 nmap <leader>sl   :!gnome-terminal --working-directory '%:p:h' -x tcsh -c "grf '<cword>'; /bin/tcsh -i"&<cr>
 nmap <leader>tkd  :!tkdiff '%' & <cr>
@@ -151,7 +153,6 @@ nnoremap <C-J> :call <SID>Saving_scroll("10<C-V><C-D>")<CR>
 vnoremap <C-J> <Esc>:call <SID>Saving_scroll("gv1<C-V><C-D>")<CR>
 
 autocmd FileType make setlocal noexpandtab
-execute pathogen#infect()
 
 fu! Spellcheck()
    set syntax=off
@@ -172,3 +173,11 @@ au WinEnter,BufRead,BufNewFile *   :cd %:p:h
    " :set ul=0 | edit
    " :AnsiEsc
 "
+
+augroup myvimrc
+   au!
+   au BufWritePost .vimrc,_vimrc,vimrc,.gvimrc,_gvimrc,gvimrc so $MYVIMRC | if has('gui_running') | so $MYGVIMRC | endif
+augroup END
+
+autocmd WinEnter,FocusGained * :setlocal number relativenumber
+autocmd WinLeave,FocusLost   * :setlocal number norelativenumber
