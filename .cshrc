@@ -38,6 +38,5 @@ alias uplinux 'sudo apt-get update; sudo apt-get upgrade; sudo apt-get dist-upgr
 
 alias g++ 'g++ -std=c++14'
 alias act 'cd ~/django/ENV/; source bin/activate.csh'
-alias st 'git st -uno .'
 
 
