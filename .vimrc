@@ -184,5 +184,8 @@ set nofoldenable
 
 autocmd WinEnter,FocusGained * :setlocal number relativenumber
 autocmd WinLeave,FocusLost   * :setlocal number norelativenumber
+
+let g:airline_powerline_fonts = 1
+
 set laststatus=2
 let g:airline_theme='xtermlight'
