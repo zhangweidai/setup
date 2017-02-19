@@ -8,12 +8,9 @@
 [diff]
 	tool = kompare
 
-[difftool]
-	prompt = false
-
 [difftool "kompare"]
 	trustExitCode = true
-	cmd = `/usr/bin/kompare $LOCAL $REMOTE`
+	cmd = `vimdiff $LOCAL $REMOTE > /dev/tty`
 
 [merge]
 	tool = kompare
@@ -46,3 +43,4 @@ rdiff = diff --stat origin/master
 resetfile = checkout origin/master 
 hh = difftool HEAD^ HEAD
 pushdiff = difftool HEAD^ HEAD
+	d = difftool

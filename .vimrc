@@ -8,6 +8,7 @@ highlight comment ctermfg=white guifg=white
 let MRU_Max_Entries = 600
 
 set incsearch
+set nofoldenable    " disable folding
 set smartcase
 set nu
 set et
