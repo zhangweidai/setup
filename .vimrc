@@ -90,7 +90,6 @@ nmap <leader>sp   :call Spellcheck()<CR>
 nmap <s-tab>      <c-w><up>
 nmap <space>      bywoqDebug()  << "\033[32m( "<<__FILE__<<"-"<<__LINE__<<"  <Esc>pA " << " \033[0m\|" << <Esc>pA <<"\|)";<Esc>15b
 nmap <tab>        <c-w>w
-nmap F            bywofunction $<Esc>pA(),invisible<cr>{<cr>}<Esc>kk3dd
 nmap XX           :q!<cr>
 nmap dc           yyp<m-up>kkw
 nmap [{           ][=%''zz
@@ -115,9 +114,6 @@ nn <leader><leader><leader> :source ~/.vimrc<Esc>
 nmap <leader>go    :exe "!firefox -search '<cword>' &"<cr>
 
 " work specific
-au! BufEnter      *.ample   nnoremap <leader>3   :!f3; cd '%:p:h'; gud<CR>
-au! BufEnter      *.ample   nnoremap <leader>4   :!f4; cd '%:p:h'; gud<CR>
-au! BufEnter      *.ample   nnoremap <leader>1   :!f1; cd '%:p:h'; gud<CR>
 nmap ,bu          :!goda; sgc; gud <cr>
 nmap ,bs          :!goda; sgc; rlse <cr>
 nmap ,s           :find  %:t:r.c*<cr>
@@ -182,15 +178,12 @@ au WinEnter,BufRead,BufNewFile *   :cd %:p:h
 
 set nofoldenable
 
-autocmd WinEnter,FocusGained * :setlocal number relativenumber
-autocmd WinLeave,FocusLost   * :setlocal number norelativenumber
+"autocmd WinEnter,FocusGained * :setlocal number relativenumber
+"autocmd WinLeave,FocusLost   * :setlocal number norelativenumber
 
 let g:airline_powerline_fonts = 1
-
 set encoding=utf-8
-
 set laststatus=2
-
-set encoding=utf-8
 let g:airline_theme='xtermlight'
+:colo molokai
 

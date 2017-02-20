@@ -17,6 +17,7 @@ alias uplinux='sudo apt-get update; sudo apt-get upgrade; sudo apt-get dist-upgr
 alias dmouse='xinput disable "ETPS/2 Elantech Touchpad"'
 alias emouse='xinput enable "ETPS/2 Elantech Touchpad"'
 alias cds='cd $HOME/setup'
+alias cdss='cd $HOME/setup'
 alias mk='make'
 
 alias hi="history"
