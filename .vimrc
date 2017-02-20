@@ -187,3 +187,7 @@ set laststatus=2
 let g:airline_theme='xtermlight'
 :colo molokai
 
+hi IndentGuidesOdd  ctermbg=black
+hi IndentGuidesEven ctermbg=darkgrey
+let g:indent_guides_start_level=2
+let g:indent_guides_guie_size=1
