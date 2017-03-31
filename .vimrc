@@ -74,7 +74,6 @@ nmap <S-Right>    0i<Tab><Esc>
 nmap <c-l>        bywofor (i = 0; i < length(<Esc>pa); i = i + 1)<Esc>o{<Esc>o}<Esc>
 nmap <c-n>        nzz
 " map <c-p>         "*p
-imap <S-Enter>    ->
 imap <S-Insert>   <Esc>"*p
 nmap <c-space>    bywostd::cout<<"\033[32m//Dbg-"<<__FILE__<<"\""<< __LINE__<<" <Esc>pA "<<"\033[0m"<<<Esc>pA <<std::endl;<Esc>
 nmap <leader><F2> oqDebug()<<"\033[32m//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\"  "<<"\033[0m";<Esc>

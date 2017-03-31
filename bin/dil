@@ -1,3 +1,2 @@
 #!/bin/bash
-echo `cat $TS/prevGrepResults.noColor | awk -v var="$1" 'FNR == var {print $1}'`
-git difftool  `cat $TS/prevGrepResults.noColor | awk -v var="$1" 'FNR == var {print $1}'`
+git difftool `cat $TS/prevGrepResults.noColor | awk -v var="$1" 'FNR == var {print $1}'`
