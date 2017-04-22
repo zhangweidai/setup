@@ -25,7 +25,7 @@ set lazyredraw
 set backspace=indent,eol,start
 set scrolloff=10
 set autochdir
-
+set pastetoggle=<F10>
 
 let comment_str = "# "
 
