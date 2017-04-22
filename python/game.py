@@ -1,64 +1,75 @@
-import pygame
-from pygame.locals import *
+#!/usr/bin/env python
 
+import OpenGL
 from OpenGL.GL import *
+from OpenGL.GLUT import *
 from OpenGL.GLU import *
+import pygame
 
-verticies = (
-    (1, -1, -1),
-    (1, 1, -1),
-    (-1, 1, -1),
-    (-1, -1, -1),
-    (1, -1, 1),
-    (1, 1, 1),
-    (-1, -1, 1),
-    (-1, 1, 1)
-    )
+ESCAPE = '\033'
+window = 0
+texture = 0
 
-edges = (
-    (0,1),
-    (0,3),
-    (0,4),
-    (2,1),
-    (2,3),
-    (2,7),
-    (6,3),
-    (6,4),
-    (6,7),
-    (5,1),
-    (5,4),
-    (5,7)
-    )
+A_TEX_NUMBER = None
+B_TEX_NUMBER = None
 
+def GenTextureForText(text):
+    font = pygame.font.Font(None, 64)
+    textSurface = font.render(text, True, (255,255,255,255), (0,0,0,255))
+    ix, iy = textSurface.get_width(), textSurface.get_height()
+    image = pygame.image.tostring(textSurface, "RGBX", True)
+    glPixelStorei(GL_UNPACK_ALIGNMENT,1)
+    i = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, i)
+    glTexImage2D(GL_TEXTURE_2D, 0, 3, ix, iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, image)
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST)
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST)
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL)
+    return i
 
-def Cube():
-    glBegin(GL_LINES)
-    for edge in edges:
-        for vertex in edge:
-            glVertex3fv(verticies[vertex])
+def InitGL(Width, Height):
+    global A_TEX_NUMBER, B_TEX_NUMBER
+    pygame.init()
+    A_TEX_NUMBER = GenTextureForText("W")
+    B_TEX_NUMBER = GenTextureForText("b")
+    glEnable(GL_TEXTURE_2D)
+    glClearColor(0.0, 0.0, 0.0, 0.0)
+    glMatrixMode(GL_PROJECTION)
+    glLoadIdentity()
+    gluPerspective(45.0, float(Width)/float(Height), 0.1, 100.0)
+    glMatrixMode(GL_MODELVIEW)
+    done = 1
+
+def DrawGLScene():
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
+    glLoadIdentity()
+    glTranslatef(0.0,0.0,-10.0)
+    glBindTexture(GL_TEXTURE_2D, B_TEX_NUMBER)
+    glBindTexture(GL_TEXTURE_2D, A_TEX_NUMBER)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex3f(-2.0, -2.0,  2.0)
+    glTexCoord2f(1.0, 0.0); glVertex3f( 2.0, -2.0,  2.0)
+    glTexCoord2f(1.0, 1.0); glVertex3f( 2.0,  2.0,  2.0)
+    glTexCoord2f(0.0, 1.0); glVertex3f(-2.0,  2.0,  2.0)
     glEnd()
+    glutSwapBuffers()
 
+def keyPressed(*args):
+    if args[0] == ESCAPE:
+        glutDestroyWindow(window)
+        sys.exit()
 
 def main():
-    pygame.init()
-    display = (800,600)
-    pygame.display.set_mode(display, DOUBLEBUF|OPENGL)
-
-    gluPerspective(45, (display[0]/display[1]), 0.1, 50.0)
-
-    glTranslatef(0.0,0.0, -5)
-
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
-
-        glRotatef(1, 3, 1, 1)
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
-        Cube()
-        pygame.display.flip()
-        pygame.time.wait(10)
-
-
+    global window
+    glutInit("")
+    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_ALPHA | GLUT_DEPTH)
+    glutInitWindowSize(640, 480)
+    glutInitWindowPosition(0, 0)
+    window = glutCreateWindow("Jeff Molofee's GL Code Tutorial ... NeHe '99")
+    glutDisplayFunc(DrawGLScene)
+    glutIdleFunc(DrawGLScene)
+    glutKeyboardFunc(keyPressed)
+    InitGL(640, 480)
+    glutMainLoop()
+print "Hit ESC key to quit."
 main()
