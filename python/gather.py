@@ -11,13 +11,13 @@ from pygame.locals import *
 def main():
     pygame.init()
     display = (800,600)
-    screen = pygame.display.set_mode(display, DOUBLEBUF|OPENGL)
+    screen = pygame.display.set_mode(display, DOUBLEBUF|OPENGLBLIT)
 
     # initialize font; must be called after 'pygame.init()' to avoid 'Font not Initialized' error
     myfont = pygame.font.SysFont("monospace", 15)
 
     # render text
-    label = myfont.render("Some text!", 1, (255,255,0))
+    label = myfont.render("Some text!", 1, (255,0,0))
     screen.blit(label, (100, 100))
 
     while True:

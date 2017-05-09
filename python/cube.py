@@ -39,7 +39,7 @@ def Cube():
     glEnd()
 
 
-def main():
+def setup():
     pygame.init()
     display = (800,600)
     pygame.display.set_mode(display, DOUBLEBUF|OPENGL)
@@ -48,6 +48,8 @@ def main():
 
     glTranslatef(0.0,0.0, -5)
 
+
+def start():
     while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -61,4 +63,5 @@ def main():
         pygame.time.wait(10)
 
 
-main()
+# setup()
+# start()
