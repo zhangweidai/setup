@@ -111,6 +111,8 @@ class Menu:
             self.PositionSelection %= self.Quanity
         menu = pygame.Surface((self.menu_width, self.menu_height))
         menu.fill(self.BackgroundColor)
+        if len(self.by) == 0:
+            return None
         Selection_rect = self.by[self.PositionSelection].Selection_rect
         pygame.draw.rect(menu,self.SelectionColor,Selection_rect)
 
