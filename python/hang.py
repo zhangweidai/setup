@@ -10,11 +10,12 @@ def setup():
     words = ["rabbit", "bunny", "carrot"]
 
 
-def application(env, start_response):
-    start_response('200 OK', [('Content-Type','text/html')])
-    return [b"Hello World"]
-
 words = ["rabbit", "bunny", "carrot"]
+def application(env, start_response):
+    global words
+    start_response('200 OK', [('Content-Type','text/html')])
+    return words[0]
+
 PORT_NUMBER = 8080
 guesses = {}
 guesses["default"] = ""
