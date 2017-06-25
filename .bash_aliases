@@ -94,4 +94,5 @@ export PATH="$HOME/setup/bin:$PATH"
 export PS1="\n\[\e[33m\][ \h \[\e[33m\]]\[\e[m\]\`parse_git_branch\` \w \n\W$ "
 
 alias py='python'
+alias well='sudo uwsgi --http :80 --wsgi-file /home/peter/setup/python/hang.py'
 
