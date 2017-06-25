@@ -25,7 +25,7 @@ set lazyredraw
 set backspace=indent,eol,start
 set scrolloff=10
 set autochdir
-set pastetoggle=<F10>
+set pastetoggle=<F11>
 
 let comment_str = "# "
 
@@ -59,7 +59,6 @@ au FileType python setlocal smartindent shiftwidth=4 ts=4 et cinwords=if,elif,el
 nmap "w           bi"<Esc>ea"<Esc>
 nmap (w           bi(<Esc>ea)<Esc>
 nmap ,g           :MRU<cr>
-nmap <F11>        olocal i;<Esc>ofor (i = 0; i < length(a); i = i + 1)<Esc>o{<Esc>o}<Esc>
 nmap <F12>        o$writeln($strcat("Dbg f: ", "<C-R>% : <Esc>:r! date<Esc><Esc>k<S-J>o : "));<Esc>k<S-J>
 nmap <F2>         oqDebug()<<"//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\"  ";<Esc>
 nmap <F3>         ostd::cout<<"\033[33m//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\"  "<<"\033[0m"<<std::endl;<Esc>

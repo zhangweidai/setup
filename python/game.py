@@ -1,64 +1,26 @@
-import pygame
+# game.py - 3/22/2013
+
+import pygame, sys, os
 from pygame.locals import *
-
-from OpenGL.GL import *
-from OpenGL.GLU import *
-
-verticies = (
-    (1, -1, -1),
-    (1, 1, -1),
-    (-1, 1, -1),
-    (-1, -1, -1),
-    (1, -1, 1),
-    (1, 1, 1),
-    (-1, -1, 1),
-    (-1, 1, 1)
-    )
-
-edges = (
-    (0,1),
-    (0,3),
-    (0,4),
-    (2,1),
-    (2,3),
-    (2,7),
-    (6,3),
-    (6,4),
-    (6,7),
-    (5,1),
-    (5,4),
-    (5,7)
-    )
-
-
-def Cube():
-    glBegin(GL_LINES)
-    for edge in edges:
-        for vertex in edge:
-            glVertex3fv(verticies[vertex])
-    glEnd()
+from classes import *
 
 
 def main():
     pygame.init()
-    display = (800,600)
-    pygame.display.set_mode(display, DOUBLEBUF|OPENGL)
+    pygame.display.set_caption('PyGame Snake')
 
-    gluPerspective(45, (display[0]/display[1]), 0.1, 50.0)
+    window = pygame.display.set_mode((854, 480))
+    screen = pygame.display.get_surface()
+    clock = pygame.time.Clock()
+    font = pygame.font.Font('freesansbold.ttf', 20)
 
-    glTranslatef(0.0,0.0, -5)
+    game = SnakeGame(window, screen, clock, font)
 
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
+    while game.run(pygame.event.get()):
+        pass
 
-        glRotatef(1, 3, 1, 1)
-        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT)
-        Cube()
-        pygame.display.flip()
-        pygame.time.wait(10)
+    pygame.quit()
+    sys.exit()
 
-
-main()
+if __name__ == '__main__':
+    main()
