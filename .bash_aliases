@@ -95,4 +95,5 @@ export PS1="\n\[\e[33m\][ \h \[\e[33m\]]\[\e[m\]\`parse_git_branch\` \w \n\W$ "
 
 alias py='python'
 alias well='sudo uwsgi --http :80 --wsgi-file /home/peter/setup/python/hang.py'
+alias well2='sudo uwsgi --http :80 --wsgi-file /home/peter/setup/python/hang2.py'
 
