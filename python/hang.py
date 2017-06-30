@@ -1,5 +1,4 @@
 #!/usr/bin/python
-from os import curdir, sep
 import cgi
 import random
 import copy
@@ -7,10 +6,10 @@ import string
 
 MAX_MISSES = 8
 LOST_RECORD = '|'
-DEFAULT_GAMEID = 'default'
 NOMOREWORDS = 'No More Words'
 GLOBALWORDS = ["rabbit", "bunny", "carrot", "lettuce", "burrow", "fluffy", "floppy", "litter", "pellets"]
 
+# holds all created games
 games = {}
 
 #######################################################
@@ -21,25 +20,16 @@ class GameInfo():
 
     # prepares all the data for a new game
     def newGame(self):
-        self.winCount = 0
         self.words = list(GLOBALWORDS)
         random.shuffle(self.words)
         self.guesses = ""
-        self.wrongCount = 0
         self.currentCount = 0
-        self.underScoredWord = ""
-        self.history = list()
 
     def getNextCount(self):
         return self.currentCount + 1
 
-    def saveGuesses(self):
-        self.history.append(self.guesses)
-
     def randomizeRemainingWords(self):
         cIdx = self.getCurrentWordIdx()
-        wordsLeft = len(self.words) - cIdx
-        self.getCurrentWordIdx()
         wordsSaved = self.words[0 : cIdx + 1]
         shuffleWords = self.words[cIdx + 1:]
         random.shuffle(shuffleWords)
@@ -115,6 +105,7 @@ class GameInfo():
             return False
         return None
 
+    # compare user entered word with the current word
     def processWordGuesses(self, undoItem):
         if len(undoItem) <= 1:
             return undoItem
@@ -139,7 +130,6 @@ class GameInfo():
         if self.currentCount > len(self.guesses):
             self.guesses += undoItem
         else:
-            self.saveGuesses()
             newGuess = self.guesses[:formCount-increment]+str(undoItem)
             self.guesses = newGuess
             if not increment == 1:
@@ -231,7 +221,6 @@ newGameBtn = '\
 <div data-tip="Restart everything over.  Clear undo history">\
 <input type="submit" value="Start Over"/></div></form>'\
 
-
 def generateRandomId():
     return ''.join(random.choice(string.ascii_uppercase + string.digits) for character in range(8))
 
@@ -254,7 +243,7 @@ def getGame(gameId):
         games[gameId] = GameInfo()
     return games[gameId]
 
-def parseParse(string):
+def parseQueryString(string):
     ret = {}
     tokens = string.split("?")
     for b in tokens:
@@ -304,15 +293,15 @@ def getGameId(query, parsedOnly = False):
         return None
 
     if query:
-        myDic = parseParse(query)
+        myDic = parseQueryString(query)
         if not len(myDic) == 0:
             return myDic["id"]
-    return DEFAULT_GAMEID
+    return generateRandomId()
 
 
 def getFormCount(query):
     if query:
-        myDic = parseParse(query)
+        myDic = parseQueryString(query)
         if not len(myDic) == 0:
             return int(myDic["count"])
     return None
