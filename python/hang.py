@@ -358,6 +358,7 @@ def playHangMan(env):
 
     return generateHTML(gameId, debugging)
 
+
 # required for wsgi
 def application(env, start_response):
     start_response('200 OK', [('Content-Type','text/html')])
