@@ -331,6 +331,8 @@ def playHangMan(env):
 
     # debug mode allows additional developer information
     debugging = ""
+    if "debug" in path:
+        debugging = "debug"
 
     if "newgame" in path:
         game.newGame()
