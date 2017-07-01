@@ -6,7 +6,13 @@ import string
 
 MAX_MISSES = 8
 LOST_RECORD = '|'
-NOMOREWORDS = 'No More Words'
+NOMOREWORDS = "No More Words"
+NOTAMPER = "No Tampering"
+COUNT = "count"
+ID = "id"
+DEBUG = "debug"
+VALID_QUERY_KEYS = [COUNT, ID, DEBUG]
+defaultId = None
 GLOBALWORDS = ["rabbit", "bunny", "carrot", "lettuce", "burrow", "fluffy", "floppy", "litter", "pellets"]
 
 # holds all created games
@@ -168,32 +174,33 @@ def spaced(word):
 
 def getUndoBtn(gameId, game, currentCount, debugging):
     return '\
-<form method="POST" action="/{}guess?id={}?count={}">\
-<input type="submit" value="undo"/ {}></form>'.format(
-        debugging,
-        gameId, 
-        game.getUndoCount(),
-        "disabled" if currentCount < 1 else "",
-        )
+<form method="POST" action="/{debug}?{id}={gameId}?{count}={gameCount}">\
+<input type="submit" value="undo"/ {disabled}></form>'.format(
+        debug = debugging,
+        id = ID,
+        gameId = gameId, 
+        count = COUNT,
+        gameCount = game.getUndoCount(),
+        disabled = "disabled" if currentCount < 1 else "")
 
 def getUserVisibleText(game):
     return '\
-<h3> user visible word is: {} </h3>\
-<h3> current guessed letters : {} </h3>\
-<h3> guesses left : {} </h3>\
-<h3> number of correct words guessed: {} out of {}</h3>\
+<h3> user visible word is: {word} </h3>\
+<h3> current guessed letters : {letters} </h3>\
+<h3> guesses left : {left} </h3>\
+<h3> number of correct words guessed: {correct} out of {total}</h3>\
 '.format(
-        spaced(game.getUserVisibleWord()),
-        game.getCurrentGuesses(),
-        game.getGuessesLeft(),
-        game.getNumOfCorrectWords(),
-        len(GLOBALWORDS)
+        word = spaced(game.getUserVisibleWord()),
+        letters = game.getCurrentGuesses(),
+        left = game.getGuessesLeft(),
+        correct = game.getNumOfCorrectWords(),
+        total = len(GLOBALWORDS)
         )
 
 def getGuessForm(gameId, game, currentWord, debugging):
     disableGuess = "disabled" if currentWord == NOMOREWORDS else ""
     return '\
-<form method="POST" action="/{}guess?id={}?count={}">\
+<form method="POST" action="/{}?id={}?count={}">\
 <input type="text" name="letter"/ autocomplete="off" {}>\
 <input type="submit" value="guess" {}/></form>'.format(
         debugging,
@@ -217,7 +224,7 @@ def getDebugMsgs(gameId, currentWord, game):
         str(len(game.getGuesses())))
 
 newGameBtn = '\
-<form method="POST" action="/newgame{}">\
+<form method="POST" action="/{}">\
 <div data-tip="Restart everything over.  Clear undo history">\
 <input type="submit" value="Start Over"/></div></form>'\
 
@@ -231,7 +238,8 @@ def getGameCopy(sourceId):
         game = copy.deepcopy(games[sourceId])
         game.randomizeRemainingWords()
     else:
-        game = GameInfo()
+        return None, None
+#        game = GameInfo()
 
     gameId = generateRandomId()
     games[gameId] = game
@@ -243,13 +251,19 @@ def getGame(gameId):
         games[gameId] = GameInfo()
     return games[gameId]
 
+
+# returns None if parsed query string contains invalid keys
+# returns a query map of valid keys
 def parseQueryString(string):
-    ret = {}
+    ret = {COUNT : None, ID : None}
     tokens = string.split("?")
     for b in tokens:
         keys = b.split("=")
         if len(keys) == 2:
-            ret[keys[0]] = keys[1]
+            cKey = keys[0]
+            if not cKey in VALID_QUERY_KEYS:
+                return None
+            ret[cKey] = keys[1]
     return ret
 
 def generateHTML(gameId, debugging):
@@ -288,42 +302,46 @@ def generateHTML(gameId, debugging):
     return '<html> {} </html>'.format(msg)
 
 
-def getGameId(query, parsedOnly = False):
-    if not query and parsedOnly:
-        return None
-
-    if query:
-        myDic = parseQueryString(query)
-        if not len(myDic) == 0:
-            return myDic["id"]
-    return generateRandomId()
-
-
-def getFormCount(query):
-    if query:
-        myDic = parseQueryString(query)
-        if not len(myDic) == 0:
-            return int(myDic["count"])
-    return None
-
+def validPath(path):
+    if path == "/":
+        return True
+    return False
 
 #Handler for the GET/POST requests
 def playHangMan(env):
+    global defaultId
     query = env['QUERY_STRING']
     path = env['PATH_INFO']
 
     if "favicon" in path:
         return ""
 
-    # determine what game we are playing:
+    if not validPath(path):
+        return NOTAMPER
+
+    parsedData = parseQueryString(query)
+
+    if parsedData == None:
+        return NOTAMPER
+
+    game = None
+    gameId = parsedData[ID]
     method = env['REQUEST_METHOD']
-    passedInGameId = getGameId(query, True)
-    if method == "GET" and passedInGameId:
+
+    # determine what game we are playing:
+    if method == "GET" and gameId:
         # GET and passed in GameId when user pastes URL, thus gets a game copy
-        game, gameId = getGameCopy(passedInGameId)
+        game, gameId = getGameCopy(gameId)
+        if game == None:
+            return NOTAMPER
     else:
-        # get existing game or new game
-        gameId = getGameId(query) if passedInGameId == None else passedInGameId
+        # get existing game or new game based on parsed gameId
+        if defaultId == None:
+            gameId = generateRandomId()
+            # reuse a default Id when one has been created and non passed in.
+            defaultId = gameId
+        else:
+            gameId = defaultId
         game = getGame(gameId)
 
     form = None
@@ -331,17 +349,14 @@ def playHangMan(env):
 
     # debug mode allows additional developer information
     debugging = ""
-    if "debug" in path:
-        debugging = "debug"
+    if parsedData.has_key(DEBUG):
+        debugging = "?debug=1"
 
-    if "newgame" in path:
+    if not query or (parsedData[COUNT] == None and debugging):
         game.newGame()
 
-    if "guess" in path:
-        input = env['wsgi.input']
-        form = cgi.FieldStorage(
-                fp=input,
-                environ=env)
+    else:
+        form = cgi.FieldStorage(fp=env['wsgi.input'], environ=env)
 
         if form.has_key("letter"):
             # qualify letter received from form
@@ -350,7 +365,7 @@ def playHangMan(env):
             if letter in game.getCurrentGuesses() or not letter.isalpha():
                 letter = ""
 
-        formCount = getFormCount(query)
+        formCount = int(parsedData[COUNT])
         if not formCount == None and formCount <= len(game.getGuesses()):
             # process undo and game discontinuity
             game.setCurrentCount(formCount)
