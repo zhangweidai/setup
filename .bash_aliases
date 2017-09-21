@@ -30,6 +30,7 @@ alias vcs="vim ~/.bashrc"
 alias vcsa="vim ~/.bash_aliases"
 alias vrc="vim ~/.vimrc"
 alias sl="ssh pzhang@skyline.wv.mentorg.com"
+alias ss="ssh pzhang@skyline.wv.mentorg.com"
 alias psx="ps -aux"
 alias grf='vimack.sh'
 alias ll='/bin/ls --color=always -all -h'

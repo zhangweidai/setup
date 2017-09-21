@@ -18,11 +18,38 @@ cash = 10000
 c = 0
 
 class OwnedStock:
-    price_ = 0
-    quantity_ = 0
-    def __init__(self, quantity, price)
+    def __init__(self, name, quantity, price):
+        self.name_ = name
         self.price_ = price
         self.quantity_ = quantity
+
+    def getQuantity(self):
+        return self.quantity_
+
+    def setQuantity(self, quantity):
+        self.quantity_ = quantity
+
+    def addQuantity(self, quantity):
+        self.quantity_ = self.quantity_ + quantity
+
+    def getPrice(self):
+        return self.price_
+
+    def getName(self):
+        return self.name_
+
+    def __hash__(self):
+        return (self.name_)
+
+    def __eq__(self, other):
+        if isinstance(other, int):
+            return False
+        return (self.getName()) == (other.getName())
+
+    def __ne__(self, other):
+        # Not strictly necessary, but to avoid having both x==y and x!=y
+        # True at the same time
+        return not(self == other)
 
 def B(pos, quantity):
     global owned, cash
@@ -38,8 +65,20 @@ def B(pos, quantity):
     cash = cash - cost
     cOwned = owned.get(stock, 0)
     if cOwned == 0:
+        print "getting here"
+        owned[stock] = OwnedStock(stock, cOwned + quantity, price)
+    else:
+        cOwned.addQuantity(quantity)
+
+    found = False
+    for name in purchased:
+        if name == stock:
+            found = True
+            break
+
+    if not found:
         purchased.append(stock)
-    owned[stock] = OwnedStock(cOwned + quantity, price)
+
     print "Buying {} shares of {}; current price {}".format(quantity, stock, price)
 
 def S(pos, quantity):
@@ -52,8 +91,8 @@ def S(pos, quantity):
     stock = purchased[pos]
     price = prices[stock][c]
     if quantity == "ALL":
-        quantity = owned[stock]
-        owned[stock] = 0
+        quantity = owned[stock].getQuantity()
+        owned[stock].setQuantity(0)
 
     print "Selling {} shares of {}; current price {}".format(quantity, stock, price)
     gain = price * quantity
@@ -77,7 +116,7 @@ def init():
     prices = {}
 
     for name in purchased:
-        owned[name] = 10
+        owned[name] = OwnedStock(name, 10, 0)
         cStock = Share(name)
         if shareQuery:
             vec = getPrices(cStock.get_historical(start, end))
@@ -156,6 +195,10 @@ def main():
                 pygame.quit()
                 quit()
             if event.type == pygame.KEYDOWN:
+
+                if event.key == pygame.K_ESCAPE:
+                    op = None
+
                 if event.key == pygame.K_q:
                     if op == "Q":
                         pygame.quit()
@@ -222,9 +265,10 @@ def main():
         screen.blit(cash_render, (0, display[1] - font_height * 2))
 
         nextLine = 200
+        print purchased
         for i, name in enumerate(purchased):
             cprice = prices[name][c]
-            line = "{} of {} ({})".format(owned[name], name)
+            line = "{} of {} ({})".format(owned[name].getQuantity(), name, owned[name].getPrice())
             currentStock = font.render(line, True, (0, 128, 0))
             nextLine = nextLine + title.get_height() 
             screen.blit(currentStock, (10, nextLine))
@@ -233,6 +277,6 @@ def main():
             cm.draw()
 
         pygame.display.flip()
-        clock.tick(30)
+        clock.tick(1)
 
 main()
