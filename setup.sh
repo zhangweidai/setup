@@ -1,9 +1,9 @@
 # setup
 sudo apt-get install xclip
-sudo apt-get install ag
+sudo apt-get install silversearcher-ag
 mkdir $HOME/.undo
 cd $HOME
-ln -s ./setup/.bashrc
-ln -s ./setup/.bash_aliases
-ln -s ./setup/.vim
-ln -s ./setup/.gitconfig
+ln -sf ./setup/.bashrc
+ln -sf ./setup/.bash_aliases
+ln -sf ./setup/.vim
+ln -sf ./setup/.gitconfig
