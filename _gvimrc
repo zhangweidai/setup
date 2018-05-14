@@ -1,0 +1,11 @@
+" Peter's Vim File "
+:colo molokai
+:set guifont=Droid\ Sans\ Mono\ for\ Powerline:h12
+:set guioptions-=m
+:set guioptions-=T
+:set guioptions-=r
+:set guioptions-=aAce
+:set number
+autocmd GUIEnter * set vb t_vb=
+
+

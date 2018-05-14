@@ -4,6 +4,7 @@
 [core]
 	excludefiles = /home/pzhang/.ignore_global
 	askpass = git-gui--askpass
+	editor = vim
 
 [diff]
 	tool = kompare

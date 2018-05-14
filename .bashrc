@@ -122,4 +122,11 @@ if [ -f ~/.bash_local ]; then
     . ~/.bash_local
 fi
 
+export ANDROID_HOME='/mnt/c/Users/pzhang/AppData/Local/Android/Sdk'
+alias go='source ~/setup/bin/go.bash'
+
 #sudo -S true
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+export SDKMAN_DIR="/home/zoe/.sdkman"
+[[ -s "/home/zoe/.sdkman/bin/sdkman-init.sh" ]] && source "/home/zoe/.sdkman/bin/sdkman-init.sh"

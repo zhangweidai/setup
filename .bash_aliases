@@ -39,6 +39,8 @@ alias vi='bash $HOME/setup/bin/gvimscript.sh '
 alias kill='kill -9'
 alias vcin='vim ~/setup/notes'
 alias py='python'
+alias resetme='git reset --hard HEAD~1'
+alias squashme='git ci -m "s"; git rebase -i'
 export TS="/tmp"
 
 # get current branch in git repo
