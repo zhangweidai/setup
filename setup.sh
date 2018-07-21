@@ -3,6 +3,7 @@ sudo apt-get install xclip
 sudo apt-get install silversearcher-ag
 sudo apt install exuberant-ctags
 sudo apt install vim
+sudo apt install gitk
 mkdir $HOME/.undo
 cd $HOME
 ln -sf ./setup/.bashrc

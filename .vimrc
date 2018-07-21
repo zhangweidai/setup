@@ -8,37 +8,30 @@ highlight comment ctermfg=white guifg=white
 
 let MRU_Max_Entries = 600
 
-set incsearch
-set nofoldenable    " disable folding
-set smartcase
-set nu
+set autochdir
+set autoindent
+set backspace=indent,eol,start
+set cindent
+set cul
 set et
 set hidden              " allow jumping without needing to save first
 set hlsearch            " Highlight my search results "
+set ic
+set incsearch
+set lazyredraw
+set nofoldenable    " disable folding
+set nu
+set pastetoggle=<F11>
+set ruler               " See important file information at the bottom of vim "
+set scrolloff=10
 set shiftwidth=4
+set smartcase
 set tabstop=4
 set title
-set cul
-set autoindent
-set cindent
-set lazyredraw
-set backspace=indent,eol,start
-set scrolloff=10
-set autochdir
-set pastetoggle=<F11>
 
 let comment_str = "# "
 
 " intelligent comments based on file type
-au WinEnter * let comment_str = "# "
-au WinEnter,BufRead,BufNewFile .vimrc    let comment_str="\" "
-au WinEnter,BufRead,BufNewFile .gvimrc   let comment_str="\" "
-au WinEnter,BufRead,BufNewFile *.c*      let comment_str='//'
-au WinEnter,BufRead,BufNewFile *.y       let comment_str='//'
-au WinEnter,BufRead,BufNewFile *.l       let comment_str='//'
-au WinEnter,BufRead,BufNewFile *.h       let comment_str='//'
-au WinEnter,BufRead,BufNewFile *.amp*    let comment_str='//'
-au WinEnter,BufRead,BufNewFile *.schema  let comment_str='//'
 
 " Syntax Highlighting on relevant files "
 au WinEnter,BufRead,BufNewFile *.txt     set filetype=c
@@ -75,19 +68,18 @@ nmap <c-n>        nzz
 " map <c-p>         "*p
 imap <S-Insert>   <Esc>"*p
 nmap <c-space>    bywostd::cout<<"\033[32m//Dbg-"<<__FILE__<<"\""<< __LINE__<<" <Esc>pA "<<"\033[0m"<<<Esc>pA <<std::endl;<Esc>
-nmap <leader><F2> oqDebug()<<"\033[32m//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\"  "<<"\033[0m";<Esc>
-nmap <leader>b    :write!<cr>:!cd '%:p:h'; make<CR>
-nmap <leader>bb   :write!<cr>:!cd '%:p:h'; cd .. ; make<CR>
+
+nmap <leader>bb   :let @* = expand('%:p')<cr>:call ExecExtension()<cr>
+nmap <leader>cf   :let @d = expand('%:p')<cr>o<esc>"dp<esc>:set clipboard=unnamed<cr>dd<esc>:set clipboard=<cr>
+nmap <leader>d    :write!<cr>:!cd '%:p:h'; mkd<CR>
 nmap <leader>f    :echo expand('%:p')<Esc>
 nmap <leader>r    :NERDTreeFind<CR>
 nmap <leader>w    :!
 nmap <leader>a    :<Up><cr>
-nmap <leader>t    :NERDTree %<CR>
-nmap <leader>e    :NERDTree &<cr>
 nmap <leader>s    :sp<CR>
 nmap <leader>sp   :call Spellcheck()<CR>
 nmap <s-tab>      <c-w><up>
-nmap <space>      bywoqDebug()  << "\033[32m( "<<__FILE__<<"-"<<__LINE__<<"  <Esc>pA " << " \033[0m\|" << <Esc>pA <<"\|)";<Esc>15b
+nmap <space>      :call DebugExtension()<cr>
 nmap <tab>        <c-w>w
 nmap XX           :q!<cr>
 nmap dc           yyp<m-up>kkw
@@ -98,8 +90,7 @@ vmap i            I
 nmap s            :write!<cr>
 nmap <leader>]    [[=%''zz
 map m $
-map <m-up>        0i<C-r>=comment_str<Esc><Esc>j
-map ??            0i<C-r>=comment_str<Esc><Esc>j
+map <m-up>        :call CommentStr()<cr>0i<C-r>=comment_str<Esc><Esc>j
 map <m-down>      0xxj
 map <m-h>         0xxx
 map <m-l>         0i<tab><Esc>
@@ -109,12 +100,9 @@ nmap <leader>se   :!gnome-terminal --working-directory '%:p:h' -x tcsh -c "grf '
 nmap <leader>sl   :!gnome-terminal --working-directory '%:p:h' -x tcsh -c "grf '<cword>'; /bin/tcsh -i"&<cr>
 nmap <leader>tkd  :!tkdiff '%' & <cr>
 nmap <silent> <leader><leader>t    :silent !gnome-terminal --working-directory '%:p:h'&<cr>
-nn <leader><leader><leader> :source ~/.vimrc<Esc> 
 nmap <leader>go    :exe "!firefox -search '<cword>' &"<cr>
 
 " work specific
-nmap ,bu          :!goda; sgc; gud <cr>
-nmap ,bs          :!goda; sgc; rlse <cr>
 nmap ,s           :find  %:t:r.c*<cr>
 nmap ,h           :find  %:t:r.h<cr>
 nmap ,H           :sfind %:t:r.h<cr>
@@ -128,7 +116,7 @@ inoremap <m-BS>   <C-O>h<C-O>daw
 inoremap <c-BS>   <C-O>h<C-O>daw
 " inoremap PP       <C-O>p
 
-set undodir=$HOME/.undo
+set undodir=~/.vim/undo
 set undofile 
 
 nmap <silent><S-Down> <C-T>
@@ -160,22 +148,6 @@ fu! Spellcheck()
 	setlocal spell spelllang=en_us
 endf
 
-" au WinEnter,BufRead,BufNewFile *          set formatoptions-=o
-" au WinEnter,BufRead,BufNewFile *          set formatoptions-=r
-set tags=/home/peter/Desktop/Qtilities-master/src/tags,/home/peter/qt-everywhere-commercial-src-4.7.4/src/tags
-
-call arpeggio#map('i', '', 0, 'jk', '<Esc>')
-call arpeggio#map('c', '', 0, 'jk', '<Esc>')
-au WinEnter,BufRead,BufNewFile *   :cd %:p:h
-"
-" things to remember
-"
-   " :VCSBlame " blame
-   " :set ul=0 | edit
-   " :AnsiEsc
-"
-
-set nofoldenable
 
 fu! CommentStr()
    let filestr = expand('%:f')
@@ -194,8 +166,45 @@ fu! CommentStr()
 endf
 
 
-"autocmd WinEnter,FocusGained * :setlocal number relativenumber
-"autocmd WinLeave,FocusLost   * :setlocal number norelativenumber
+fu! DebugExtension()
+   if expand('%:p') =~ ".ahk"
+      norm bywoMsgBox, %
+      :norm pA%
+   elseif expand('%:p') =~ ".py"
+      norm bywoprint("
+      :norm pA:" + 
+      :norm pA)
+   else
+      norm bywo$writeln($strcat("Dbg f: ", "<C-R>% : <Esc>pA ", <Esc>pA));<Esc>
+   endif 
+endf
+
+
+fu! ExecExtension()
+   if expand('%:p') =~ ".ahk"
+      :silent !"C:\Program Files\AutoHotkey\AutoHotkey.exe" %:p
+   elseif expand('%:p') =~ ".py"
+      :silent !python -i %:p
+   else
+   	:silent !wscript "C:\Users\Peter\Documents\send.vbs"
+   endif 
+endf
+
+
+nmap j gj
+nmap k gk
+call arpeggio#map('i', '', 0, 'jk', '<Esc>')
+call arpeggio#map('c', '', 0, 'jk', '<Esc>')
+au WinEnter,BufRead,BufNewFile *   :cd %:p:h
+"
+" things to remember
+"
+   " :VCSBlame " blame
+   " :set ul=0 | edit
+   " :AnsiEsc
+"
+
+
 
 let g:airline_powerline_fonts = 1
 set encoding=utf-8
