@@ -1,1 +1,0 @@
-start "" "E:\Program Files\Blender Foundation\Blender\blender.exe" "C:\Users\Peter\AppData\Roaming\Blender Foundation\Blender\2.79\scripts\addons\Dynamat\dynamats\wood05.blend" "--python" "C:\Users\Peter\Documents\GitHub\setup\blender\scripts\material_builder.py"

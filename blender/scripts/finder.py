@@ -46,7 +46,7 @@ def process(word):
     print (mode)
     if mode == "py":
         scripts = "/scripts/"
-    folder = 'C:/Users/Peter/Documents/GitHub/setup/blender{}'.format(scripts)
+    folder = 'C:/Users/Peter/Documents{}'.format(scripts)
     print (folder)
     files = [f for f in Path(folder).glob("*.{}".format(mode)) if f.is_file()]
     counter = 1
