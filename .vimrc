@@ -177,6 +177,23 @@ au WinEnter,BufRead,BufNewFile *   :cd %:p:h
 
 set nofoldenable
 
+fu! CommentStr()
+   let filestr = expand('%:f')
+   let exten = expand('%:e')
+   if filestr =~ "vimrc"
+      let g:comment_str = "\""
+   elseif exten =~ "py"
+      let g:comment_str = "#"
+   elseif exten =~ "js"
+      let g:comment_str = "//"
+   elseif exten =~ "bat"
+      let g:comment_str = "REM "
+   elseif exten =~ "ahk"
+      let g:comment_str = "; "
+   endif
+endf
+
+
 "autocmd WinEnter,FocusGained * :setlocal number relativenumber
 "autocmd WinLeave,FocusLost   * :setlocal number norelativenumber
 

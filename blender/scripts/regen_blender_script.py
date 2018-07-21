@@ -4,7 +4,7 @@ if len(sys.argv) == 3:
     y = int(sys.argv[2])
     modx = x + 100
     mody = y - 50
-    aFile = "C:\\Users\\Peter\\Documents\\myscript.ahk"
+    aFile = "C:\\Users\\Peter\\Documents\\GitHub\\setup\\blender\\ahk\\myscript.ahk"
     f = open(aFile, "r+")
     lines = f.read().split('\n')
     newwrite = list()
