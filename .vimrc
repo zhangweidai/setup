@@ -28,6 +28,7 @@ set shiftwidth=4
 set smartcase
 set tabstop=4
 set title
+set ff=unix
 
 let comment_str = "# "
 

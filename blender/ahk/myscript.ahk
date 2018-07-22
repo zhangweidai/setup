@@ -1,12 +1,17 @@
 #SingleInstance force
 
+; ^control +shift !alt
 
 GroupAdd, REMOTE_DESKTOPS, ahk_class Photoshop
 GroupAdd, REMOTE_DESKTOPS, ahk_class illustrator
 GroupAdd, REMOTE_DESKTOPS, ahk_exe blender.exe
+GroupAdd, WINSHELLS, ahk_exe cmd.exe
+GroupAdd, WINSHELLS, ahk_exe powershell.exe
 return
 
-; ^control +shift !alt
+SetWinDelay,2
+CoordMode,Mouse
+return
 
 ^+l::
 Reload 
@@ -79,10 +84,14 @@ Send, {enter}
 Return
 
 !^+m::
-Send, {LWin down}
-Send, {up}
-Send, {LWin up}
-Return
+WinGetActiveTitle, title
+WinGet, maximized, MinMax, %title%
+if (maximized)
+   WinRestore, %title%
+else
+   WinMaximize, %title%
+return
+
 
 !^+o::
 Run, "C:\Users\Peter\AppData\Local\Programs\Python\Python35\python.exe" "C:\Users\Peter\Documents\GitHub\setup\blender\py\opener.py" 
@@ -134,43 +143,45 @@ MouseMove, 10 , 210, , R
 SetControlDelay 1
 }
 
-
 #IfWinNotActive, ahk_group REMOTE_DESKTOPS
 {
-LWin & LButton::
-CoordMode, Mouse  ; Switch to screen/absolute coordinates.
-MouseGetPos, EWD_MouseStartX, EWD_MouseStartY, EWD_MouseWin
-WinGetPos, EWD_OriginalPosX, EWD_OriginalPosY,,, ahk_id %EWD_MouseWin%
-WinGet, EWD_WinState, MinMax, ahk_id %EWD_MouseWin% 
-if EWD_WinState = 0  ; Only if the window isn't maximized 
-    SetTimer, EWD_WatchMouse, 10 ; Track the mouse as the user drags it.
-return
+!LButton::
 
-EWD_WatchMouse:
-GetKeyState, EWD_LButtonState, LButton, P
-if EWD_LButtonState = U  ; Button has been released, so drag is complete.
+CoordMode, Mouse, Relative
+MouseGetPos, cur_win_x, cur_win_y, window_id
+WinGet, window_minmax, MinMax, ahk_id %window_id%
+
+; Return if the window is maximized or minimized
+if window_minmax <> 0
 {
-    SetTimer, EWD_WatchMouse, off
-    return
+  return
 }
-GetKeyState, EWD_EscapeState, Escape, P
-if EWD_EscapeState = D  ; Escape has been pressed, so drag is cancelled.
+
+CoordMode, Mouse, Screen
+SetWinDelay, 0
+
+loop
 {
-    SetTimer, EWD_WatchMouse, off
-    WinMove, ahk_id %EWD_MouseWin%,, %EWD_OriginalPosX%, %EWD_OriginalPosY%
-    return
+  ; exit the loop if the left mouse button was released
+  if !GetKeyState("LButton", "P")
+  {
+    break
+  }
+
+  ; move the window based on cursor position
+  MouseGetPos, cur_x, cur_y
+  WinMove, ahk_id %window_id%,, (cur_x - cur_win_x), (cur_y - cur_win_y)
 }
-; Otherwise, reposition the window to match the change in mouse coordinates
-; caused by the user having dragged the mouse:
-CoordMode, Mouse
-MouseGetPos, EWD_MouseX, EWD_MouseY
-WinGetPos, EWD_WinX, EWD_WinY,,, ahk_id %EWD_MouseWin%
-SetWinDelay, -1   ; Makes the below move faster/smoother.
-WinMove, ahk_id %EWD_MouseWin%,, EWD_WinX + EWD_MouseX - EWD_MouseStartX, EWD_WinY + EWD_MouseY - EWD_MouseStartY
-EWD_MouseStartX := EWD_MouseX  ; Update for the next timer-call to this subroutine.
-EWD_MouseStartY := EWD_MouseY
+
 return
 }
+#IfWinActive ahk_group WINSHELLS
+{
+^u::
+SendInput, {Esc}
+return
+}
+
 
 #IfWinActive ahk_exe Foxit Reader.exe
 {
