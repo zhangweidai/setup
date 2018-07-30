@@ -1,7 +1,6 @@
 if exist %~dp0.vimrc (
-    copy %~dp0\.vimrc %HOMEPATH%\_vimrc
-    copy %~dp0\_gvimrc %HOMEPATH%\_gvimrc
-    xcopy %~dp0\.vim %HOMEPATH%\vimfiles /O /X /E /H /K
-    mkdir %HOMEPATH%\GitHub
-    mklink /D /J "%USERPROFILE%\Documents\GitHub\setup" "%USERPROFILE%\AppData\Local\lxss\root\setup"
+REM     mklink "%HOMEPATH%\_vimrc" "%~dp0\.vimrc" 
+REM     mklink "%HOMEPATH%\_gvimrc" "%~dp0\_gvimrc" 
+REM     mklink /D /J "%HOMEPATH%\vimfiles" "%~dp0\.vim" 
+    mklink "C:\Users\Peter\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup\myscript.ahk" "%~dp0\blender\ahk\myscript.ahk" 
 )

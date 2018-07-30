@@ -1,6 +1,6 @@
 " Peter's Vim File "
 :colo molokai
-:set guifont=Droid\ Sans\ Mono\ for\ Powerline:h14
+:set guifont=Droid\ Sans\ Mono\ for\ Powerline:h12
 :set guioptions-=m
 :set guioptions-=T
 :set guioptions-=r

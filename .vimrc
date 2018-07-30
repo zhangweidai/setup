@@ -22,7 +22,7 @@ set lazyredraw
 set nofoldenable    " disable folding
 set nu
 set pastetoggle=<F11>
-set ruler               " See important file information at the bottom of vim "
+set ruler               " See important file information at the botom of vim "
 set scrolloff=10
 set shiftwidth=4
 set smartcase
@@ -51,46 +51,63 @@ au FileType python setlocal smartindent shiftwidth=4 ts=4 et cinwords=if,elif,el
 
 " Debug macros - Bind F# Hot Keys to put text where the cursor is. "
 nmap "w           bi"<Esc>ea"<Esc>
+nmap 'w           bi'<Esc>ea'<Esc>
 nmap (w           bi(<Esc>ea)<Esc>
+nmap %w           bi%<Esc>ea%<Esc>
 nmap ,g           :MRU<cr>
-nmap <F12>        o$writeln($strcat("Dbg f: ", "<C-R>% : <Esc>:r! date<Esc><Esc>k<S-J>o : "));<Esc>k<S-J>
-nmap <F2>         oqDebug()<<"//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\"  ";<Esc>
-nmap <F3>         ostd::cout<<"\033[33m//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\"  "<<"\033[0m"<<std::endl;<Esc>
-nmap <F4>         ostd::cout<<"\033[31m//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\"  "<<"\033[0m"<<std::endl;<Esc>
-nmap <F5>         ostd::cout<< " VAR: " << VAR <<std::endl;<Esc>
-nmap <F6>         ostd::cout<<"\033[36m//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\"  "<<"\033[0m"<<std::endl;<Esc>
-nmap <F7>         ostd::cout<<"\033[37m//Dbg-"<<__FILE__<<"\""<< __LINE__<<"\"  "<<"\033[0m"<<std::endl;<Esc>
-nmap <F8>         o$writeln($strcat("--------------- ", " : " ));<Esc>
-nmap <F9>         o$writeln($strcat("Dbg file: ", "<C-R>% : "));<Esc>
+
+" tab indentation
 nmap <S-Left>     0dw<Esc>
 nmap <S-Right>    0i<Tab><Esc>
-nmap <c-l>        bywofor (i = 0; i < length(<Esc>pa); i = i + 1)<Esc>o{<Esc>o}<Esc>
-nmap <c-n>        nzz
-" map <c-p>         "*p
-imap <S-Insert>   <Esc>"*p
-nmap <c-space>    bywostd::cout<<"\033[32m//Dbg-"<<__FILE__<<"\""<< __LINE__<<" <Esc>pA "<<"\033[0m"<<<Esc>pA <<std::endl;<Esc>
 
-nmap <leader>bb   :let @* = expand('%:p')<cr>:call ExecExtension()<cr>
-nmap <leader>cf   :let @d = expand('%:p')<cr>o<esc>"dp<esc>:set clipboard=unnamed<cr>dd<esc>:set clipboard=<cr>
-nmap <leader>d    :write!<cr>:!cd '%:p:h'; mkd<CR>
+" paste clipboard
+imap <S-Insert>   <Esc>"*p
+
+" exec extension / reload vimrc
+nmap <leader>b   :let @* = expand('%:p')<cr>:call ExecExtension()<cr>
+nmap <silent> <leader><leader><leader> :source %:p<cr>
+
+" copy file
+nmap <leader>cf   :let @*=expand('%:p')<cr>
+nmap <leader>cd   :let @*=expand('%:p:h')<cr>
+
+" show file
 nmap <leader>f    :echo expand('%:p')<Esc>
-nmap <leader>r    :NERDTreeFind<CR>
-nmap <leader>w    :!
-nmap <leader>a    :<Up><cr>
-nmap <leader>s    :sp<CR>
-nmap <leader>sp   :call Spellcheck()<CR>
-nmap <s-tab>      <c-w><up>
+
+" debug extension
 nmap <space>      :call DebugExtension()<cr>
+
+" split tabbing
 nmap <tab>        <c-w>w
+
+" quit no save
 nmap XX           :q!<cr>
+
+" quit no save
+nmap tt           :call Toggler()<cr>
+
+nmap pp           bi(<esc>wea)<esc>
+
+" fast saving
+nmap s            :write!<cr>
+
+" fast end of the line
+map m $
+
+" fast scrolling
+nnoremap <C-K> :call <SID>Saving_scroll("10<C-V><C-U>")<CR>
+vnoremap <C-K> <Esc>:call <SID>Saving_scroll("gv1<C-V><C-U>")<CR>
+nnoremap <C-J> :call <SID>Saving_scroll("10<C-V><C-D>")<CR>
+vnoremap <C-J> <Esc>:call <SID>Saving_scroll("gv1<C-V><C-D>")<CR>
+
+
+" other
+nmap <c-space>    bywostd::cout<<"\033[32m//Dbg-"<<__FILE__<<"\""<< __LINE__<<" <Esc>pA "<<"\033[0m"<<<Esc>pA <<std::endl;<Esc>
+nmap <leader>sp   :call Spellcheck()<CR>
 nmap dc           yyp<m-up>kkw
 nmap [{           ][=%''zz
-nmap st           :FufTag<CR>
-nmap <s-i>        o<Esc>
 vmap i            I
-nmap s            :write!<cr>
 nmap <leader>]    [[=%''zz
-map m $
 map <m-up>        :call CommentStr()<cr>0i<C-r>=comment_str<Esc><Esc>j
 map <m-down>      0xxj
 map <m-h>         0xxx
@@ -99,9 +116,8 @@ imap <m-h>        <Esc>0xxx
 imap <m-l>        <Esc>0i<tab><Esc>
 nmap <leader>se   :!gnome-terminal --working-directory '%:p:h' -x tcsh -c "grf '<cword>'; /bin/tcsh -i"&<cr>
 nmap <leader>sl   :!gnome-terminal --working-directory '%:p:h' -x tcsh -c "grf '<cword>'; /bin/tcsh -i"&<cr>
-nmap <leader>tkd  :!tkdiff '%' & <cr>
-nmap <silent> <leader><leader>t    :silent !gnome-terminal --working-directory '%:p:h'&<cr>
-nmap <leader>go    :exe "!firefox -search '<cword>' &"<cr>
+nmap <leader>go   :exe "!firefox -search '<cword>' &"<cr>
+nmap <leader>t    :let @d = expand('%:p:h')<cr>o<esc>"dp<esc>:set clipboard=unnamed<cr>dd<esc>:set clipboard=<cr>
 
 " work specific
 nmap ,s           :find  %:t:r.c*<cr>
@@ -120,8 +136,8 @@ inoremap <c-BS>   <C-O>h<C-O>daw
 set undodir=~/.vim/undo
 set undofile 
 
-nmap <silent><S-Down> <C-T>
-nmap <silent><S-Up> <C-]>
+"nmap <silent><S-Down> <C-T>
+"nmap <silent><S-Up> <C-]>
 "
 " File navigation macros - Jump to the declaration of the function with holding Shift and Up/Down while cursor is on a function name. "
 
@@ -133,14 +149,12 @@ fu! s:Saving_scroll(cmd)
   execute 'normal! ' . a:cmd
   let &scroll = save_scroll
 endf
-nnoremap <C-Down> :call <SID>Saving_scroll("5<C-V><C-D>")<CR>
-vnoremap <C-Down> <Esc>:call <SID>Saving_scroll("gv1<C-V><C-D>")<CR>
-nnoremap <C-Up> :call <SID>Saving_scroll("5<C-V><C-U>")<CR>
-vnoremap <C-Up> <Esc>:call <SID>Saving_scroll("gv1<C-V><C-U>")<CR>
-nnoremap <C-K> :call <SID>Saving_scroll("10<C-V><C-U>")<CR>
-vnoremap <C-K> <Esc>:call <SID>Saving_scroll("gv1<C-V><C-U>")<CR>
-nnoremap <C-J> :call <SID>Saving_scroll("10<C-V><C-D>")<CR>
-vnoremap <C-J> <Esc>:call <SID>Saving_scroll("gv1<C-V><C-D>")<CR>
+
+"nnoremap <C-Down> :call <SID>Saving_scroll("5<C-V><C-D>")<CR>
+"vnoremap <C-Down> <Esc>:call <SID>Saving_scroll("gv1<C-V><C-D>")<CR>
+"nnoremap <C-Up> :call <SID>Saving_scroll("5<C-V><C-U>")<CR>
+"vnoremap <C-Up> <Esc>:call <SID>Saving_scroll("gv1<C-V><C-U>")<CR>
+
 
 autocmd FileType make setlocal noexpandtab
 
@@ -181,19 +195,59 @@ fu! DebugExtension()
 endf
 
 
+
+fu! Toggler()
+    let cchar = matchstr(getline('.'), '\%' . col('.') . 'c.')
+    while (col('.') > 1)
+        norm h
+        let cchar = matchstr(getline('.'), '\%' . col('.') . 'c.')
+        if (l:cchar == ' ') || (l:cchar == "\"") || (l:cchar == "\'") || (l:cchar == "%") 
+            break
+        endif
+    endwhile
+
+    if l:cchar == " "
+        norm li"
+        norm f 
+        let cchar = matchstr(getline('.'), '\%' . col('.') . 'c.')
+        if l:cchar == "\""
+            norm A"
+        endif
+    elseif l:cchar =~ "\""
+        norm xi'
+        norm f"a'
+        norm hxh
+    elseif l:cchar =~ "\'"
+        norm xi%
+        norm f'a%
+        norm hxh
+    elseif l:cchar =~ "%"
+        norm xi"
+        norm f%a"
+        norm hxh
+    endif
+endf
+
 fu! ExecExtension()
-   if expand('%:p') =~ ".ahk"
+   let path = expand('%:p')
+
+    if l:path =~ ".ahk"
       :silent !"C:\Program Files\AutoHotkey\AutoHotkey.exe" %:p
-   elseif expand('%:p') =~ ".py"
+    elseif l:path =~ ".py"
       :silent !python -i %:p
-   else
-   	:silent !wscript "C:\Users\Peter\Documents\send.vbs"
+    elseif l:path =~ ".reg"
+      :silent !%:p
+    elseif l:path =~ ".bat"
+   	    :silent !wscript "C:\Users\Peter\Documents\send.vbs"
+    else
+   	    :silent !wscript "C:\Users\Peter\Documents\send.vbs"
    endif 
 endf
 
 
 nmap j gj
 nmap k gk
+
 call arpeggio#map('i', '', 0, 'jk', '<Esc>')
 call arpeggio#map('c', '', 0, 'jk', '<Esc>')
 au WinEnter,BufRead,BufNewFile *   :cd %:p:h
@@ -204,9 +258,6 @@ au WinEnter,BufRead,BufNewFile *   :cd %:p:h
    " :set ul=0 | edit
    " :AnsiEsc
 "
-
-
-
 let g:airline_powerline_fonts = 1
 set encoding=utf-8
 set laststatus=2
@@ -217,3 +268,7 @@ hi IndentGuidesOdd  ctermbg=black
 hi IndentGuidesEven ctermbg=darkgrey
 let g:indent_guides_start_level=2
 let g:indent_guides_guie_size=1
+
+set noerrorbells visualbell t_vb=
+autocmd GUIEnter * set visualbell t_vb=
+

@@ -4,6 +4,9 @@ import random
 import bmesh
 import numpy as np
 
+from importlib import *
+# imp.reload(module)
+
 mainPath = "C:\\Users\Peter\AppData\Roaming\Blender Foundation\Blender\\2.79\scripts\\addons\Dynamat\dynamats"
 dynaPath = "C:\\Users\Peter\AppData\Roaming\Blender Foundation\Blender\\2.79\scripts\\addons\Dynamat\dynamats"
 texturesPath = "C:\\Users\\Peter\\Documents\\Textures"
@@ -200,5 +203,27 @@ def copyToClipBoard():
 
     file.close() 
     os.system("type testfile.txt | clip")
+
 print ("hllo world")
+# C.object.location
+def getbm():
+    obj = bpy.context.edit_object
+    me = obj.data
+    bm = bmesh.from_edit_mesh(me)
+    return b
+    
+C = bpy.context
+D = bpy.data
+S = D.scenes['Scene']
+
+def getfaces():
+    return getbm().faces
+
+def well():
+    # active face bm.faces.active
+    bm = getbm()
+    print (bm.faces.active.normal)
+#    for face in bm.faces:
+#        print (face)
+
 #copyToClipBoard()
