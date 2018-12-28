@@ -5,8 +5,6 @@ scn = bpy.context.scene
 scn.frame_start = 1
 scn.frame_end = 101
 
-# move to frame 17
-bpy.context.scene.frame_set(frame=17)
 
 # create an object
 bpy.ops.object.add(type='MESH')
@@ -27,10 +25,10 @@ newMesh.update()
 # select the created object
 bpy.data.objects['MyTriangle'].select = True
 
-# do something with the object. A rotation, in this case
-bpy.ops.transform.rotate(value=(-0.5*math.pi), axis=(-1, 0, 0))
-
-# create keyframe
-bpy.ops.anim.keyframe_insert_menu(type='Rotation')
+for b in range(10):
+    # move to frame 17
+    bpy.context.scene.frame_set(frame=b*5)
+    bpy.ops.transform.rotate(value=(.5*math.pi), axis=(-1, 0, 0))
+    bpy.ops.anim.keyframe_insert_menu(type='Rotation')
 
 

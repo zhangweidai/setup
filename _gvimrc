@@ -7,3 +7,5 @@
 :set guioptions-=aAce
 :set number
 autocmd GUIEnter * set vb t_vb=
+
+

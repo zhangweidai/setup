@@ -135,11 +135,7 @@ inoremap <m-BS>   <C-O>h<C-O>daw
 inoremap <c-BS>   <C-O>h<C-O>daw
 " inoremap PP       <C-O>p
 
-if has("windows")
-    set undodir=~\Documents\undo
-else
-    set undodir=~/.vim/undo
-endif
+set undodir=~/.vim/undo
 set undofile 
 
 "nmap <silent><S-Down> <C-T>
@@ -278,13 +274,10 @@ let g:indent_guides_guie_size=1
 set noerrorbells visualbell t_vb=
 autocmd GUIEnter * set visualbell t_vb=
 
+
 if has("windows")
     set shell=C:\Windows\System32\bash.exe
     set shellpipe=|
     set shellredir=>
     set shellcmdflag=
-endif
-
-if executable('ag')
-  let g:ackprg = 'ag --vimgrep'
 endif

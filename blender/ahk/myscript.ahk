@@ -12,6 +12,11 @@ global lastop, sca_x, sca_y
 sca_x := 3454
 sca_y := 1064
 
+; if ErrorLevel
+;     ExitApp
+; Editor := "C:\Program Files (x86)\Vim\vim81\gvim.exe"
+; RegWrite REG_SZ, HKCR, AutoHotkeyScript\Shell\Edit\Command,, "%Editor%" "`%1"
+
 GroupAdd, REMOTE_DESKTOPS, ahk_class Photoshop
 GroupAdd, REMOTE_DESKTOPS, ahk_class illustrator
 GroupAdd, REMOTE_DESKTOPS, ahk_exe blender.exe
@@ -28,7 +33,6 @@ SetWinDelay,2
 CoordMode,Mouse
 
 Capslock::Ctrl	
-
 
 #1::
 WinActivate, ahk_exe blender.exe
@@ -52,6 +56,10 @@ Return
 MsgBox, %sca_x%, %sca_y%
 Return
 
+F7::
+Run, C:\Program Files (x86)\Vim\vim81\gvim.exe %A_ScriptName%
+Return
+
 !^+l::
 MsgBox, "Reloaded"
 Reload 
@@ -62,7 +70,10 @@ Reload
 return
 
 #g::
-Send, {RWin}gvim{Enter}
+SendInput, {RWin Down}
+SendInput, {RWin Up}
+Send, gvim
+SendInput, {enter}
 return
 
 #n::
@@ -127,6 +138,7 @@ else if (Operation == "ca")
     MouseMove, %sca_x%, %sca_y%
     MouseClick 
 }
+
 else if (Operation == "sca")
 {
   MouseGetPos, sca_x, sca_y
@@ -321,9 +333,6 @@ return
 SendInput, {down}{down}{down}
 return
 }
-
-
-
 
 ; WHAT : regen blender load script
 #IfWinActive ahk_exe blender.exe
