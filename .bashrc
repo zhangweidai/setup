@@ -124,6 +124,7 @@ fi
 
 export ANDROID_HOME='/mnt/c/Users/pzhang/AppData/Local/Android/Sdk'
 alias go='source ~/setup/bin/go.bash'
+alias py3='python3'
 
 #sudo -S true
 
