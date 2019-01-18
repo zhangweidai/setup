@@ -87,8 +87,6 @@ nmap XX           :q!<cr>
 " quit no save
 nmap tt           :call Toggler()<cr>
 
-nmap pp           bi(<esc>wea)<esc>
-
 " fast saving
 nmap s            :write!<cr>
 
@@ -133,7 +131,6 @@ inoremap <m-h>    <Esc>0dw
 inoremap <s-BS>   <C-O>x
 inoremap <m-BS>   <C-O>h<C-O>daw
 inoremap <c-BS>   <C-O>h<C-O>daw
-" inoremap PP       <C-O>p
 
 set undodir=~/.vim/undo
 set undofile 
@@ -188,9 +185,13 @@ fu! DebugExtension()
       norm bywoMsgBox, %
       :norm pA%
    elseif expand('%:p') =~ ".py"
-      norm bywoprint("
-      :norm pA:" + 
-      :norm pA)
+      norm bywoprint "(pz-dbg) - __file__"
+      :norm o
+      :norm iprint "
+      :norm pA"
+      :norm o
+      :norm iprint 
+      :norm pA
    else
       norm bywo$writeln($strcat("Dbg f: ", "<C-R>% : <Esc>pA ", <Esc>pA));<Esc>
    endif 
