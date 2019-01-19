@@ -1,0 +1,3 @@
+Open Terminal Here:
+    ctrl + l
+    type cmd or bash

@@ -1,5 +1,6 @@
 " Peter's Vim File "
 set t_Co=256
+
 execute pathogen#infect()
 
 fixdel
@@ -290,3 +291,5 @@ endif
 if executable('ag')
   let g:ackprg = 'ag --vimgrep'
 endif
+
+

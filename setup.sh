@@ -1,4 +1,7 @@
 # setup
+sudo add-apt-repository ppa:jonathonf/vim
+sudo apt-get update
+
 sudo apt-get install xclip
 sudo apt-get install silversearcher-ag
 sudo apt install exuberant-ctags
