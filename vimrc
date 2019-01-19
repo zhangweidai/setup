@@ -185,7 +185,7 @@ fu! DebugExtension()
       norm bywoMsgBox, %
       :norm pA%
    elseif expand('%:p') =~ ".py"
-      norm bywoprint "(pz-dbg) - __file__"
+      norm bywoprint "(pz-dbg) - " + __file__
       :norm o
       :norm iprint "
       :norm pA"
