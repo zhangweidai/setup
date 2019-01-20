@@ -122,6 +122,7 @@ if [ -f ~/.bash_local ]; then
     . ~/.bash_local
 fi
 
+alias welltf='python3 ~/setup/python/tf_check.py'
 export ANDROID_HOME='/mnt/c/Users/pzhang/AppData/Local/Android/Sdk'
 alias go='source ~/setup/bin/go.bash'
 alias py3='python3'
