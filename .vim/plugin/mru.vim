@@ -449,10 +449,22 @@ endfunction
 " that should be escaped (for security reasons)
 let s:esc_filename_chars = ' *?[{`$%#"|!<>();&' . "'\t\n"
 function! s:MRU_escape_filename(fname)
-    if exists("*fnameescape")
-        return fnameescape(a:fname)
+    let retVar = a:fname
+
+    if has("win32")
+       let retVar = substitute(retVar, "/mnt/c/", "c:\\", "")
+       let retVar = substitute(retVar, "/mnt/e/", "e:\\", "")
+       let retVar = substitute(retVar, "/", "\\", "g")
     else
-        return escape(a:fname, s:esc_filename_chars)
+       let retVar = substitute(retVar, "C:\\", "/mnt/c/", "")
+       let retVar = substitute(retVar, "E:\\", "/mnt/e/", "")
+       let retVar = substitute(retVar, "\\", "/", "g")
+    endif
+
+    if exists("*fnameescape")
+        return fnameescape(retVar)
+    else
+        return escape(retVar, s:esc_filename_chars)
     endif
 endfunction
 

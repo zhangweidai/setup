@@ -134,10 +134,13 @@ inoremap <m-BS>   <C-O>h<C-O>daw
 inoremap <c-BS>   <C-O>h<C-O>daw
 " inoremap PP       <C-O>p
 
-if has("windows")
+if has("win32")
     set undodir=~\Documents\undo
+    let MRU_File="C:\\Users\\Peter\\.vim_mru_files"
 else
-    set undodir=~/.vim/undo
+    let MRU_File="/mnt/c/Users/Peter/.vim_mru_files"
+"    let MRU_File=expand("~/.vim_mru_files")
+    set undodir=~/.undo
 endif
 set undofile 
 
@@ -176,6 +179,8 @@ fu! CommentStr()
       let g:comment_str = "\""
    elseif exten =~ "py"
       let g:comment_str = "#"
+   elseif exten =~ "vim"
+      let g:comment_str = "\""
    elseif exten =~ "js"
       let g:comment_str = "//"
    elseif exten =~ "bat"
