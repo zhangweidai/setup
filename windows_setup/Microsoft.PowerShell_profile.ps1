@@ -4,6 +4,10 @@ function back {set-location ..}
 New-Alias b back
 New-Alias hi history
 
+
+function echopath_impl {$env:path.split(";")}
+New-Alias echopath echopath_impl
+
 function gosetup {set-location $env:UserProfile\Documents\setup}
 New-Alias cds gosetup
 
