@@ -5,6 +5,9 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.app.Activity;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CheckBox;
@@ -22,6 +25,36 @@ public class Settings extends Activity {
         finishBtn_ = (Button) findViewById(R.id.button);
         finishBtn_.setOnClickListener(mStartListener);
     }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
+        MenuItem menuItem = menu.add(Menu.NONE, 1, Menu.NONE, R.string.title_about);
+        menuItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+        menuItem.setIcon(R.drawable.ic_about);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) 
+    {
+        // Handle item selection
+        switch (item.getItemId()) {
+            case 1:
+                newGame();
+                return true;
+
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void newGame() 
+    {
+        System.exit(0);
+        Log.d("menu", "SO FAR SO GOOD");
+    }
+
 
     private View.OnClickListener mStartListener = new View.OnClickListener()
     {

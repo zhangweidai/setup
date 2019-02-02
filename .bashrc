@@ -127,6 +127,8 @@ export ANDROID_HOME='/mnt/c/Users/pzhang/AppData/Local/Android/Sdk'
 alias go='source ~/setup/bin/go.bash'
 alias py3='python3'
 
+alias pyscopeupd='find "$PWD/" -name "*.py" -o -iname "*.cfg" > cscope.files && cscope -bv -i cscope.files -f cscope.out'
+
 #sudo -S true
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!

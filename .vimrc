@@ -25,11 +25,14 @@ set nu
 set pastetoggle=<F12>
 set ruler               " See important file information at the botom of vim "
 set scrolloff=10
+set expandtab
 set shiftwidth=4
 set smartcase
 set tabstop=4
+set softtabstop=4
 set title
-set ff=unix
+set fileformat=unix 
+set smartindent
 
 let comment_str = "# "
 
@@ -48,7 +51,7 @@ au BufReadPost        *         if line("'\"") > 0|if line("'\"") <= line("$")|e
 
 filetype plugin on
 
-au FileType python setlocal smartindent shiftwidth=4 ts=4 et cinwords=if,elif,else,for,while,try,except,finally,def,class
+au FileType python setlocal cinwords=if,elif,else,for,while,try,except,finally,def,class
 
 " Debug macros - Bind F# Hot Keys to put text where the cursor is. "
 nmap "w           bi"<Esc>ea"<Esc>
@@ -179,6 +182,8 @@ fu! CommentStr()
       let g:comment_str = "\""
    elseif exten =~ "py"
       let g:comment_str = "#"
+   elseif exten =~ "java"
+      let g:comment_str = "//"
    elseif exten =~ "vim"
       let g:comment_str = "\""
    elseif exten =~ "js"
@@ -295,5 +300,4 @@ endif
 if executable('ag')
   let g:ackprg = 'ag --vimgrep'
 endif
-
 

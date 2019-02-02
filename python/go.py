@@ -7,7 +7,11 @@ if len(sys.argv) == 1:
 else:
     query = int(sys.argv[1])
 
-with open(os.path.expanduser("~/.vim_mru_files")) as f:
+mru_path = os.path.expanduser("~/.vim_mru_files")
+if not os.path.exists(mru_path):
+    mru_path = "/mnt/c/Users/Peter/.vim_mru_files"
+
+with open(mru_path) as f:
     read = f.readlines()
 
 dirs = list()

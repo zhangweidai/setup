@@ -6,6 +6,8 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.Gravity;
 import android.widget.Button;
@@ -51,6 +53,35 @@ public class MainActivity extends Activity
 
         Intent intent = new Intent(this, Settings.class);
         startActivityForResult(intent, 1);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
+        MenuItem menuItem = menu.add(Menu.NONE, 1, Menu.NONE, R.string.title_about);
+        menuItem.setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+        menuItem.setIcon(R.drawable.ic_about);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) 
+    {
+        // Handle item selection
+        switch (item.getItemId()) {
+            case 1:
+                newGame();
+                return true;
+
+            default:
+                return super.onOptionsItemSelected(item);
+        }
+    }
+
+    private void newGame() 
+    {
+        System.exit(0);
+        Log.d("menu", "SO FAR SO GOOD");
     }
 
     private Boolean isEasyMode()
@@ -112,14 +143,14 @@ public class MainActivity extends Activity
         return retLayout;
     }
 
-    private Button getExitBtn()
-    {
-        Button btn = new Button(this);
-        btn.setText("Exit");
-        btn.setOnClickListener(mExitListener);
-        btn.setId(99);
-        return btn;
-    }
+//    private Button getExitBtn()
+//    {
+//        Button btn = new Button(this);
+//        btn.setText("Exit");
+//        btn.setOnClickListener(mExitListener);
+//        btn.setId(99);
+//        return btn;
+//    }
 
     private Button getStartBtn()
     {
@@ -144,8 +175,6 @@ public class MainActivity extends Activity
 
         if (!starting)
             bottomLayout.addView(getStartBtn());
-
-        bottomLayout.addView(getExitBtn());
 
         score_ = new TextView(this);
         score_.setText("0 points / ");
@@ -261,7 +290,7 @@ public class MainActivity extends Activity
         gameCount_ = gameCount_ + 1;
         answerStack_.clear();
         rounds_.setText(String.format((" Round %d"), gameCount_));
-
+        getWindow().getDecorView().setBackgroundColor(Color.WHITE);
 
         // reset all to grey
         final int size = buttonList_.size();
@@ -399,14 +428,13 @@ public class MainActivity extends Activity
                 score_.setText(String.format(("%d points / "), winCount_));
                 if (winCount_ >= maxScore_)
                 {
-                    winCount_ = 0;
                     createGameBoard();
+                    winCount_ = 0;
                     getWindow().getDecorView().setBackgroundColor(Color.GREEN);
-
-                    Long endTime = System.currentTimeMillis();
-                    Long duration = endTime - startTime_;
-                    Long average = (duration / maxScore_);
-                    score_.setText(String.format(("Average Time : %d"), average));
+//                    Long endTime = System.currentTimeMillis();
+//                    Long duration = endTime - startTime_;
+//                    Long average = (duration / maxScore_);
+//                    score_.setText(String.format(("Average Time : %d"), average));
                 }
                 else
                     startGame();
@@ -428,7 +456,7 @@ public class MainActivity extends Activity
         }
 
         
-        if (isEasyMode() && (maxScore_ - winCount_ < 2))
+        if (isEasyMode() && (maxScore_ - winCount_ <= 2))
         {
             int rand = getRandomButtonIndex();
             Button object = buttonList_.get(rand);
