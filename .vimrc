@@ -246,6 +246,10 @@ fu! Toggler()
     endif
 endf
 
+fu! MoreScope()
+    cs add $CSCOPE_DB
+endf
+
 fu! ExecExtension()
    let path = expand('%:p')
 

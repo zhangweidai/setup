@@ -127,7 +127,11 @@ export ANDROID_HOME='/mnt/c/Users/pzhang/AppData/Local/Android/Sdk'
 alias go='source ~/setup/bin/go.bash'
 alias py3='python3'
 
-alias pyscopeupd='find "$PWD/" -name "*.py" -o -iname "*.cfg" > cscope.files && cscope -bv -i cscope.files -f cscope.out'
+export CSCOPE_DB='/usr/local/lib/python2.7/dist-packages/cscope.out'
+alias scopeme='find "$PWD/" -name "*.py" -o -iname "*.cfg" > cscope.files && cscope -bv -i cscope.files -f cscope.out'
+alias pysite='python -m site'
+alias vgitrc='vim ~/.gitconfig'
+
 
 #sudo -S true
 

@@ -6,6 +6,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.DisplayMetrics;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -36,7 +37,7 @@ public class MainActivity extends Activity
     private int columnCount_ = 4;
     private int btnWidth_ = 80;
     private int winCount_ = 0;
-    private int gameCount_ = -1;
+    private int gameCount_ = 0;
     private int recallCount_ = 5;
     private int totalTiles_ = 24;
     private int curGuessIdx_ = 0;
@@ -105,8 +106,30 @@ public class MainActivity extends Activity
         buttonList_.clear();
 
         Resources r = getResources();
-        int px = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, btnWidth_, r.getDisplayMetrics());
-        int hx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 70, r.getDisplayMetrics());
+        DisplayMetrics dm = r.getDisplayMetrics();
+//        Log.d("whatnow", Integer.toString(row));
+//        Log.d("whatnow", Integer.toString(columnCount_));
+        int width = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, btnWidth_, r.getDisplayMetrics());
+
+        int display = getResources().getDisplayMetrics().widthPixels;
+        int converted = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, display, r.getDisplayMetrics());
+        Log.d("whatnow", Integer.toString(display));
+        Log.d("whatnow", Integer.toString(converted));
+
+        display = getResources().getDisplayMetrics().heightPixels;
+        converted = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, display, r.getDisplayMetrics());
+        Log.d("whatnow", Integer.toString(display));
+        Log.d("whatnow", Integer.toString(converted));
+
+        int sw = dm.widthPixels;
+        int sh = dm.heightPixels;
+
+        converted = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, r.getDisplayMetrics());
+        int adjust = row * converted;
+        int margin = (sw + sh) / adjust;
+
+        int hx = (sh-adjust) / row;
+        int wx = (sw-(columnCount_ * 10)) /columnCount_;
 
         Button btn;
         for (int i =0, c = 0, rr = 0; i < totalTiles_; i++, c++)
@@ -123,15 +146,15 @@ public class MainActivity extends Activity
             btn.setOnClickListener(tileClicked);
 
             btn.setText(Integer.toString(i));
-            btn.setWidth(px);
+            btn.setWidth(wx);
             btn.setHeight(hx);
             retLayout.addView(btn, i);
 
             GridLayout.LayoutParams param = new GridLayout.LayoutParams();
             param.height = GridLayout.LayoutParams.WRAP_CONTENT;
             param.width = GridLayout.LayoutParams.WRAP_CONTENT;
-            param.rightMargin = 15;
-            param.topMargin = 15;
+            param.rightMargin = margin;
+            param.topMargin = margin;
             param.setGravity(Gravity.CENTER_VERTICAL | Gravity.CENTER_HORIZONTAL);
             param.columnSpec = GridLayout.spec(c);
             param.rowSpec = GridLayout.spec(rr);
@@ -140,6 +163,14 @@ public class MainActivity extends Activity
             buttonList_.add(btn);
         } 
 
+            GridLayout.LayoutParams huh = new GridLayout.LayoutParams();
+            huh.rightMargin = 20;
+            huh.topMargin = 20;
+            huh.bottomMargin = 20;
+            huh.leftMargin = 20;
+
+//        retLayout.setUseDefaultMargins(true);
+        retLayout.setLayoutParams(huh);
         return retLayout;
     }
 
@@ -429,8 +460,12 @@ public class MainActivity extends Activity
                 if (winCount_ >= maxScore_)
                 {
                     createGameBoard();
-                    winCount_ = 0;
+
+                    score_.setText(String.format(("%d points / "), winCount_));
+                    rounds_.setText(String.format((" Round %d"), gameCount_));
+
                     getWindow().getDecorView().setBackgroundColor(Color.GREEN);
+                    gameCount_ = 0;
 //                    Long endTime = System.currentTimeMillis();
 //                    Long duration = endTime - startTime_;
 //                    Long average = (duration / maxScore_);
