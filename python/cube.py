@@ -63,5 +63,5 @@ def start():
         pygame.time.wait(10)
 
 
-# setup()
-# start()
+setup()
+start()

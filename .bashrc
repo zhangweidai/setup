@@ -138,3 +138,7 @@ alias vgitrc='vim ~/.gitconfig'
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="/home/zoe/.sdkman"
 [[ -s "/home/zoe/.sdkman/bin/sdkman-init.sh" ]] && source "/home/zoe/.sdkman/bin/sdkman-init.sh"
+
+LANG=en_US.utf8
+export DISPLAY=:0.0
+export PULSE_SERVER=tcp:localhost

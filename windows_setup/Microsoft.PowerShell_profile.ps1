@@ -32,3 +32,10 @@ Set-PSReadLineKeyHandler -Chord Ctrl+U -ScriptBlock {
 Set-PSReadLineKeyHandler -Chord Ctrl+Shift+T -ScriptBlock {
     start-process powershell.exe
 }
+
+function time($block) {
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    &$block
+    $sw.Stop()
+    $sw.Elapsed
+}

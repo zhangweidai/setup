@@ -13,7 +13,7 @@ HISTFILESIZE=2000
 # make less more friendly for non-text input files, see lesspipe(1)
 [ -x /usr/bin/lesspipe ] && eval "$(SHELL=/bin/sh lesspipe)"
 
-alias uplinux='sudo apt-get update; sudo apt-get upgrade; sudo apt-get dist-upgrade'
+alias uplinux='sudo apt-get update; sudo apt-get upgrade -f; sudo apt-get dist-upgrade -f'
 alias dmouse='xinput disable "ETPS/2 Elantech Touchpad"'
 alias emouse='xinput enable "ETPS/2 Elantech Touchpad"'
 alias cds='cd $HOME/setup'
@@ -88,7 +88,6 @@ function parse_git_dirty {
 		echo ""
 	fi
 }
-
 alias filesThatContain="grep -Rl" 
 bind '"\C-u": kill-whole-line'
 alias clipdir='echo -n `pwd` | xclip -i -sel p -f | xclip -i -f -sel c'

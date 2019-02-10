@@ -1,3 +1,5 @@
+# time python bench.py
+# time { python bench.py }
 def test():
     """Stupid test function"""
     lst = []
