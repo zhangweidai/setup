@@ -6,17 +6,17 @@ locale.setlocale( locale.LC_ALL, '' )
 caroneProb = 80
 gohomeProbability = 44
 personalTravelProbability = 60
-endofdate = datetime.datetime.strptime("01/01/17", "%m/%d/%y")
-car = dict()
+endofdate = datetime.datetime.strptime("01/01/19", "%m/%d/%y")
+car = 106511
 miles = 0
 dates = []
-date_1 = datetime.datetime.strptime("01/01/16", "%m/%d/%y")
+date_1 = datetime.datetime.strptime("01/01/18", "%m/%d/%y")
 log = dict()
 dalog = []
 daydidntwork = 0
 persmile = 0
 
-appointSetup = [(30,0), (50,1), (10,2), (10,3),(5,4),(1,5)]
+appointSetup = [(60,0), (40,1), (40,2), (30,3), (10,4)]
 appoints = []
 
 def buildVector(source):
@@ -27,16 +27,15 @@ def buildVector(source):
     return temp
 
 def startOver():
-    global car, miles, dalog, log, dates, date_1, daydidntwork, appointtotal, persmile, appoints
+    global miles, dalog, log, dates, date_1, daydidntwork, appointtotal, persmile, appoints, car
     persmile = 0
     daydidntwork = 0
     dalog = []
-    car[0] = 95027
-    car[1] = 102011
     miles = 0
+    car = 106511
     appointtotal = 0
     dates = []
-    date_1 = datetime.datetime.strptime("01/01/16", "%m/%d/%y")
+    date_1 = datetime.datetime.strptime("01/01/18", "%m/%d/%y")
     log = dict()
 
     appoints = buildVector(appointSetup)
@@ -62,10 +61,10 @@ locationtranslate.append(("River Road Salem Clinic",12))
 locationtranslate.append(("River Road ENT",4))
 maxplaces = len(locationtranslate)
 
-longdistance = []
-longdistance.append(("Samaritan Hospital", 39))
-longdistance.append(("Beaverton KP", 50))
-longdistance.append(("Sunnyside Medical Center", 60))
+#longdistance = []
+#longdistance.append(("Samaritan Hospital", 39))
+#longdistance.append(("Beaverton KP", 50))
+#longdistance.append(("Sunnyside Medical Center", 60))
 
 
 def distance(a, b):
@@ -88,7 +87,6 @@ def distance(a, b):
 
         note =  "{}{}".format(note, secondplace)
         return [locationtranslate[loc][1], note]
-kdfjdflksdfjsa;lfdf;lsdkajfaslf
     loca = locationtranslate[a-1][0]
     locb = locationtranslate[b-1][0]
 
@@ -158,27 +156,26 @@ def subtract():
         updateappoints()
 
     date = str(date_1.strftime("%m/%d/%y"))
-    todaycar = chooseCar()
-    starting = car[todaycar]
+    starting = car
 
-    if day in longdistancedays:
-        ld = random.choice(longdistance)
-        d = ld[1]
-
-        note = "Going to {}".format(ld[0])
-        ending = starting + d
-        dalog.append(",".join([date, str(starting), str(ending), str(d), note]))
-        starting += d
-
-        note = "Returning from {}".format(ld[0])
-        ending = ending + d
-        dalog.append(",".join([date, str(starting), str(ending), str(d), note]))
-        starting += d
-        miles = miles + 2 * d
-
-        car[todaycar] = starting
-        return
-
+#    if day in longdistancedays:
+#        ld = random.choice(longdistance)
+#        d = ld[1]
+#
+#        note = "Going to {}".format(ld[0])
+#        ending = starting + d
+#        dalog.append(",".join([date, str(starting), str(ending), str(d), note]))
+#        starting += d
+#
+#        note = "Returning from {}".format(ld[0])
+#        ending = ending + d
+#        dalog.append(",".join([date, str(starting), str(ending), str(d), note]))
+#        starting += d
+#        miles = miles + 2 * d
+#
+#        car = starting
+#        return
+#
 
     pointstoday = random.choice(appoints)
     if pointstoday == 0:
@@ -186,7 +183,7 @@ def subtract():
         return
     appointtotal += pointstoday
 
-#     print "\nDate is {}\n{} appointments using car {}".format( date, pointstoday, todaycar)
+    #print "\nDate is {}\n{} appointment".format( date, pointstoday)
 
     places = []
     dmiles = []
@@ -217,8 +214,8 @@ def subtract():
         d = retD[0]
         note =  retD[1]
 
-#         print "distance to go from {} to {} is {}".format(a,b,d)
-#         print "start mileage {} and end mileage {}".format(starting, starting + d)
+        #print "distance to go from {} to {} is {}".format(a,b,d)
+        #print "start mileage {} and end mileage {}".format(starting, starting + d)
 
         submiles += d
         miles += d
@@ -232,7 +229,7 @@ def subtract():
         persmile += gosomewhererandom
         starting += gosomewhererandom
 
-    car[todaycar] = starting
+    car = starting
 
 ava = 0
 avb = 0
@@ -248,14 +245,17 @@ def findAnswer(appointmentTotal):
     avb = 0
     avc = 0
 
-    while lastAppointTotal != appointmentTotal:
+    while abs(lastAppointTotal - appointmentTotal) > 5:
+        print lastAppointTotal
+        print appointmentTotal
+        #print abs(lastAppointTotal - appointmentTotal)
         cd += 1
         startOver();
         while (date_1 < endofdate):
             subtract()
     
         lastAppointTotal = appointtotal
-        print "{} and {}".format(lastAppointTotal, daydidntwork)
+        #print "{} and Day Didn't work {}".format(lastAppointTotal, daydidntwork)
         ava += daydidntwork
         avb += miles
         avc += appointtotal
@@ -266,7 +266,9 @@ def findAnswer(appointmentTotal):
     print_stats()
 
 def print_stats():
+    print "\n\n"
     print "days didnt work {}".format(daydidntwork)
+    print "days worked {}".format(365-daydidntwork)
     print "work miles so far {}".format(miles)
     print "personal miles {}".format(persmile)
     print "number of appointments {}".format(lastAppointTotal)
@@ -275,6 +277,7 @@ def print_stats():
     if cd == 0:
         return
 
+    print "\n\n"
     print "avg days didnt work {}".format(ava/cd)
     print "avg work miles so far {}".format(avb/cd)
     print "avg number of appointments {}".format(avc/cd)
@@ -294,5 +297,5 @@ def doonce():
     lastAppointTotal = appointtotal
     print_stats()
 
-findAnswer(316)
+findAnswer(265 * 1.1)
 #doonce()

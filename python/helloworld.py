@@ -3,6 +3,27 @@ import types
 import fnmatch
 import os
 
+if True:
+    foo = "help"
+else:
+    foo = "bar"
+
+print foo
+
+exit()
+
+bar = "sadfa"
+foo = 1
+iterable = [bar, foo]
+def myfilter(something):
+    if type(something) == str:
+        return True
+    return False
+mylist = list(filter(myfilter, iterable))
+print "(pz-dbg) - mylist " + __file__
+print mylist 
+
+
 bar = {}
 bar['a'] = True
 try:
@@ -12,7 +33,6 @@ try:
     print foo
 except:
     pass
-exit()
 
 def writeTclFile(newFile, w1, w2, options, ascii, log):
     fo = open("./template.tcl", "r")
