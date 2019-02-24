@@ -80,7 +80,7 @@ def process2(stocks, directory = "stocks"):
                 high = closed
                 hdate = idx
 
-        if low == 0:
+        if not low or not high or not start:
             continue
 
         drop = 0
