@@ -120,6 +120,14 @@ def build_model(vocab_size, embedding_dim, rnn_units, batch_size):
             recurrent_initializer='glorot_uniform',
 	    stateful=True),
 
+	rnn(rnn_units, return_sequences=True, 
+            recurrent_initializer='glorot_uniform',
+	    stateful=True),
+
+	rnn(rnn_units, return_sequences=True, 
+            recurrent_initializer='glorot_uniform',
+	    stateful=True),
+
         tf.keras.layers.Dense(vocab_size)])
     return model
 
@@ -140,6 +148,8 @@ sampled_indices = tf.squeeze(sampled_indices,axis=-1).numpy()
 print("Input: \n", repr("".join(idx2char[input_example_batch[0]])))
 print()
 print("Next Char Predictions: \n", repr("".join(idx2char[sampled_indices ])))
+
+#raise SystemExit
 
 ## Build The Model
 

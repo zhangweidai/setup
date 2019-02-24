@@ -1,58 +1,41 @@
 from pandas_datareader import data as pdr
-
 import fix_yahoo_finance as yf
 import numpy as np
 import pandas
 import os
+import mine
 
+import numpy as np
+from sklearn.preprocessing import normalize
+from sklearn.preprocessing import MinMaxScaler
 
-#holdings = ["IVV"]
+def norm(x):
+    return x / np.linalg.norm(x)
+
+scaler = MinMaxScaler(feature_range=(0, 1))
+data = pandas.read_csv("{}/raw/GOOG.csv".format(os.getcwd()))
+data.drop(columns = ["Date", "Adj Close"], inplace=True)
+data = scaler.fit_transform(data)
+msk = np.random.rand(len(data)) < 0.8
+train = data[msk]
+test = data[~msk]
+print (test)
+#print (norm(data["Open"].tolist()))
+
+def getEtfList():
+    path = "{}/analysis/ETFList.csv".format(os.getcwd())
+    data = pandas.read_csv(path)
+    return data['Symbol'].tolist()
+
+#mine.process(getEtfList())
+#raise SystemError
+def getStocks(holding):
+    data = pandas.read_csv("{}/holdings/{}_holdings.csv".format(os.getcwd(), holding))
+    return data['Ticker'].tolist()
+
 #stocks = []
 #for holding in holdings:
-#    data = pandas.read_csv("{}/holdings/{}_holdings.csv".format(os.getcwd(), holding))
-#    stocks = data['Ticker'].tolist()
 
-doonce = True
-
-stocks = ["GOOG"]
-#print (data)
-#
-## download Panel
-def process(stocks):
-    global doonce
-    for astock in stocks:
-        if not astock:
-            continue
-        path = "{}/stocks/{}.csv".format(os.getcwd(), astock)
-        data = None
-        print (path)
-        if os.path.exists(path):
-            data = pandas.read_csv(path)
-        else:
-            try:
-                if doonce:
-                    yf.pdr_override() # <== that's all it takes :-)
-                    doonce = False
-                data = pdr.get_data_yahoo([astock], start="2007-01-01", end="2019-12-24")
-                data.to_csv(path)
-            except:
-                print ("problem downloading")
-                pass
-    
-        if not os.path.exists(path):
-            print ("could not save {}".format(path))
-            continue
-    
-        data.drop(columns = ["High", "Low", "Close", "Volume"], inplace=True)
-    
-        for idx,row in data.iterrows():
-            for label in ["Open","Adj Close"]:
-                data.at[idx, label] = int(round(data.at[idx, label]))
-    
-        path = "{}/stocks/_{}.csv".format(os.getcwd(), astock)
-        data.to_csv(path)
-
-for astock in stocks:
-    path = "{}/stocks/_{}.csv".format(os.getcwd(), astock)
-    df = pandas.read(path)
-#    print df
+#mine.process(getStocks("IWB"), "all")
+#mine.process2(getStocks("IWB"), "all")
+#percent_list = mine.process2(getEtfList(), "etfs")
