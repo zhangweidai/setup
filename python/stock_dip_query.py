@@ -3,7 +3,7 @@ import fix_yahoo_finance as yf
 import numpy as np
 import pandas
 import os
-import mine
+#import mine
 
 #print (norm(data["Open"].tolist()))
 
@@ -51,6 +51,18 @@ def process2(stocks, directory = "stocks"):
         start = None
         ldate = 0
         hdate = 0
+
+        for idx, row in df.tail(140).iterrows():
+            opend = int(df.at[idx, "Open"])
+            closed = int(df.at[idx, "Close"])
+            if opend < low:
+                low = opend
+                ldate = idx
+            if closed < low:
+                low = closed
+                ldate = idx
+
+
         for idx, row in df.tail(140).iterrows():
             countd_days += 1
 #            if countd_days < 1000 or countd_days > 2500:
@@ -61,18 +73,12 @@ def process2(stocks, directory = "stocks"):
             if not start:
                 start = opend
             lastprice = closed
-            if opend > high:
+            if opend > high and idx < ldate:
                 high = opend
                 hdate = idx
-            if closed > high:
+            if closed > high and idx < ldate:
                 high = closed
                 hdate = idx
-            if opend < low:
-                low = opend
-                ldate = idx
-            if closed < low:
-                low = closed
-                ldate = idx
 
         if low == 0:
             continue
@@ -85,7 +91,7 @@ def process2(stocks, directory = "stocks"):
 
         recover = round(lastprice/low, 3)
         total = round(lastprice/start,3)
-        evaluation = (2 * drop) + recover + total
+        evaluation = (2*drop*drop) + recover + total
         percent_list[astock] = [start, high, low, lastprice, drop, recover, total, round(evaluation, 3)] 
 #        else:
 #            print ("need more logic for {}".format(astock))
