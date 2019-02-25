@@ -54,8 +54,9 @@ cap = dict()
 beta = dict()
 profit = dict()
 pmc = dict()
+name = dict()
 def getJsonData(astock):
-    global dividends, cap, beta, pmc
+    global dividends, cap, beta, pmc, name
     path = "{}/{}/{}.json".format(os.getcwd(), "income", astock)
     data = None
     if os.path.exists(path):
@@ -78,6 +79,7 @@ def getJsonData(astock):
     if not info_data:
         return
 
+    name[astock] = info_data[astock]["companyName"]
     price = float(info_data[astock]["Price"])
     dividends[astock] = round(float(info_data[astock]["LastDiv"])/float(price),4)
     beta[astock] = round(float(info_data[astock]["Beta"]), 4)
@@ -104,7 +106,7 @@ def getAllData(stocks):
     data = dict()
     for astock in stocks:
         try:
-            data[astock] = [dividends[astock], pmc[astock], beta[astock], cap[astock]]
+            data[astock] = [dividends[astock], pmc[astock], beta[astock], cap[astock], name[astock]]
         except:
             pass
 
@@ -117,7 +119,7 @@ def getAllData(stocks):
 stocks = stock_analyze.getStocks("IVV")
 adata = getAllData(stocks)
 import pandas
-df = pandas.DataFrame.from_dict(adata, orient = 'index', columns=["Dividend", "P:MC(big is good)", "BETA(small)", "MarketCap"])
+df = pandas.DataFrame.from_dict(adata, orient = 'index', columns=["Dividend", "P:MC(big is good)", "BETA(small)", "MarketCap", "Name"])
 path = "{}/analysis/gg_json.csv".format(os.getcwd())
 df.to_csv(path)
 

@@ -34,6 +34,7 @@ json_dict = getData("json")
 #,Start,High,Low,Last,Drop,Recover,TotalChange,Score,HighDate,LowDate,DropTime
 #{'MSFT': [74.31, 116.18, 72.92, 110.97, 0.628, 1.521, 1.493, 3.804, '2018-10-03', '2019-02-22', 179]}
 
+name_idx = 4
 recent_change_idx = 2
 drop_idx = 4
 l_idx = 2
@@ -77,6 +78,7 @@ for astock in stocks:
         lows = drop_dict[astock][l_idx]
         highs = drop_dict[astock][h_idx]
         lasts = drop_dict[astock][la_idx]
+        name = json_dict[astock][name_idx]
     except:
         continue
 
@@ -96,10 +98,10 @@ for astock in stocks:
     value = score + (1.5*dividend) + pmc
 
     final = round(value / discount, 4)
-    ret_dict[astock] = [final, round(discount,4), round(dividend,4), cap, dropscore, lows, highs, lasts]
+    ret_dict[astock] = [final, round(discount,4), round(dividend,4), cap, dropscore, lows, highs, lasts, name]
 
 df = pandas.DataFrame.from_dict(ret_dict, orient = 'index', 
-                                columns=["Final", "Recent Change", "Dividend", "MCap", "Drop", "Low", "High", "Last"])
+                                columns=["Final", "Recent Change", "Dividend", "MCap", "Drop", "Low", "High", "Last", "Name"])
 path = "{}/analysis/gg_final.csv".format(os.getcwd())
 df.to_csv(path)
 
