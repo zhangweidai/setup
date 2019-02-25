@@ -30,17 +30,12 @@ def getEtfList():
 #mine.process(getEtfList())
 #raise SystemError
 def getStocks(holding):
-    removes = ["HEIA"]
     data = pandas.read_csv("{}/holdings/{}_holdings.csv".format(os.getcwd(), holding))
-    ret = data['Ticker'].tolist()
-    for b in removes:
-        if b in ret:
-            ret.remove(b)
-    return ret
+    return data['Ticker'].tolist()
 
 #stocks = []
 #for holding in holdings:
 
-#mine.process(getStocks("IWB"), "all")
+mine.process(getStocks("IWB"), "all")
 #mine.process2(getStocks("IWB"), "all")
 #percent_list = mine.process2(getEtfList(), "etfs")

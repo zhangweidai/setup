@@ -6,6 +6,7 @@ import os
 import datetime
 
 doonce = True
+startdate = datetime.date.today() - datetime.timedelta(days=777)
 def process(stocks, directory="stocks"):
     global doonce
     for astock in stocks:
@@ -21,9 +22,7 @@ def process(stocks, directory="stocks"):
                 if doonce:
                     yf.pdr_override() # <== that's all it takes :-)
                     doonce = False
-                #data = pdr.get_data_yahoo([astock], start="2010-01-01", end=datetime.date.today().isoformat())
-                data = pdr.get_data_yahoo([astock], start="2010-01-01", end="2019-02-22")
-                #data.to_csv(path)
+                data = pdr.get_data_yahoo([astock], start=startdate.isoformat(), end=datetime.date.today().isoformat())
             except:
                 print ("problem downloading")
                 continue
@@ -32,13 +31,13 @@ def process(stocks, directory="stocks"):
 #            print ("could not save {}".format(path))
 #            continue
     
-        data.drop(columns = ["High", "Low", "Adj Close", "Volume"], inplace=True)
+        data.drop(columns = ["Adj Close", "Volume"], inplace=True)
     
         for idx,row in data.iterrows():
-            for label in ["Open","Close"]:
-                data.at[idx, label] = int(round(data.at[idx, label]))
+            for label in ["Open","Close", "High", "Low"]:
+                data.at[idx, label] = round(data.at[idx, label], 4)
     
-        path = "{}/{}/_{}.csv".format(os.getcwd(), directory, astock)
+        path = "{}/{}/{}.csv".format(os.getcwd(), directory, astock)
         data.to_csv(path)
 
 def process2(stocks, directory = "stocks"):
