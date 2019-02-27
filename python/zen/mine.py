@@ -4,10 +4,11 @@ import numpy as np
 import pandas
 import os
 import datetime
+import fnmatch
 
 doonce = True
-startdate = datetime.date.today() - datetime.timedelta(days=777)
-def process(stocks, directory="stocks"):
+startdate = "2017-01-09"
+def process(stocks, directory="all"):
     global doonce
     for astock in stocks:
         if not astock:
@@ -16,13 +17,13 @@ def process(stocks, directory="stocks"):
         data = None
         print (path)
         if os.path.exists(path):
-            data = pandas.read_csv(path)
-        else:
+#            data = pandas.read_csv(path)
+#        else:
             try:
                 if doonce:
                     yf.pdr_override() # <== that's all it takes :-)
                     doonce = False
-                data = pdr.get_data_yahoo([astock], start=startdate.isoformat(), end=datetime.date.today().isoformat())
+                data = pdr.get_data_yahoo([astock], start=startdate, end=datetime.date.today().isoformat())
             except:
                 print ("problem downloading")
                 continue
@@ -115,4 +116,21 @@ def process2(stocks, directory = "stocks"):
     df = pandas.DataFrame.from_dict(percent_list, orient = 'index', columns=["Change", "Shares", "DataSize", "LoseStreak", "Invested", "CurrentValue", "LastPurchase"])
     path = "{}/analysis/6d_{}_last_purchase.csv".format(os.getcwd(), directory)
     df.to_csv(path)
+
+
+
+def getFromHoldings():
+    pattern = "*.csv"  
+    holds = []
+    listOfFiles = os.listdir('./holdings')  
+    for entry in listOfFiles:  
+        if fnmatch.fnmatch(entry, pattern):
+            holds.append(entry.split("_")[0])
+    return holds
+
+def getStocks(holding, andEtfs = False):
+    data = pandas.read_csv("{}/holdings/{}_holdings.csv".format(os.getcwd(), holding))
+    if andEtfs:
+        return data['Ticker'].tolist() + getFromHoldings()
+    return data['Ticker'].tolist()
 

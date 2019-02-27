@@ -3,6 +3,7 @@ import fix_yahoo_finance as yf
 import numpy as np
 import pandas
 import os
+import util_var 
 #import mine
 
 #print (norm(data["Open"].tolist()))
@@ -106,5 +107,33 @@ def process2(stocks, directory = "stocks"):
 
 #mine.process(getStocks("IWB"), "all")
 #process2(["GOOG", "AAPL"], "all")
-process2(getStocks("IVV"), "all")
-#percent_list = mine.process2(getEtfList(), "etfs")
+
+name_idx = 4
+dividend_idx = 0
+def writeDropCsv(stocks, directory = "stocks"):
+    newest = 1000
+    #global percent_list, notinvested
+    percent_list = {}
+    json_dict = util_var.getData("json")
+    foundmax=None
+
+    for astock in stocks:
+        path = "{}/{}/{}.csv".format(os.getcwd(), directory, astock)
+        if not os.path.exists(path):
+            continue
+
+        df = pandas.read_csv(path)
+        values = df['Open'].tolist()
+        length = len(values)
+        if length < newest:
+            newest = length
+
+#        print (util_var.getFactors(values))
+
+    util_var.writeFile(percent_list, ["Final", "Score(Reg/Dip)", "Discount", "Dip", "Reg", "Dividend", "Factor", "Name"])
+
+#writeDropCsv(["GOOG"], "all")
+writeDropCsv(getStocks("IVV"), "all")
+#writeDropCsv(["GOOG", "C"], "all")
+#writeDropCsv(["GOOG", "C"], "all")
+#process2(getStocks("IVV"), "all")

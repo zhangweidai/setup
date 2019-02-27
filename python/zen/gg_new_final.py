@@ -3,7 +3,8 @@ import fix_yahoo_finance as yf
 import numpy as np
 import pandas
 import os
-#import mine
+import util_var 
+import mine
 
 #print (norm(data["Open"].tolist()))
 
@@ -14,9 +15,6 @@ import os
 
 #mine.process(getEtfList())
 #raise SystemError
-def getStocks(holding):
-    data = pandas.read_csv("{}/holdings/{}_holdings.csv".format(os.getcwd(), holding))
-    return data['Ticker'].tolist()
 
 #stocks = getStocks("IWB")
 stocks = ["GOOG"]
@@ -106,5 +104,49 @@ def process2(stocks, directory = "stocks"):
 
 #mine.process(getStocks("IWB"), "all")
 #process2(["GOOG", "AAPL"], "all")
-process2(getStocks("IVV"), "all")
-#percent_list = mine.process2(getEtfList(), "etfs")
+
+name_idx = 4
+dividend_idx = 0
+etfs = mine.getFromHoldings()
+def writeDropCsv(stocks, directory = "stocks"):
+    #global percent_list, notinvested
+    percent_list = {}
+    json_dict = util_var.getData("json")
+
+    for astock in stocks:
+        path = "{}/{}/{}.csv".format(os.getcwd(), directory, astock)
+        if not os.path.exists(path):
+            continue
+
+        try:
+            dividend = 10*json_dict[astock][dividend_idx]
+        except:
+            dividend = 0
+
+        try:
+            name = json_dict[astock][name_idx]
+        except:
+            name = ""
+            if astock in etfs:
+                name = "ETF"
+
+        df = pandas.read_csv(path)
+        values = df['Open'].tolist()
+        length = len(values)
+
+        factor = util_var.getFactors(values)
+
+        score, dipScore = util_var.getScore(values)
+        discount = util_var.getDiscount(values)
+        combined = round(score/dipScore,4)
+        final = round((combined / (discount*discount)) * factor, 4)
+
+        dipScore = round(dipScore,3)
+        score = round(score,3)
+        percent_list[astock] = [final, combined, discount, dipScore, score, dividend, factor, length, name]
+
+    util_var.writeFile(percent_list, ["Final", "Score(Reg/Dip)", "Discount", "Dip", "Reg", "Dividend", "Factor", "Length", "Name"])
+
+#writeDropCsv(["GOOG"], "all")
+writeDropCsv(mine.getStocks("IVV", True), "all")
+#process2(getStocks("IVV"), "all")

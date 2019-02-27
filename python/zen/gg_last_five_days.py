@@ -83,7 +83,7 @@ def getOtherData(stocks):
         df = pandas.read_csv(path)
 
 
-stocks = getStocks("IWB")
+stocks = getStocks("IVV")
 #getOtherData(stocks)
 process(stocks)
 #process(getStocks("IWB"), "all")

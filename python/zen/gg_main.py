@@ -5,19 +5,11 @@ import pandas
 import os
 import datetime
 import stock_analyze
+import util_var
 
-def getData(filename):
-    path = "{}/analysis/gg_{}.csv".format(os.getcwd(), filename)
-    trend = pandas.read_csv(path)
-    whatdict = trend.to_dict('split')
-    ret = dict()
-    for company_data in whatdict['data']:
-        ret[company_data[0]] = company_data[1:]
-    return ret
-
-trend_dict = getData("trending")
-drop_dict = getData("365_drop")
-json_dict = getData("json")
+trend_dict = util_var.getData("trending")
+drop_dict = util_var.getData("365_drop")
+json_dict = util_var.getData("json")
 #print (trend_dict)
 #print (drop_dict)
 #print (json_dict)

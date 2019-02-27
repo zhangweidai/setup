@@ -126,6 +126,7 @@ alias welltf='python3 ~/setup/python/tf_check.py'
 export ANDROID_HOME='/mnt/c/Users/pzhang/AppData/Local/Android/Sdk'
 alias go='source ~/setup/bin/go.bash'
 alias py3='python3'
+alias py='python3'
 
 export CSCOPE_DB='/usr/local/lib/python2.7/dist-packages/cscope.out'
 alias scopeme='find "$PWD/" -name "*.py" -o -iname "*.cfg" > cscope.files && cscope -bv -i cscope.files -f cscope.out'

@@ -33,9 +33,17 @@ def getStocks(holding):
     data = pandas.read_csv("{}/holdings/{}_holdings.csv".format(os.getcwd(), holding))
     return data['Ticker'].tolist()
 
+import os, fnmatch
+
+
+import mine
+mine.process(["LIN"])
+#print (mine.getStocks("IVV", True))
+
 #stocks = []
 #for holding in holdings:
 
-mine.process(getStocks("IWB"), "all")
+#mine.process(getStocks("IWB"), "all")
+#mine.process(["IVV"], "all")
 #mine.process2(getStocks("IWB"), "all")
 #percent_list = mine.process2(getEtfList(), "etfs")
