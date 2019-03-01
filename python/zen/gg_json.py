@@ -1,6 +1,6 @@
 import urllib.request, json 
-import stock_analyze
 import os
+import util
 
 def loadFromUrl(astock, urlstr):
     decoded = None
@@ -21,11 +21,7 @@ def saveJson(stocks, urlstr, dirstr, removeVec):
     for astock in stocks:
         data = None
         path = "{}/{}/{}.json".format(os.getcwd(), dirstr, astock)
-        if os.path.exists(path):
-            with open(path) as f:
-                data = json.load(f)
-        else:
-            data = loadFromUrl(astock, urlstr)
+        data = loadFromUrl(astock, urlstr)
 
         if not data:
             continue
@@ -82,44 +78,40 @@ def getJsonData(astock):
     name[astock] = info_data[astock]["companyName"]
     price = float(info_data[astock]["Price"])
     dividends[astock] = round(float(info_data[astock]["LastDiv"])/float(price),4)
-    beta[astock] = round(float(info_data[astock]["Beta"]), 4)
-    capa = int(info_data[astock]["MktCap"])
-    useme = round(capa / 100000,6)
-    cap[astock] = useme
-    if prof == None:
-        pmc[astock] = "NRP"
-    elif useme:
-        pmc[astock] = round(prof / useme, 6)
-    else:
-        pmc[astock] = 0
+#    beta[astock] = round(float(info_data[astock]["Beta"]), 4)
+#    capa = int(info_data[astock]["MktCap"])
+#    useme = round(capa / 100000,6)
+#    cap[astock] = useme
+#    if prof == None:
+#        pmc[astock] = "NRP"
+#    elif useme:
+#        pmc[astock] = round(prof / useme, 6)
+#    else:
+#        pmc[astock] = 0
 
-def getAllData(stocks):
+def saveJsonData(stocks):
     for astock in stocks:
         getJsonData(astock)
 
 #    beta["NORMAL"] = 1
 #    normalizeDict(dividends)
 #    normalizeDict(beta)
-    normalizeDict(cap)
+#    normalizeDict(cap)
 #    normalizeDict(pmc)
 
     data = dict()
     for astock in stocks:
         try:
-            data[astock] = [dividends[astock], pmc[astock], beta[astock], cap[astock], name[astock]]
+            data[astock] = [dividends[astock], name[astock]]
         except:
             pass
 
     return data
-#print (getJsonData("GOOG"))
-    
-#saveJson(["GOOG", "ZEN"])
-#saveJson(
-#stocks = ["GOOG", "ZEN"]
-stocks = stock_analyze.getStocks("IVV")
+
+stocks = util.getStocks("IVV")
 adata = getAllData(stocks)
 import pandas
-df = pandas.DataFrame.from_dict(adata, orient = 'index', columns=["Dividend", "P:MC(big is good)", "BETA(small)", "MarketCap", "Name"])
+df = pandas.DataFrame.from_dict(adata, orient = 'index', columns=["Dividend", "Name"])
 path = "{}/analysis/gg_json.csv".format(os.getcwd())
 df.to_csv(path)
 

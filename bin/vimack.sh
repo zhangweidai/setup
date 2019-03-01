@@ -22,6 +22,12 @@ done
 wd=`pwd`
 skipD=""
 
+if [ -d ./all ]; then
+    pysearch="--py"
+elif [ -d ./zen ]; then
+    pysearch="--py"
+fi
+
 #sed -i "1i$1" $TS/search_history.list
 ag --hidden --follow -C 1 --color "${searchstr}" ${pysearch} >& $TS/prevGrepResults
 

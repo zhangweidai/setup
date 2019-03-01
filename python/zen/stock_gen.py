@@ -221,7 +221,7 @@ print(generate_text(model, start_string=u"ROMEO: "))
 
 #tf.keras.models.save_model(
 #    model,
-#    "mine.h5",
+#    "util.h5",
 #    overwrite=True,
 #    include_optimizer=True)
 

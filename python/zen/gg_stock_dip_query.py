@@ -3,7 +3,7 @@ import fix_yahoo_finance as yf
 import numpy as np
 import pandas
 import os
-#import mine
+#import util
 
 #print (norm(data["Open"].tolist()))
 
@@ -12,12 +12,8 @@ import os
 #    data = pandas.read_csv(path)
 #    return data['Symbol'].tolist()
 
-#mine.process(getEtfList())
+#util.process(getEtfList())
 #raise SystemError
-def getStocks(holding):
-    data = pandas.read_csv("{}/holdings/{}_holdings.csv".format(os.getcwd(), holding))
-    return data['Ticker'].tolist()
-
 #stocks = getStocks("IWB")
 stocks = ["GOOG"]
 directory = "all"
@@ -104,7 +100,7 @@ def process2(stocks, directory = "stocks"):
 
 #for holding in holdings:
 
-#mine.process(getStocks("IWB"), "all")
+#util.process(getStocks("IWB"), "all")
 #process2(["GOOG", "AAPL"], "all")
-process2(getStocks("IVV"), "all")
-#percent_list = mine.process2(getEtfList(), "etfs")
+process2(util.getStocks("IVV", True), "all")
+#percent_list = util.process2(getEtfList(), "etfs")

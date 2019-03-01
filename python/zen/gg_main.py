@@ -4,12 +4,11 @@ import numpy as np
 import pandas
 import os
 import datetime
-import stock_analyze
-import util_var
+import util
 
-trend_dict = util_var.getData("trending")
-drop_dict = util_var.getData("365_drop")
-json_dict = util_var.getData("json")
+trend_dict = util.getData("trending")
+drop_dict = util.getData("365_drop")
+json_dict = util.getData("json")
 #print (trend_dict)
 #print (drop_dict)
 #print (json_dict)
@@ -37,8 +36,8 @@ dividend_idx = 0
 beta_idx = 2
 pmc_idx = 1
 cap_idx = 3
-#mine.process(
-stocks = stock_analyze.getStocks("IVV")
+#util.process(
+stocks = util.getStocks("IVV")
 #stocks = ["MSFT"]
 ret_dict = dict()
 import math

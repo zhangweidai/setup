@@ -3,8 +3,7 @@ import fix_yahoo_finance as yf
 import numpy as np
 import pandas
 import os
-import util_var 
-import mine
+import util 
 
 #print (norm(data["Open"].tolist()))
 
@@ -13,7 +12,7 @@ import mine
 #    data = pandas.read_csv(path)
 #    return data['Symbol'].tolist()
 
-#mine.process(getEtfList())
+#util.process(getEtfList())
 #raise SystemError
 
 #stocks = getStocks("IWB")
@@ -102,16 +101,18 @@ def process2(stocks, directory = "stocks"):
 
 #for holding in holdings:
 
-#mine.process(getStocks("IWB"), "all")
+#util.process(getStocks("IWB"), "all")
 #process2(["GOOG", "AAPL"], "all")
 
-name_idx = 4
+name_idx = 1
 dividend_idx = 0
-etfs = mine.getFromHoldings()
-def writeDropCsv(stocks, directory = "stocks"):
+#etfs = util.getFromHoldings()
+def writeDropCsv(stocks, directory = "all"):
     #global percent_list, notinvested
     percent_list = {}
-    json_dict = util_var.getData("json")
+    json_dict = util.getData("json_{}".format(directory))
+    if json_dict is None:
+        return
 
     for astock in stocks:
         path = "{}/{}/{}.csv".format(os.getcwd(), directory, astock)
@@ -127,17 +128,21 @@ def writeDropCsv(stocks, directory = "stocks"):
             name = json_dict[astock][name_idx]
         except:
             name = ""
-            if astock in etfs:
-                name = "ETF"
+#            if astock in etfs:
+#                name = "ETF"
 
         df = pandas.read_csv(path)
         values = df['Open'].tolist()
         length = len(values)
 
-        factor = util_var.getFactors(values)
+        try:
+            factor = util.getFactors(values)
+        except:
+            print ("Not enough data for {}".format(astock))
+            continue
 
-        score, dipScore = util_var.getScore(values)
-        discount = util_var.getDiscount(values)
+        score, dipScore = util.getScore(values)
+        discount = util.getDiscount(values)
         combined = round(score/dipScore,4)
         final = round((combined / (discount*discount)) * factor, 4)
 
@@ -145,8 +150,8 @@ def writeDropCsv(stocks, directory = "stocks"):
         score = round(score,3)
         percent_list[astock] = [final, combined, discount, dipScore, score, dividend, factor, length, name]
 
-    util_var.writeFile(percent_list, ["Final", "Score(Reg/Dip)", "Discount", "Dip", "Reg", "Dividend", "Factor", "Length", "Name"])
+    util.writeFile(percent_list, ["Final", "Score(Reg/Dip)", "Discount", "Dip", "Reg", "Dividend", "Factor", "Length", "Name"], directory)
 
 #writeDropCsv(["GOOG"], "all")
-writeDropCsv(mine.getStocks("IVV", True), "all")
+writeDropCsv(util.getStocks("IJH"), "ijh")
 #process2(getStocks("IVV"), "all")

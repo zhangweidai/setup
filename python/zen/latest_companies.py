@@ -3,23 +3,8 @@ import fix_yahoo_finance as yf
 import numpy as np
 import pandas
 import os
-import util_var 
-#import mine
+import util 
 
-#print (norm(data["Open"].tolist()))
-
-#def getEtfList():
-#    path = "{}/analysis/ETFList.csv".format(os.getcwd())
-#    data = pandas.read_csv(path)
-#    return data['Symbol'].tolist()
-
-#mine.process(getEtfList())
-#raise SystemError
-def getStocks(holding):
-    data = pandas.read_csv("{}/holdings/{}_holdings.csv".format(os.getcwd(), holding))
-    return data['Ticker'].tolist()
-
-#stocks = getStocks("IWB")
 stocks = ["GOOG"]
 directory = "all"
 
@@ -105,7 +90,7 @@ def process2(stocks, directory = "stocks"):
 
 #for holding in holdings:
 
-#mine.process(getStocks("IWB"), "all")
+#util.process(getStocks("IWB"), "all")
 #process2(["GOOG", "AAPL"], "all")
 
 name_idx = 4
@@ -114,7 +99,7 @@ def writeDropCsv(stocks, directory = "stocks"):
     newest = 1000
     #global percent_list, notinvested
     percent_list = {}
-    json_dict = util_var.getData("json")
+    json_dict = util.getData("json")
     foundmax=None
 
     for astock in stocks:
@@ -128,12 +113,8 @@ def writeDropCsv(stocks, directory = "stocks"):
         if length < newest:
             newest = length
 
-#        print (util_var.getFactors(values))
+    util.writeFile(percent_list, ["Final", "Score(Reg/Dip)", "Discount", "Dip", "Reg", "Dividend", "Factor", "Name"])
 
-    util_var.writeFile(percent_list, ["Final", "Score(Reg/Dip)", "Discount", "Dip", "Reg", "Dividend", "Factor", "Name"])
-
-#writeDropCsv(["GOOG"], "all")
+#writeDropCsv(["GOOG", "C"], "all")
 writeDropCsv(getStocks("IVV"), "all")
-#writeDropCsv(["GOOG", "C"], "all")
-#writeDropCsv(["GOOG", "C"], "all")
 #process2(getStocks("IVV"), "all")

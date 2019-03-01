@@ -7,39 +7,6 @@ import datetime
 import fnmatch
 
 doonce = True
-startdate = "2017-01-09"
-def process(stocks, directory="all"):
-    global doonce
-    for astock in stocks:
-        if not astock:
-            continue
-        path = "{}/{}/{}.csv".format(os.getcwd(), directory, astock)
-        data = None
-        print (path)
-        if os.path.exists(path):
-#            data = pandas.read_csv(path)
-#        else:
-            try:
-                if doonce:
-                    yf.pdr_override() # <== that's all it takes :-)
-                    doonce = False
-                data = pdr.get_data_yahoo([astock], start=startdate, end=datetime.date.today().isoformat())
-            except:
-                print ("problem downloading")
-                continue
-    
-#        if not os.path.exists(path):
-#            print ("could not save {}".format(path))
-#            continue
-    
-        data.drop(columns = ["Adj Close", "Volume"], inplace=True)
-    
-        for idx,row in data.iterrows():
-            for label in ["Open","Close", "High", "Low"]:
-                data.at[idx, label] = round(data.at[idx, label], 4)
-    
-        path = "{}/{}/{}.csv".format(os.getcwd(), directory, astock)
-        data.to_csv(path)
 
 def process2(stocks, directory = "stocks"):
     #global percent_list, notinvested
@@ -119,18 +86,5 @@ def process2(stocks, directory = "stocks"):
 
 
 
-def getFromHoldings():
-    pattern = "*.csv"  
-    holds = []
-    listOfFiles = os.listdir('./holdings')  
-    for entry in listOfFiles:  
-        if fnmatch.fnmatch(entry, pattern):
-            holds.append(entry.split("_")[0])
-    return holds
 
-def getStocks(holding, andEtfs = False):
-    data = pandas.read_csv("{}/holdings/{}_holdings.csv".format(os.getcwd(), holding))
-    if andEtfs:
-        return data['Ticker'].tolist() + getFromHoldings()
-    return data['Ticker'].tolist()
 

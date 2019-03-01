@@ -3,7 +3,7 @@ import fix_yahoo_finance as yf
 import numpy as np
 import pandas
 import os
-import mine
+import util
 
 import numpy as np
 from sklearn.preprocessing import normalize
@@ -31,20 +31,9 @@ def getInputTarget():
 
 #print (norm(data["Open"].tolist()))
 
-def getEtfList():
-    path = "{}/analysis/ETFList.csv".format(os.getcwd())
-    data = pandas.read_csv(path)
-    return data['Symbol'].tolist()
-
-#mine.process(getEtfList())
-#raise SystemError
-def getStocks(holding):
-    data = pandas.read_csv("{}/holdings/{}_holdings.csv".format(os.getcwd(), holding))
-    return data['Ticker'].tolist()
-
 #stocks = []
 #for holding in holdings:
 
-#mine.process(getStocks("IWB"), "all")
-#mine.process2(getStocks("IWB"), "all")
-#percent_list = mine.process2(getEtfList(), "etfs")
+#util.process(getStocks("IWB"), "all")
+#util.process2(getStocks("IWB"), "all")
+#percent_list = util.process2(getEtfList(), "etfs")

@@ -3,7 +3,8 @@ from pandas_datareader import data as pdr
 import fix_yahoo_finance as yf
 import os
 import pandas
-import mine
+import util
+import time
 
 #main()
 yf.pdr_override()
@@ -12,7 +13,7 @@ startdate = date.today() - timedelta(days=4)
 def getDataFromYahoo(astock):
     data = None
     try:
-        data = pdr.get_data_yahoo([astock], start=startdate.isoformat(), end=date.today().isoformat())
+        data = pdr.get_data_yahoo([astock], start=str(startdate.isoformat()), end=str(date.today().isoformat()))
     except Exception as e:
         print (str(e))
         return None
@@ -25,12 +26,21 @@ def getDataFromYahoo(astock):
 
     return data
 
-def updateCsv(astock):
-    path = "{}/all/{}.csv".format(os.getcwd(), astock)
+pulled = False
+def updateCsv(astock, directory = "all"):
+    global pulled
+    path = "{}/{}/{}.csv".format(os.getcwd(), directory, astock)
     loaded = None
+
+#    last = str(time.ctime(os.path.getmtime(path)))
+#    if "Feb 27" in last:
+#        return
+
     if os.path.exists(path):
         loaded = pandas.read_csv(path)
     else:
+        pulled = True
+        util.pullNewCsvFromYahoo([astock], directory)
         return
 
     lastdate = loaded.tail(1)["Date"].item()
@@ -52,9 +62,11 @@ def updateCsv(astock):
             
         if cdate == lastdate:
             appending = True
-import stock_analyze
-stocks = stock_analyze.getStocks("IVV")
-#stocks = ["C"]
+
+stocks = util.getStocks("IJH")
 for astock in stocks:
-    updateCsv(astock)
+    updateCsv(astock, directory = "ijh")
+
+if pulled:
+    util.saveJsonData(stocks, "ijh")
 
