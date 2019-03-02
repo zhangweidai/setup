@@ -95,10 +95,14 @@ def getScore(items):
 #print (a/b)
 
 def getData(filename, asList = False):
-    path = "{}/analysis/{}.csv".format(os.getcwd(), filename)
+    path = filename
+    if not os.path.exists(filename):
+        path = "{}/analysis/{}.csv".format(os.getcwd(), filename)
+
     if not os.path.exists(path):
         print ("could not find" + path)
         return None
+
     trend = pandas.read_csv(path)
     whatdict = trend.to_dict('split')
     ret = dict()
@@ -118,7 +122,7 @@ def writeFile(dictionary, cols, directory="all", name = "training"):
 #    if "new" in directory:
 #        directory = "averaged"
 
-    path = "{}/{}/{}.csv".format(os.getcwd(), directory, name.zfill(3))
+    path = "{}/{}/{}.csv".format(os.getcwd(), directory, name)
     df.to_csv(path)
     print ("File Written " + path)
 

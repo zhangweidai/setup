@@ -31,12 +31,12 @@ target = target.reshape((1, 9, 11))
 # Build Model
 model = Sequential()  
 model.add(LSTM(11, input_shape=(9, 11), unroll=True, return_sequences=True))
-model.add(LSTM(1024, return_sequences=True))
 model.add(Dense(11))
 model.compile(loss='mean_absolute_error', optimizer='adam')
-model.fit(data, target, nb_epoch=2000, batch_size=1, verbose=2)
+model.fit(data, target, nb_epoch=200, batch_size=1, verbose=2)
 model.summary()
 
 predictions = model.predict(data)
 print (predictions)
+
 

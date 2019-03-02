@@ -4,7 +4,7 @@ from __future__ import absolute_import, division, print_function
 
 import tensorflow as tf
 print (tf.__version__)
-tf.enable_eager_execution()
+#tf.enable_eager_execution()
 
 import numpy as np
 import os
@@ -31,6 +31,8 @@ class Trainer():
         vocab = sorted(set(text))
 
         self.char2idx = {u:i for i, u in enumerate(vocab)}
+        print ("self.char2idx")
+        print (self.char2idx)
         self.idx2char = np.array(vocab)
         text_as_int = np.array([self.char2idx[c] for c in text])
 
@@ -47,6 +49,8 @@ class Trainer():
 
         BUFFER_SIZE = 10000
         dataset = dataset.shuffle(BUFFER_SIZE).batch(BATCH_SIZE, drop_remainder=True)
+        print (dataset)
+        return
 
 #        rnn_units = 256
         rnn_units = 1024
@@ -67,7 +71,7 @@ class Trainer():
         checkpoint_callback=tf.keras.callbacks.ModelCheckpoint(
                 filepath=checkpoint_prefix, save_weights_only=True)
         
-        EPOCHS=13
+        EPOCHS=2
         
         ## Generate Text
         history = self.model.fit(dataset.repeat(), epochs=EPOCHS, 
@@ -140,9 +144,10 @@ class Trainer():
 
 
 path_to_file = tf.keras.utils.get_file('shakespeare.txt', 'https://storage.googleapis.com/download.tensorflow.org/data/shakespeare.txt')
+print (path_to_file)
 trainer = Trainer()
 trainer.train(path_to_file)
-print(trainer.generate_text(start_string=u"ROMEO: "))
+#print(trainer.generate_text(start_string=u"ROMEO: "))
 
 #tf.keras.models.save_model(
 #    model,

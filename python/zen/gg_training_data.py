@@ -172,14 +172,12 @@ def writeDropCsv(stocks, directory = "all"):
 
 def generateTrainingData(stocks):
     dates = util.getNumberOfDates()
-    print (dates)
     allvalues = dict()
     for astock in stocks:
         path = "{}/../new/{}.csv".format(os.getcwd(), astock)
         allvalues[astock] = pandas.read_csv(path)['Avg'].tolist()
 
     for start in range(dates-149):
-        print (start)
         end = start + 150
         percent_list = dict()
         for astock in stocks:
@@ -189,15 +187,12 @@ def generateTrainingData(stocks):
             except:
                 print (astock)
                 print (values)
-                raise SystemError
-#        util.writeFile(percent_list, ["Final", "Dip"], "report", name=str(start))
-#        print ("{} and {}".format(start, end))
-#        for astock in stocks:
-#            values = df[astock]['Avg'].tolist()
-#            percent_list[astock] = getMinimizedVector(values)
-
-
-#writeDropCsv(["GOOG"], "all")
-#writeDropCsv(util.getStocks("IJH"), "ijh")
-#writeMinimizedReport(util.getStocks("IVV", andEtfs = True))
-generateTrainingData(util.getStocks("IVV", andEtfs = True))
+                continue
+        util.writeFile(percent_list, ["Final", "Dip"], "report", name=str(start).zfill(3))
+#generateTrainingData(util.getStocks("IVV", andEtfs = True))
+def CsvToTraining(stocks):
+    dates = util.getNumberOfDates()
+    for start in range(dates-149):
+        path = "{}/report/{}.csv".format(os.getcwd(), str(start).zfill(3))
+        allvalues[astock] = pandas.read_csv(path)['Avg'].tolist()
+CsvToTraining(util.getStocks("IVV", andEtfs = True, dev=True))

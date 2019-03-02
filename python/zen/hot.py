@@ -35,7 +35,6 @@ def first(elem):
 def second(elem):
     return elem[2]
 
-#stocks = [["goog",321, 1], ["spy",100,132], ["voo",30,3], ["ivv",1,0.2]]
 # True is Descending
 def rankEm(stocks, method = (True, False)):
     stocks.sort(key=first, reverse=method[0])
@@ -46,22 +45,15 @@ def rankEm(stocks, method = (True, False)):
         stocks.sort(key=second, reverse=method[1])
         for i, astock in enumerate(stocks):
             stocks[i][2] = i
-    print (stocks)
+    return stocks
 
-import util
-trend_dict = util.getData("Final_all", asList = True)
-#mylist = []
-#for key, value in trend_dict.iteritems():
-#    temp = [key,value[1]]
-#    mylist.append(temp)
-rankEm(trend_dict, method = (True, None))
-#    if not method[0]:
-#        stocks.sort(key=second, reverse = True)
-#    if not method[0]:
-#        stocks.sort(key=max1)
-
+#stocks = [["goog",321, 1], ["spy",100,132], ["voo",30,3], ["ivv",1,0.2]]
+#ranked = rankEm(stocks, method = (True, False))
 #print (encodeRanked(ranked))
 
-#print (encoder.categories_)
-#print (encoder.transform(ranking).toarray())
-
+#import util
+#import os
+#path = "{}/analysis/minimal_report.csv".format(os.getcwd())
+#trend_dict = util.getData(path, asList = True)
+#ranked = rankEm(trend_dict, method = (True, False))
+#print (encodeRanked(ranked))

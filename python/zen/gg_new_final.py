@@ -176,8 +176,8 @@ def writeMinimizedReport(stocks, directory = "report"):
         df = pandas.read_csv(path)
         values = df['Avg'].tolist()
         percent_list[astock] = getMinimizedVector(values)
-    util.writeFile(percent_list, ["Final", "Dip"], directory)
+    util.writeFile(percent_list, ["Final", "Dip"], directory, name="minimal_report")
 
-#writeDropCsv(["GOOG"], "all")
-writeDropCsv(util.getStocks("IVV", andEtfs = True), directory = "analysis")
+#writeDropCsv(util.getStocks("IVV", andEtfs = True), directory = "analysis")
+writeMinimizedReport(util.getStocks("IVV", andEtfs = True), directory = "analysis")
 #writeMinimizedReport(util.getStocks("IVV", andEtfs = True))

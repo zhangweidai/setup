@@ -1,8 +1,12 @@
 echo "$Profile"
 "$Profile"
+
 function back {set-location ..}
 New-Alias b back
 New-Alias hi history
+
+function pyt {python $args}
+New-Alias py pyt
 
 
 function echopath_impl {$env:path.split(";")}
