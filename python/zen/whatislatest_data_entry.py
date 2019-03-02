@@ -5,7 +5,7 @@ import datetime
 import sys
 
 lookup = "GOOG"
-if len(sys.argv) == 1:
+if len(sys.argv) == 2:
     lookup = sys.argv[1]
 
 yf.pdr_override() # <== that's all it takes :-)

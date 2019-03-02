@@ -109,7 +109,7 @@ def saveJsonData(stocks):
     return data
 
 stocks = util.getStocks("IVV")
-adata = getAllData(stocks)
+adata = saveJsonData(stocks)
 import pandas
 df = pandas.DataFrame.from_dict(adata, orient = 'index', columns=["Dividend", "Name"])
 path = "{}/analysis/gg_json.csv".format(os.getcwd())

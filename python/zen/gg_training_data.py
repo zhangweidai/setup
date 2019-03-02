@@ -104,6 +104,18 @@ def process2(stocks, directory = "stocks"):
 #util.process(getStocks("IWB"), "all")
 #process2(["GOOG", "AAPL"], "all")
 
+def getMinimizedVector(values):
+    try:
+        factor = util.getFactors(values)
+    except:
+        factor = 1
+
+    score, dipScore = util.getScore(values)
+    discount = util.getDiscount(values)
+    combined = round(score/dipScore,4)
+    final = round((combined / (discount*discount)) * factor)
+    dipScore = round(dipScore,3)
+    return [final, dipScore]
 
 
 def getVector(values, name, dividend):
@@ -131,9 +143,11 @@ def writeDropCsv(stocks, directory = "all"):
 
     #global percent_list, notinvested
     percent_list = {}
-    json_dict = util.getData("gg_json")
+    json_dict = util.getData("json_{}".format(directory))
     if json_dict is None:
         return
+
+#    numberOfDates = util.getNumberOfDates()
 
     for astock in stocks:
         path = "{}/../new/{}.csv".format(os.getcwd(), astock)
@@ -154,30 +168,36 @@ def writeDropCsv(stocks, directory = "all"):
         values = df['Avg'].tolist()
         percent_list[astock] = getVector(values, dividend, name)
 
-    util.writeFile(percent_list, ["Final", "Score(Reg/Dip)", "Discount", "Dip", "Reg", "Name", "Factor", "Length", "Dividend"], directory, name = "regular_report")
+    util.writeFile(percent_list, ["Final", "Score(Reg/Dip)", "Discount", "Dip", "Reg", "Dividend", "Factor", "Length", "Name"], directory)
 
-def getMinimizedVector(values):
-    try:
-        factor = util.getFactors(values)
-    except:
-        factor = 1
-
-    score, dipScore = util.getScore(values)
-    discount = util.getDiscount(values)
-    combined = round(score/dipScore,4)
-    final = round((combined / (discount*discount)) * factor)
-    dipScore = round(dipScore,3)
-    return [final, dipScore]
-
-def writeMinimizedReport(stocks, directory = "report"):
-    percent_list = {}
+def generateTrainingData(stocks):
+    dates = util.getNumberOfDates()
+    print (dates)
+    allvalues = dict()
     for astock in stocks:
         path = "{}/../new/{}.csv".format(os.getcwd(), astock)
-        df = pandas.read_csv(path)
-        values = df['Avg'].tolist()
-        percent_list[astock] = getMinimizedVector(values)
-    util.writeFile(percent_list, ["Final", "Dip"], directory)
+        allvalues[astock] = pandas.read_csv(path)['Avg'].tolist()
+
+    for start in range(dates-149):
+        print (start)
+        end = start + 150
+        percent_list = dict()
+        for astock in stocks:
+            values = allvalues[astock][start:end]
+            try:
+                percent_list[astock] = getMinimizedVector(values)
+            except:
+                print (astock)
+                print (values)
+                raise SystemError
+#        util.writeFile(percent_list, ["Final", "Dip"], "report", name=str(start))
+#        print ("{} and {}".format(start, end))
+#        for astock in stocks:
+#            values = df[astock]['Avg'].tolist()
+#            percent_list[astock] = getMinimizedVector(values)
+
 
 #writeDropCsv(["GOOG"], "all")
-writeDropCsv(util.getStocks("IVV", andEtfs = True), directory = "analysis")
+#writeDropCsv(util.getStocks("IJH"), "ijh")
 #writeMinimizedReport(util.getStocks("IVV", andEtfs = True))
+generateTrainingData(util.getStocks("IVV", andEtfs = True))

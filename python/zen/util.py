@@ -8,7 +8,14 @@ import datetime
 import fix_yahoo_finance as yf
 from pandas_datareader import data as pdr
 
+def getTestItems():
+    return [807.0,811.84,803.19,807.6025,807.0,811.84,803.19,808.38,807.6025, 807.0,811.84,803.19,808.38,807.6025,807.0,811.84,803.19,807.6025]
+
 def regress(items):
+    leng = len(items)
+    if leng == 0:
+        print ("why is this empty")
+        return 0
     i = 0
     x = []
     for b in items:
@@ -16,7 +23,7 @@ def regress(items):
         x.append(i)
     x = np.asarray(x)
     y = np.asarray(items)
-    sub = sum(items)/len(items)
+    sub = sum(items)/leng
 
     slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
     rs = r_value**2
@@ -35,22 +42,42 @@ def averageRegress(items):
     f2 = regress(second) 
     f3 = regress(three) * 1.618033
     return (f1 + f2 + f3)
+#print (averageRegress(getTestItems()))
+
+#def get3DayLow(items, idx):
+#    size = len(items)
+#    if idx + 3 >= size:
+#        idx = size - 3
+#    low = items[idx]
+#    for i in range(1,3):
+#        print (i)
+#        if items[idx+i] < low:
+#            low = items[idx+i]
+#    return low
+#print (get3DayLow(getTestItems(), 20))
 
 from collections import deque
-def dipsCounted(items):
-    SIZE = 6
-    dipping = 1
+def dipScore(items):
+    SIZE = 7
     currentStack = deque([])
-    for price in items:
+    low = deque([])
+    dips = []
+    for i,price in enumerate(items):
         currentStack.append(price)
+
         if len(currentStack) == SIZE:
-            start = currentStack[0] + currentStack[1]
-            end = currentStack[-1] + currentStack[-2]
+#            print (currentStack)
+            start = (max(list(currentStack)[:3]))
+            end = (min(list(currentStack)[-3:]))
             tdip = (end/start)
             if tdip < 1:
-                dipping += (1-tdip)
+                dip = (1-tdip)
+                dips.append(dip)
             currentStack.popleft()
-    return dipping
+#    print (statistics.stdev(dips))
+#    print (sum(dips)/len(dips))
+    return round(sum(dips),6)
+#print (dipScore(getTestItems()))
 
 import math
 def getFactors(items):
@@ -62,25 +89,38 @@ def getFactors(items):
 
 def getScore(items):
     num =  averageRegress(items)
-    bottom = dipsCounted(items)
+    bottom = dipScore(items)
     return (num,bottom)
+#a,b = getScore(getTestItems())
+#print (a/b)
 
-def getData(filename):
-    path = "{}/analysis/gg_{}.csv".format(os.getcwd(), filename)
+def getData(filename, asList = False):
+    path = "{}/analysis/{}.csv".format(os.getcwd(), filename)
     if not os.path.exists(path):
         print ("could not find" + path)
         return None
     trend = pandas.read_csv(path)
     whatdict = trend.to_dict('split')
     ret = dict()
-    for company_data in whatdict['data']:
-        ret[company_data[0]] = company_data[1:]
+    if not asList:
+        for company_data in whatdict['data']:
+            ret[company_data[0]] = company_data[1:]
+    else:
+        ret = list()
+        for company_data in whatdict['data']:
+            ret.append(company_data)
+
     return ret
 
-def writeFile(dictionary, cols, directory="all"):
+def writeFile(dictionary, cols, directory="all", name = "training"):
     df = pandas.DataFrame.from_dict(dictionary, orient = 'index', columns=cols)
-    path = "{}/analysis/gg_{}_{}.csv".format(os.getcwd(), cols[0], directory)
+
+#    if "new" in directory:
+#        directory = "averaged"
+
+    path = "{}/{}/{}.csv".format(os.getcwd(), directory, name.zfill(3))
     df.to_csv(path)
+    print ("File Written " + path)
 
 
 def getDiscount(items):
@@ -104,7 +144,10 @@ def getFromHoldings():
             holds.append(entry.split("_")[0])
     return holds
 
-def getStocks(holding, andEtfs = False, difference = False):
+def getStocks(holding, andEtfs = False, difference = False, dev=False):
+    if dev:
+        return ["GOOG", "IVV"]
+
     path = "{}/holdings/{}_holdings.csv".format(os.getcwd(), holding)
     if not holding == "IVV":
         listOfFiles = os.listdir('./holdings')  
@@ -138,9 +181,12 @@ def pullNewCsvFromYahoo(stocks, directory="all"):
         try:
             data = pdr.get_data_yahoo([astock], start=startdate, end=str(datetime.date.today().isoformat()))
         except Exception as e:
-            print ("Problem  :" + astock)
-            print ('Failed: '+ str(e))
-            continue
+            try:
+                data = pdr.get_data_yahoo([astock], start=startdate, end=str(datetime.date.today().isoformat()))
+            except Exception as e:
+                print ("Problem  :" + astock)
+                print ('Failed: '+ str(e))
+                continue
 
         try:
             data.drop(columns = ["Adj Close", "Volume"], inplace=True)
@@ -196,3 +242,22 @@ def saveJsonData(stocks, directory="all"):
     path = "{}/analysis/gg_json_{}.csv".format(os.getcwd(), directory)
     df.to_csv(path)
 
+def getNumberOfDates():
+    path = "{}/../new/GOOG.csv".format(os.getcwd())
+    num_lines = sum(1 for line in open(path))
+    return num_lines-1
+
+#def writeTrainingData1(items, size = 7):
+#    currentStack = deque([])
+#    low = deque([])
+#    dips = []
+#    for i,price in enumerate(items):
+#        currentStack.append(price)
+#
+#        if len(currentStack) == size:
+##            print (currentStack)
+#            list(currentStack)
+#
+#            currentStack.popleft()
+
+#writeTrainingData1(getTestItems())

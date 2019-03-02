@@ -20,7 +20,7 @@ def rankList(stocks):
         stocks[i] = [stocks[i], i]
     return stocks
 
-ranked = rankList(stocks)
+#ranked = rankList(stocks)
 
 encoder = None
 def encodeRanked(ranking):
@@ -29,7 +29,38 @@ def encodeRanked(ranking):
     encoder.fit(ranking)
     return encoder.transform(ranking).toarray()
 
-print (encodeRanked(ranked))
+def first(elem):
+    return elem[1]
+
+def second(elem):
+    return elem[2]
+
+#stocks = [["goog",321, 1], ["spy",100,132], ["voo",30,3], ["ivv",1,0.2]]
+# True is Descending
+def rankEm(stocks, method = (True, False)):
+    stocks.sort(key=first, reverse=method[0])
+    for i, astock in enumerate(stocks):
+        stocks[i][1] = i
+
+    if not method[1] == None:
+        stocks.sort(key=second, reverse=method[1])
+        for i, astock in enumerate(stocks):
+            stocks[i][2] = i
+    print (stocks)
+
+import util
+trend_dict = util.getData("Final_all", asList = True)
+#mylist = []
+#for key, value in trend_dict.iteritems():
+#    temp = [key,value[1]]
+#    mylist.append(temp)
+rankEm(trend_dict, method = (True, None))
+#    if not method[0]:
+#        stocks.sort(key=second, reverse = True)
+#    if not method[0]:
+#        stocks.sort(key=max1)
+
+#print (encodeRanked(ranked))
 
 #print (encoder.categories_)
 #print (encoder.transform(ranking).toarray())

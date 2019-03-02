@@ -15,8 +15,11 @@ def getDataFromYahoo(astock):
     try:
         data = pdr.get_data_yahoo([astock], start=str(startdate.isoformat()), end=str(date.today().isoformat()))
     except Exception as e:
-        print (str(e))
-        return None
+        try:
+            data = pdr.get_data_yahoo([astock], start=str(startdate.isoformat()), end=str(date.today().isoformat()))
+        except Exception as e:
+            print (str(e))
+            return None
     
     data.drop(columns = ["Adj Close", "Volume"], inplace=True)
     
@@ -27,7 +30,7 @@ def getDataFromYahoo(astock):
     return data
 
 pulled = False
-def updateCsv(astock, directory = "all"):
+def updateCsv(astock, directory = "../new"):
     global pulled
     path = "{}/{}/{}.csv".format(os.getcwd(), directory, astock)
     loaded = None
@@ -36,13 +39,12 @@ def updateCsv(astock, directory = "all"):
 #    if "Feb 27" in last:
 #        return
 
-    if os.path.exists(path):
-        loaded = pandas.read_csv(path)
-    else:
-        pulled = True
+    if not os.path.exists(path):
         util.pullNewCsvFromYahoo([astock], directory)
+        pulled = True
         return
 
+    loaded = pandas.read_csv(path)
     lastdate = loaded.tail(1)["Date"].item()
     data = getDataFromYahoo(astock)
     if data is None:
@@ -58,15 +60,18 @@ def updateCsv(astock, directory = "all"):
                 high = data.at[idx, "High"]
                 low = data.at[idx, "Low"]
                 closed = data.at[idx, "Close"]
-                f.write("{},{},{},{},{}\n".format(cdate, opend, high, low, closed))
+                avg = round((float(opend) + float(high) + 
+                         float(low) + float(closed))/4, 4)
+                f.write("{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, avg))
             
         if cdate == lastdate:
             appending = True
 
-stocks = util.getStocks("IJH")
+stocks = util.getStocks("IVV", andEtfs=True)
 for astock in stocks:
-    updateCsv(astock, directory = "ijh")
+    updateCsv(astock)
+#    updateCsv(astock, directory = "ijh")
 
-if pulled:
+#if pulled:
     util.saveJsonData(stocks, "ijh")
 
