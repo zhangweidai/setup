@@ -6,10 +6,27 @@ import pandas
 import fnmatch
 import datetime
 import fix_yahoo_finance as yf
+import statistics
 from pandas_datareader import data as pdr
 
 def getTestItems():
-    return [807.0,811.84,803.19,807.6025,807.0,811.84,803.19,808.38,807.6025, 807.0,811.84,803.19,808.38,807.6025,807.0,811.84,803.19,807.6025]
+    return [807.0,811.84,803.19,807.6025,807.0,811.84,803.19,808.38,807.6025, 807.0,811.84,803.19,808.38,807.6025,807.0,811.84,803.19,807.6025,807.0,811.84,803.19,807.6025,807.0,811.84,803.19,808.38,807.6025, 807.0,811.84,803.19,808.38,807.6025,807.0,811.84,797.19]
+
+def getRangedDist(items):
+    if len(items) < 18:
+        return None
+    newlist = items[-18:]
+    maxv = max(newlist)
+    minv = min(newlist)
+    lastitems = items[-1]
+    vari = np.var([newlist[0], lastitems, minv, maxv])
+    if lastitems == maxv:
+        return "{}".format(round(maxv/minv,3)), vari
+    else:
+        first = str(round((lastitems/minv)-1,3))
+        second = str(round((maxv/lastitems)-1,3))
+        return "{}/{}".format(first, second), vari
+#print(getRangedDist(getTestItems()))
 
 def regress(items):
     leng = len(items)
@@ -21,17 +38,20 @@ def regress(items):
     for b in items:
         i+=1
         x.append(i)
+
     x = np.asarray(x)
     y = np.asarray(items)
     sub = sum(items)/leng
 
     slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
-    rs = r_value**2
+    rs = (r_value**2)/2
     normalized_err = (std_err/sub)
     if normalized_err == 0:
         normalized_err = 0.0001
-    score = rs/normalized_err
+    score = rs/(normalized_err)
     return score
+
+
 
 def averageRegress(items):
     count = int(len(items)/3)
@@ -71,8 +91,7 @@ def dipScore(items):
             end = (min(list(currentStack)[-3:]))
             tdip = (end/start)
             if tdip < 1:
-                dip = (1-tdip)
-                dips.append(dip)
+                dips.append(1-tdip)
             currentStack.popleft()
 #    print (statistics.stdev(dips))
 #    print (sum(dips)/len(dips))
@@ -87,6 +106,7 @@ def getFactors(items):
 
     return round((((final/two)+1)/7)+(((final/one)+1)/2),5)
 
+
 def getScore(items):
     num =  averageRegress(items)
     bottom = dipScore(items)
@@ -97,7 +117,7 @@ def getScore(items):
 def getData(filename, asList = False):
     path = filename
     if not os.path.exists(filename):
-        path = "{}/analysis/{}.csv".format(os.getcwd(), filename)
+        path = getPath("analysis/{}.csv".format(filename))
 
     if not os.path.exists(path):
         print ("could not find" + path)
@@ -118,26 +138,40 @@ def getData(filename, asList = False):
 
 def writeFile(dictionary, cols, directory="all", name = "training"):
     df = pandas.DataFrame.from_dict(dictionary, orient = 'index', columns=cols)
+    path = getPath("{}/{}.csv".format(directory, name))
+    try:
+        df.to_csv(path)
+    except:
+        os.makedirs(os.path.dirname(path))
+        try:
+            df.to_csv(path)
+        except Exception as e:
+            print ('FailedWrite: '+ str(e))
+            return
 
-#    if "new" in directory:
-#        directory = "averaged"
-
-    path = "{}/{}/{}.csv".format(os.getcwd(), directory, name)
-    df.to_csv(path)
     print ("File Written " + path)
 
 
 def getDiscount(items):
-    idx = -1 * (int(len(items)/4))
-    tvec = items[idx:]
-    average = sum(tvec)/len(tvec)
-    num = (items[-1] + items[-2])/2
-    return round(num/average,4)
+    newlist = items[-5:]
+    num = (items[-1] + items[-2] + items[-3])/3
+    return round(num/newlist[0],4)
+#print (getDiscount(getTestItems()))
 
 def getEtfList():
-    path = "{}/analysis/ETFList.csv".format(os.getcwd())
+    path = getPath("analysis/ETFList.csv")
     data = pandas.read_csv(path)
     return data['Symbol'].tolist()
+
+def getTrainingTemps():
+    pattern = "*.csv"  
+    holds = []
+    listOfFiles = os.listdir('./training_data')  
+    for entry in listOfFiles:  
+        if fnmatch.fnmatch(entry, pattern):
+            holds.append(entry)
+    return holds
+#print (getTrainingTemps())
 
 def getFromHoldings():
     pattern = "*.csv"  
@@ -152,12 +186,12 @@ def getStocks(holding, andEtfs = False, difference = False, dev=False):
     if dev:
         return ["GOOG", "IVV"]
 
-    path = "{}/holdings/{}_holdings.csv".format(os.getcwd(), holding)
+    path = getPath("holdings/{}_holdings.csv".format(holding))
     if not holding == "IVV":
         listOfFiles = os.listdir('./holdings')  
         for entry in listOfFiles:  
             if holding in entry:
-                path = "{}/holdings/{}".format(os.getcwd(), entry)
+                path = getPath("holdings/{}".format(entry))
                 break
 
     data = pandas.read_csv(path)
@@ -176,7 +210,7 @@ def pullNewCsvFromYahoo(stocks, directory="all"):
     for astock in stocks:
         if not astock:
             continue
-        path = "{}/{}/{}.csv".format(os.getcwd(), directory, astock)
+        path = getPath("{}/{}.csv".format(directory, astock))
         data = None
         print (path)
 
@@ -200,7 +234,7 @@ def pullNewCsvFromYahoo(stocks, directory="all"):
             for label in ["Open","Close", "High", "Low"]:
                 data.at[idx, label] = round(data.at[idx, label], 4)
     
-        path = "{}/{}/{}.csv".format(os.getcwd(), directory, astock)
+        path = getPath("{}/{}.csv".format(directory, astock))
         data.to_csv(path)
 
 import urllib.request, json
@@ -241,17 +275,22 @@ def saveJsonData(stocks, directory="all"):
 
     import pandas
     df = pandas.DataFrame.from_dict(data, orient = 'index', columns=["Dividend", "Name"])
-    path = "{}/analysis/gg_json_{}.csv".format(os.getcwd(), directory)
+    path = getPath("analysis/json_{}.csv".format(directory))
     df.to_csv(path)
 
 def getNumberOfDates():
-    path = "{}/../new/GOOG.csv".format(os.getcwd())
+    path = getPath("csv/GOOG.csv")
     num_lines = sum(1 for line in open(path))
     return num_lines-1
 
 tday = datetime.date.today().isoformat()
 startdate = "2017-01-01"
 def saveProcessedFromYahoo(astock):
+
+    path = getPath("csv/{}.csv".format(astock), True)
+    if os.path.exists(path):
+        return
+
     df = None
     try:
         df = pdr.get_data_yahoo([astock], start=startdate, end=str(tday))
@@ -260,6 +299,10 @@ def saveProcessedFromYahoo(astock):
             df = pdr.get_data_yahoo([astock], start=startdate, end=str(tday))
         except Exception as e:
             print (str(e))
+
+    if df is None:
+        print ("problem with {}".format(astock))
+        return
 
     avg = list()
     df.drop(columns = ["Adj Close"], inplace=True)
@@ -277,7 +320,7 @@ def saveProcessedFromYahoo(astock):
     path = "/mnt/c/Users/Peter/Documents/setup/python/new/{}.csv".format(astock)
     df.to_csv(path)
 
-saveProcessedFromYahoo("IVV")
+#saveProcessedFromYahoo("IVV")
 
 def getMinimizedVector(values):
     try:
@@ -295,23 +338,50 @@ def getMinimizedVector(values):
 def writeMinimizedReport(stocks, directory = "report"):
     percent_list = {}
     for astock in stocks:
-        path = "{}/../new/{}.csv".format(os.getcwd(), astock)
+        path = getPath("csv_mini/{}.csv".format(astock))
         df = pandas.read_csv(path)
         values = df['Avg'].tolist()
         percent_list[astock] = getMinimizedVector(values)
     writeFile(percent_list, ["Final", "Dip"], directory, name="minimal_report")
 
-#def writeTrainingData1(items, size = 7):
-#    currentStack = deque([])
-#    low = deque([])
-#    dips = []
-#    for i,price in enumerate(items):
-#        currentStack.append(price)
-#
-#        if len(currentStack) == size:
-##            print (currentStack)
-#            list(currentStack)
-#
-#            currentStack.popleft()
+def getPointsAbove(items):
+    lastpart = int(len(items)/5)*4
+    last = items[-1]
+    ret = []
+    points = 0
+    bonus = 1
+    below = 0
+    for i,item in enumerate(items):
+        s = last/item
+        b = baseline[i]
+        if s > b:
+            if i > lastpart:
+                bonus = 1.07
+            points += (s-b) * bonus
+        elif s < b:
+            below += b-s
+    return round(points,3), round(below,2)
 
-#writeTrainingData1(getTestItems())
+baseline = []
+def setBaselineScores():
+    global baseline
+    path = getPath("csv/USMV.csv")
+    df = pandas.read_csv(path)
+    values = df['Avg'].tolist()
+    last = values[-1]
+    ret = []
+    for b in values:
+        ret.append(round(last/b,3))
+    baseline = ret
+#print (setBaselineScores())
+
+def getPath(path):
+    path = "{}/../zen_dump/{}".format(os.getcwd(), path)
+
+    if not os.path.exists(path):
+        os.makedirs(os.path.dirname(path))
+
+    return path
+getPath("delme/file.csv")        
+
+

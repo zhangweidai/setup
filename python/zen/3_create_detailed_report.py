@@ -2,8 +2,10 @@ from pandas_datareader import data as pdr
 import fix_yahoo_finance as yf
 import numpy as np
 import pandas
+import math
 import os
 import util 
+import scipy 
 
 #print (norm(data["Open"].tolist()))
 
@@ -19,7 +21,7 @@ import util
 stocks = ["GOOG"]
 directory = "all"
 
-def getVector(values, name, dividend):
+def getVector(values, dividend, name, astock):
     length = len(values)
 
     try:
@@ -29,15 +31,28 @@ def getVector(values, name, dividend):
 
     score, dipScore = util.getScore(values)
     discount = util.getDiscount(values)
+    distrange, vari = util.getRangedDist(values)
+
     combined = round(score/dipScore,4)
     final = round((combined / (discount*discount)) * factor, 4)
 
     dipScore = round(dipScore,3)
     score = round(score,3)
 
-    return [final, combined, discount, dipScore, score, dividend, factor, length, name]
+    pointsabove = 0
+    pointsbelow = 0
+    if not astock == "USMV":
+        pointsabove, pointsbelow = util.getPointsAbove(values)
 
-def writeDropCsv(stocks, directory = "all"):
+    fd = round(factor/discount, 3)
+    new = round((((pointsabove-(pointsbelow/3.1415))*(1+(dividend/2))* fd)/dipScore) + math.sqrt(score), 3)
+
+    return [final, combined, discount, dipScore, score, name, factor, length, dividend, 
+    distrange, vari, fd, pointsabove, pointsbelow, new]
+
+def writeDropCsv(stocks, directory):
+    util.setBaselineScores()
+
     name_idx = 1
     dividend_idx = 0
     etfs = util.getFromHoldings()
@@ -65,10 +80,10 @@ def writeDropCsv(stocks, directory = "all"):
 
         df = pandas.read_csv(path)
         values = df['Avg'].tolist()
-        percent_list[astock] = getVector(values, dividend, name)
+        percent_list[astock] = getVector(values, dividend, name, astock)
 
-    util.writeFile(percent_list, ["Final", "Score(Reg/Dip)", "Discount", "Dip", "Reg", "Name", "Factor", "Length", "Dividend"], directory, name = "regular_report")
+    util.writeFile(percent_list, ["Final", "Score(Reg/Dip)", "Discount", "Dip", "Reg", "Name", "Factor", "Length", "Dividend", "DistRange", "Variance", "F/D", "PointsAbove", "PointsBelow", "NewScore"], directory, name = "regular_report")
 
-writeDropCsv(util.getStocks("IVV", dev = True, andEtfs = True), directory = "analysis")
+writeDropCsv(util.getStocks("IVV", andEtfs = True), directory = "analysis")
 #writeMinimizedReport(util.getStocks("IVV", andEtfs = True), directory = "analysis")
 #writeMinimizedReport(util.getStocks("IVV", andEtfs = True))

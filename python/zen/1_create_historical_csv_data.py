@@ -35,9 +35,9 @@ import os, fnmatch
 
 #import util
 #util.process(["LIN"])
-stocks = util.getStocks("IVV", dev = True))
+stocks = util.getStocks("IVV", andEtfs=True)
 for astock in stocks:
-    saveProcessedFromYahoo(astock):
+    util.saveProcessedFromYahoo(astock)
 
 #stocks = []
 #for holding in holdings:
