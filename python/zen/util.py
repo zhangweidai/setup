@@ -173,15 +173,13 @@ doonce = True
 yf.pdr_override() # <== that's all it takes :-)
 def pullNewCsvFromYahoo(stocks, directory="all"):
     startdate = "2017-01-09"
-    global doonce
     for astock in stocks:
         if not astock:
             continue
         path = "{}/{}/{}.csv".format(os.getcwd(), directory, astock)
         data = None
         print (path)
-#        if doonce:
-#            doonce = False
+
         try:
             data = pdr.get_data_yahoo([astock], start=startdate, end=str(datetime.date.today().isoformat()))
         except Exception as e:
@@ -193,7 +191,7 @@ def pullNewCsvFromYahoo(stocks, directory="all"):
                 continue
 
         try:
-            data.drop(columns = ["Adj Close", "Volume"], inplace=True)
+            data.drop(columns = ["Adj Close"], inplace=True)
         except:
             print ("Problem with {}".format(astock))
             continue
@@ -250,6 +248,58 @@ def getNumberOfDates():
     path = "{}/../new/GOOG.csv".format(os.getcwd())
     num_lines = sum(1 for line in open(path))
     return num_lines-1
+
+tday = datetime.date.today().isoformat()
+startdate = "2017-01-01"
+def saveProcessedFromYahoo(astock):
+    df = None
+    try:
+        df = pdr.get_data_yahoo([astock], start=startdate, end=str(tday))
+    except:
+        try:
+            df = pdr.get_data_yahoo([astock], start=startdate, end=str(tday))
+        except Exception as e:
+            print (str(e))
+
+    avg = list()
+    df.drop(columns = ["Adj Close"], inplace=True)
+    for idx,row in df.iterrows():
+        sub = 0
+        for label in ["Open", "Close", "High", "Low"]:
+            temp = round(df.at[idx, label], 4)
+            sub += temp
+            df.at[idx, label] = temp
+        avg.append(round(sub/4, 4))
+
+    idx = 4
+    df.insert(loc=idx, column='Avg', value=avg)
+
+    path = "/mnt/c/Users/Peter/Documents/setup/python/new/{}.csv".format(astock)
+    df.to_csv(path)
+
+saveProcessedFromYahoo("IVV")
+
+def getMinimizedVector(values):
+    try:
+        factor = getFactors(values)
+    except:
+        factor = 1
+
+    score, dipScore = getScore(values)
+    discount = getDiscount(values)
+    combined = round(score/dipScore,4)
+    final = round((combined / (discount*discount)) * factor)
+    dipScore = round(dipScore,3)
+    return [final, dipScore]
+
+def writeMinimizedReport(stocks, directory = "report"):
+    percent_list = {}
+    for astock in stocks:
+        path = "{}/../new/{}.csv".format(os.getcwd(), astock)
+        df = pandas.read_csv(path)
+        values = df['Avg'].tolist()
+        percent_list[astock] = getMinimizedVector(values)
+    writeFile(percent_list, ["Final", "Dip"], directory, name="minimal_report")
 
 #def writeTrainingData1(items, size = 7):
 #    currentStack = deque([])

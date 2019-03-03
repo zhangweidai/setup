@@ -56,8 +56,8 @@ def updateCsv(astock, directory = "../new"):
             f.write("{},{},{},{},{},{}\n".format(date, opend, high, 
                                                  low, closed, avg))
             
-#stocks = util.getStocks("IVV", andEtfs=True)
-stocks = util.getFromHoldings()
+stocks = util.getStocks("IVV", andEtfs=True)
+#stocks = util.getFromHoldings()
 for astock in stocks:
     updateCsv(astock)
 

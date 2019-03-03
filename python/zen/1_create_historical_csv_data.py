@@ -33,9 +33,11 @@ def getEtfList():
 import os, fnmatch
 
 
-import util
-util.process(["LIN"])
-#print (util.getStocks("IVV", True))
+#import util
+#util.process(["LIN"])
+stocks = util.getStocks("IVV", dev = True))
+for astock in stocks:
+    saveProcessedFromYahoo(astock):
 
 #stocks = []
 #for holding in holdings:

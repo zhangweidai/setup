@@ -68,8 +68,9 @@ def updateCsv(astock, directory = "../new"):
             appending = True
 
 stocks = util.getStocks("IVV", andEtfs=True)
-for astock in stocks:
-    updateCsv(astock)
+#for astock in stocks:
+#    updateCsv(astock)
+util.pullNewCsvFromYahoo(stocks, "../new")
 #    updateCsv(astock, directory = "ijh")
 
 #if pulled:
