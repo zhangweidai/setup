@@ -7,54 +7,49 @@ import os
 import util 
 import scipy 
 
-#print (norm(data["Open"].tolist()))
-
-#def getEtfList():
-#    path = "{}/analysis/ETFList.csv".format(os.getcwd())
-#    data = pandas.read_csv(path)
-#    return data['Symbol'].tolist()
-
-#util.process(getEtfList())
-#raise SystemError
-
-#stocks = getStocks("IWB")
 stocks = ["GOOG"]
 directory = "all"
 
 def getVector(values, dividend, name, astock):
     length = len(values)
 
-    try:
-        factor = util.getFactors(values)
-    except:
-        factor = 1
+#    try:
+#        factor = util.getFactors(values)
+#    except:
+#        factor = 1
 
     score, dipScore = util.getScore(values)
     discount = util.getDiscount(values)
     distrange, vari = util.getRangedDist(values)
-
-    combined = round(score/dipScore,4)
-    final = round((combined / (discount*discount)) * factor, 4)
-
     dipScore = round(dipScore,3)
-    score = round(score,3)
 
     pointsabove = 0
     pointsbelow = 0
     if not astock == "USMV":
         pointsabove, pointsbelow = util.getPointsAbove(values)
+    changes = util.getChanges(values)
+    factor = "NotEnoughData"
+    fd = 1
+    if changes:
+        factor = round(np.prod(changes),3)
+        fd = round(float(factor)/float(discount), 3)
 
-    fd = round(factor/discount, 3)
-    new = round((((pointsabove-(pointsbelow/3.1415))*(1+(dividend/2))* fd)/dipScore) + math.sqrt(score), 3)
+#    discount = util.formatDecimal(discount)
 
-    return [final, combined, discount, dipScore, score, name, factor, length, dividend, 
-    distrange, vari, fd, pointsabove, pointsbelow, new]
+    new = round((((pointsabove-(pointsbelow/3.1415))* fd)/dipScore) + 
+            math.sqrt(score), 3)
 
-def writeDropCsv(stocks, directory):
+    wc, probup = util.getWC(values)
+#    for i,b in enumerate(changes):
+#        changes[i] = util.formatDecimal(b)
+
+    return [name, new, discount, dipScore, factor, length, dividend, 
+    distrange, vari, fd, pointsabove, pointsbelow, wc, probup] + changes
+
+def writeDropCsv(stocks, directory = "analysis"):
     util.setBaselineScores()
 
     name_idx = 1
-    dividend_idx = 0
     etfs = util.getFromHoldings()
 
     #global percent_list, notinvested
@@ -64,12 +59,12 @@ def writeDropCsv(stocks, directory):
         return
 
     for astock in stocks:
-        path = "{}/../new/{}.csv".format(os.getcwd(), astock)
+        path = util.getPath("csv/{}.csv".format(astock))
 
-        try:
-            dividend = 10*json_dict[astock][dividend_idx]
-        except:
-            dividend = 0
+        df = pandas.read_csv(path)
+        values = df['Avg'].tolist()
+
+        dividend = util.getDividend(astock, values[-1], json_dict)
 
         try:
             name = json_dict[astock][name_idx]
@@ -78,12 +73,15 @@ def writeDropCsv(stocks, directory):
             if astock in etfs:
                 name = "ETF"
 
-        df = pandas.read_csv(path)
-        values = df['Avg'].tolist()
         percent_list[astock] = getVector(values, dividend, name, astock)
 
-    util.writeFile(percent_list, ["Final", "Score(Reg/Dip)", "Discount", "Dip", "Reg", "Name", "Factor", "Length", "Dividend", "DistRange", "Variance", "F/D", "PointsAbove", "PointsBelow", "NewScore"], directory, name = "regular_report")
+    headers = ["Name", "Score", "Discount", "Dip", 
+               "Factor", "Length", "Dividend", "DistRange", "Variance", 
+               "Factor/Discount", "PointsAbove", "PointsBelow", "WC", "ProbUp",
+               "3", "6", "12", "24", "48", "96", "192", "384"]
 
-writeDropCsv(util.getStocks("IVV", andEtfs = True), directory = "analysis")
+    util.writeFile(percent_list, headers, directory, name = "main_report")
+
+writeDropCsv(util.getStocks("IVV", andEtfs = True))
 #writeMinimizedReport(util.getStocks("IVV", andEtfs = True), directory = "analysis")
 #writeMinimizedReport(util.getStocks("IVV", andEtfs = True))

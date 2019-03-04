@@ -20,7 +20,7 @@ def loadFromUrl(astock, urlstr):
 def saveJson(stocks, urlstr, dirstr, removeVec):
     for astock in stocks:
         data = None
-        path = "{}/{}/{}.json".format(os.getcwd(), dirstr, astock)
+        path = util.getPath("{}/{}.json".format(dirstr, astock)
         data = loadFromUrl(astock, urlstr)
 
         if not data:
@@ -53,7 +53,7 @@ pmc = dict()
 name = dict()
 def getJsonData(astock):
     global dividends, cap, beta, pmc, name
-    path = "{}/{}/{}.json".format(os.getcwd(), "income", astock)
+    path = util.getPath("income/{}.json".format(astock)
     data = None
     if os.path.exists(path):
         with open(path) as f:
@@ -66,7 +66,7 @@ def getJsonData(astock):
         except:
             pass
 
-    path = "{}/{}/{}.json".format(os.getcwd(), "info", astock)
+    path = util.getPath("info/{}.json".format(astock)
     info_data = None
     if os.path.exists(path):
         with open(path) as f:
@@ -112,7 +112,7 @@ stocks = util.getStocks("IVV")
 adata = saveJsonData(stocks)
 import pandas
 df = pandas.DataFrame.from_dict(adata, orient = 'index', columns=["Dividend", "Name"])
-path = "{}/analysis/gg_json.csv".format(os.getcwd())
+path = util.getPath("analysis/gg_json.csv")
 df.to_csv(path)
 
 #removeVec = ["CEO", "image", "sector", "exchange", "Changes", "industry", "website"]

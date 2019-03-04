@@ -3,14 +3,116 @@ import matplotlib.pyplot as plt
 from scipy import stats
 import os
 import pandas
-import fnmatch
 import datetime
+import pickle
 import fix_yahoo_finance as yf
-import statistics
+#import statistics
 from pandas_datareader import data as pdr
+import urllib.request, json
 
-def getTestItems():
-    return [807.0,811.84,803.19,807.6025,807.0,811.84,803.19,808.38,807.6025, 807.0,811.84,803.19,808.38,807.6025,807.0,811.84,803.19,807.6025,807.0,811.84,803.19,807.6025,807.0,811.84,803.19,808.38,807.6025, 807.0,811.84,803.19,808.38,807.6025,807.0,811.84,797.19]
+def getTestItems(needed = 30):
+    return [i for i in range(needed)]
+
+def getPath(path):
+    path = "{}/../zen_dump/{}".format(os.getcwd(), path)
+
+    parent = os.path.dirname(path)
+    if not os.path.exists(parent):
+        os.makedirs(parent)
+
+    return path
+#getPath("delme/file.csv")        
+
+from bs4 import BeautifulSoup
+def getDividendSchedule(month, date):
+    addy = "https://www.nasdaq.com/dividend-stocks/dividend-calendar.aspx?date=2019-{}-{}".format(
+            month, date)
+    decoded = None
+    try:
+        with urllib.request.urlopen(addy) as url:
+            decoded = BeautifulSoup(url.read(), 'html.parser').get_text()
+#                    from_encoding=url.info().getparam('charset')).prettify()
+    except:
+        try:
+            with urllib.request.urlopen(addy) as url:
+                decoded = BeautifulSoup(url.read(), 'html.parser').get_text()
+        except Exception as e:
+            print ('Failed: '+ str(e))
+            return None
+
+    return decoded.split("\n")
+
+import re
+def getSymbol(text):
+    m = re.search(r"\((.*?)\)", text)
+    if m:
+        return m.group(1)
+    return None
+#print (getSymbol('1147                     <td><a href="https://www.nasdaq.com/symbol/alsn/dividend-history">Allison Transmission Holdings, Inc.&nbsp;&#40;ALSN&#41; </a></td>^M'))
+
+divData = dict()
+def parseDividendHtml(lines):
+    global divData
+#    with open(path, "r") as f:
+#        lines = f.readlines()
+    symbol = ""
+#        divData = dict()
+    started = False
+    for line in lines:
+        line = line.strip()
+        if not line:
+            symbol = ""
+            continue
+        
+        if "Payment Date" in line:
+            started = True
+            continue
+
+        if started and "Previous" in line:
+            break
+
+        if not started:
+            continue
+
+        if symbol:
+            divData.setdefault(symbol, list())
+            if len(divData[symbol]) < 4:
+                divData[symbol].append(line)
+        else:
+            symbol = getSymbol(line)
+
+        if ' </tr>' in line:
+            symbol = ""
+#path = getPath("divs/Mar_01.html")
+#parseDividendHtml(path)
+
+def saveDivs():
+    months = ["Mar", "Apr"]
+    months = ["Mar"]
+    for month in months:
+        for i in range(1,30):
+
+            # too late
+            if month == "Mar" and i < 5:
+                continue
+
+            date = str(i).zfill(2)
+            lines = getDividendSchedule(month, date)
+            if lines:
+                parseDividendHtml(lines)
+
+    path = getPath("divs/div.pkl")
+    pickle.dump(divData, open(path, "wb"))
+    print ("Saved {} symbols".format(len(divData)))
+#saveDivs()
+loadedDivs = None
+def loadDivs():
+    path = getPath("divs/div.pkl")
+    return pickle.load(open(path, "rb"))
+#loadDivs()
+
+
+
 
 def getRangedDist(items):
     if len(items) < 18:
@@ -21,11 +123,11 @@ def getRangedDist(items):
     lastitems = items[-1]
     vari = np.var([newlist[0], lastitems, minv, maxv])
     if lastitems == maxv:
-        return "{}".format(round(maxv/minv,3)), vari
+        return "{}".format(round(maxv/minv,3)), round(vari,2)
     else:
         first = str(round((lastitems/minv)-1,3))
         second = str(round((maxv/lastitems)-1,3))
-        return "{}/{}".format(first, second), vari
+        return "{}/{}".format(first, second), round(vari,2)
 #print(getRangedDist(getTestItems()))
 
 def regress(items):
@@ -142,19 +244,62 @@ def writeFile(dictionary, cols, directory="all", name = "training"):
     try:
         df.to_csv(path)
     except:
-        os.makedirs(os.path.dirname(path))
         try:
+            os.makedirs(os.path.dirname(path))
             df.to_csv(path)
         except Exception as e:
-            print ('FailedWrite: '+ str(e))
-            return
+            try:
+                import tempfile
+                path = next(tempfile._get_candidate_names())
+                df.to_csv(path)
+            except Exception as e:
+                print ('FailedWrite: '+ str(e))
+                return
 
     print ("File Written " + path)
 
 
+def getWC(items):
+    howmany = len(items)
+    start = howmany-130 
+
+    short = items[-10:]
+    newlist = items[start:start+100]
+
+    minv = min(short)
+    maxv = max(short)
+    maxv2 = max(newlist)
+
+    up = 0
+    for v in newlist:
+        if v<maxv:
+            up+=1
+
+    return round(minv/maxv2,3), up/100
+
+def getChanges(items):
+    last = 1
+    last2 = 1
+    lastvalue = items[-1]
+    if len(items) >= 384:
+        last = lastvalue / items[-384]
+    if len(items) >= 192:
+        last2 = lastvalue / items[-192]
+
+    ret = [ lastvalue / items[-3], lastvalue / items[-6],
+    lastvalue / items[-12], lastvalue / items[-24], 
+    lastvalue / items[-48], lastvalue / items[-96], 
+    last2, last]
+
+    for i,b in enumerate(ret):
+        ret[i] = round(b,3)
+
+    return ret
+#print (getChanges(items))
+
 def getDiscount(items):
-    newlist = items[-5:]
-    num = (items[-1] + items[-2] + items[-3])/3
+    newlist = items[-4:]
+    num = (items[-1] + items[-2])/2
     return round(num/newlist[0],4)
 #print (getDiscount(getTestItems()))
 
@@ -164,9 +309,10 @@ def getEtfList():
     return data['Symbol'].tolist()
 
 def getTrainingTemps():
+    import fnmatch
     pattern = "*.csv"  
     holds = []
-    listOfFiles = os.listdir('./training_data')  
+    listOfFiles = os.listdir('../zen_dump/training_data')  
     for entry in listOfFiles:  
         if fnmatch.fnmatch(entry, pattern):
             holds.append(entry)
@@ -174,9 +320,10 @@ def getTrainingTemps():
 #print (getTrainingTemps())
 
 def getFromHoldings():
+    import fnmatch
     pattern = "*.csv"  
     holds = []
-    listOfFiles = os.listdir('./holdings')  
+    listOfFiles = os.listdir('../zen_dump/holdings')  
     for entry in listOfFiles:  
         if fnmatch.fnmatch(entry, pattern):
             holds.append(entry.split("_")[0])
@@ -188,7 +335,7 @@ def getStocks(holding, andEtfs = False, difference = False, dev=False):
 
     path = getPath("holdings/{}_holdings.csv".format(holding))
     if not holding == "IVV":
-        listOfFiles = os.listdir('./holdings')  
+        listOfFiles = os.listdir('../zen_dump/holdings')  
         for entry in listOfFiles:  
             if holding in entry:
                 path = getPath("holdings/{}".format(entry))
@@ -215,10 +362,12 @@ def pullNewCsvFromYahoo(stocks, directory="all"):
         print (path)
 
         try:
-            data = pdr.get_data_yahoo([astock], start=startdate, end=str(datetime.date.today().isoformat()))
+            data = pdr.get_data_yahoo([astock], start=startdate, 
+                    end=str(datetime.date.today().isoformat()))
         except Exception as e:
             try:
-                data = pdr.get_data_yahoo([astock], start=startdate, end=str(datetime.date.today().isoformat()))
+                data = pdr.get_data_yahoo([astock], start=startdate, 
+                        end=str(datetime.date.today().isoformat()))
             except Exception as e:
                 print ("Problem  :" + astock)
                 print ('Failed: '+ str(e))
@@ -237,7 +386,6 @@ def pullNewCsvFromYahoo(stocks, directory="all"):
         path = getPath("{}/{}.csv".format(directory, astock))
         data.to_csv(path)
 
-import urllib.request, json
 
 def loadFromUrl(astock, urlstr = "company/profile"):
     decoded = None
@@ -375,13 +523,35 @@ def setBaselineScores():
     baseline = ret
 #print (setBaselineScores())
 
-def getPath(path):
-    path = "{}/../zen_dump/{}".format(os.getcwd(), path)
 
-    if not os.path.exists(path):
-        os.makedirs(os.path.dirname(path))
+loadedDivs = dict()
+def getDividend(astock, lastvalue, json_dict):
+    global loadedDivs
+    if not loadedDivs:
+        loadedDivs = loadDivs()
 
-    return path
-getPath("delme/file.csv")        
+    div = loadedDivs.get(astock, 0)
+
+    dividend_idx = 0
+    dividend = 0
+    if not div or len(div) < 2:
+        try:
+            dividend = json_dict[astock][dividend_idx]
+        except:
+            dividend = 0
+    else:
+        dividend = "{:.2%}".format(float(div[2])/lastvalue)
+
+    return dividend
+
+
+def formatDecimal(factor):
+    return "{:.2%}".format(factor-1)
+#print(formatDecimal(2.93))
+
+#json_dict = getData("gg_json")
+#print (getDividend("BLK", 300, json_dict))
+
+
 
 

@@ -9,7 +9,7 @@ def generateTrainingData(stocks):
     dates = util.getNumberOfDates()
     allvalues = dict()
     for astock in stocks:
-        path = "{}/../new/{}.csv".format(os.getcwd(), astock)
+        path = util.getPath("csv/{}.csv".format(astock))
         allvalues[astock] = pandas.read_csv(path)['Avg'].tolist()
 
     for start in range(dates-149):
@@ -27,10 +27,3 @@ def generateTrainingData(stocks):
                        name=str(start).zfill(3))
 
 generateTrainingData(util.getStocks("IVV", andEtfs = True, dev=True))
-
-#def csvToTraining(stocks):
-#    dates = util.getNumberOfDates()
-#    for start in range(dates-149):
-#        path = "{}/report/{}.csv".format(os.getcwd(), str(start).zfill(3))
-#        allvalues[astock] = pandas.read_csv(path)['Avg'].tolist()
-#csvToTraining(util.getStocks("IVV", andEtfs = True, dev=True))
