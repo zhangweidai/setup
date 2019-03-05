@@ -13,11 +13,6 @@ directory = "all"
 def getVector(values, dividend, name, astock):
     length = len(values)
 
-#    try:
-#        factor = util.getFactors(values)
-#    except:
-#        factor = 1
-
     score, dipScore = util.getScore(values)
     discount = util.getDiscount(values)
     distrange, vari = util.getRangedDist(values)
@@ -27,6 +22,7 @@ def getVector(values, dividend, name, astock):
     pointsbelow = 0
     if not astock == "USMV":
         pointsabove, pointsbelow = util.getPointsAbove(values)
+
     changes = util.getChanges(values)
     factor = "NotEnoughData"
     fd = 1
@@ -39,12 +35,12 @@ def getVector(values, dividend, name, astock):
     new = round((((pointsabove-(pointsbelow/3.1415))* fd)/dipScore) + 
             math.sqrt(score), 3)
 
-    wc, probup = util.getWC(values)
+    wc, probup, wcb = util.getWC(values)
 #    for i,b in enumerate(changes):
 #        changes[i] = util.formatDecimal(b)
 
     return [name, new, discount, dipScore, factor, length, dividend, 
-    distrange, vari, fd, pointsabove, pointsbelow, wc, probup] + changes
+    distrange, vari, fd, pointsabove, pointsbelow, wc, probup, wcb] + changes
 
 def writeDropCsv(stocks, directory = "analysis"):
     util.setBaselineScores()
@@ -77,7 +73,8 @@ def writeDropCsv(stocks, directory = "analysis"):
 
     headers = ["Name", "Score", "Discount", "Dip", 
                "Factor", "Length", "Dividend", "DistRange", "Variance", 
-               "Factor/Discount", "PointsAbove", "PointsBelow", "WC", "ProbUp",
+               "Factor/Discount", "PointsAbove", "PointsBelow", "WC", 
+               "ProbUp", "WCBad",
                "3", "6", "12", "24", "48", "96", "192", "384"]
 
     util.writeFile(percent_list, headers, directory, name = "main_report")

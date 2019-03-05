@@ -1,5 +1,9 @@
 import numpy as np
-import matplotlib.pyplot as plt
+try:
+    import matplotlib.pyplot as plt
+    from bs4 import BeautifulSoup
+except:
+    pass
 from scipy import stats
 import os
 import pandas
@@ -11,19 +15,31 @@ from pandas_datareader import data as pdr
 import urllib.request, json
 
 def getTestItems(needed = 30):
-    return [i for i in range(needed)]
+    from math import sqrt
+    return [round(sqrt(i), 2) for i in range(needed)]
 
 def getPath(path):
     path = "{}/../zen_dump/{}".format(os.getcwd(), path)
-
     parent = os.path.dirname(path)
     if not os.path.exists(parent):
         os.makedirs(parent)
-
     return path
+
+def getp(name):
+    path = getPath("pkl/{}.pkl".format(name))
+    return pickle.load(open(path, "rb"))
+
+def setp(data, name):
+    path = getPath("pkl/{}.pkl".format(name))
+    pickle.dump(data, open(path, "wb"))
+
+#setp(getTestItems(20), "saved_values")
+#items = (getTestItems(2000))
+#setp(items, "saved_values")
+#items = getp("saved_values")
+#print (items)
 #getPath("delme/file.csv")        
 
-from bs4 import BeautifulSoup
 def getDividendSchedule(month, date):
     addy = "https://www.nasdaq.com/dividend-stocks/dividend-calendar.aspx?date=2019-{}-{}".format(
             month, date)
@@ -48,15 +64,11 @@ def getSymbol(text):
     if m:
         return m.group(1)
     return None
-#print (getSymbol('1147                     <td><a href="https://www.nasdaq.com/symbol/alsn/dividend-history">Allison Transmission Holdings, Inc.&nbsp;&#40;ALSN&#41; </a></td>^M'))
 
 divData = dict()
 def parseDividendHtml(lines):
     global divData
-#    with open(path, "r") as f:
-#        lines = f.readlines()
     symbol = ""
-#        divData = dict()
     started = False
     for line in lines:
         line = line.strip()
@@ -106,13 +118,11 @@ def saveDivs():
     print ("Saved {} symbols".format(len(divData)))
 #saveDivs()
 loadedDivs = None
+
 def loadDivs():
     path = getPath("divs/div.pkl")
     return pickle.load(open(path, "rb"))
 #loadDivs()
-
-
-
 
 def getRangedDist(items):
     if len(items) < 18:
@@ -186,9 +196,7 @@ def dipScore(items):
     dips = []
     for i,price in enumerate(items):
         currentStack.append(price)
-
         if len(currentStack) == SIZE:
-#            print (currentStack)
             start = (max(list(currentStack)[:3]))
             end = (min(list(currentStack)[-3:]))
             tdip = (end/start)
@@ -261,6 +269,8 @@ def writeFile(dictionary, cols, directory="all", name = "training"):
 
 def getWC(items):
     howmany = len(items)
+    half = int(howmany/2)
+    print (items[half:])
     start = howmany-130 
 
     short = items[-10:]
@@ -274,8 +284,8 @@ def getWC(items):
     for v in newlist:
         if v<maxv:
             up+=1
-
     return round(minv/maxv2,3), up/100
+getWC(getTestItems(1000))
 
 def getChanges(items):
     last = 1
@@ -378,7 +388,6 @@ def pullNewCsvFromYahoo(stocks, directory="all"):
         except:
             print ("Problem with {}".format(astock))
             continue
-    
         for idx,row in data.iterrows():
             for label in ["Open","Close", "High", "Low"]:
                 data.at[idx, label] = round(data.at[idx, label], 4)

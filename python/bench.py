@@ -7,5 +7,6 @@ def test():
         lst.append(i)
 
 if __name__ == '__main__':
-    import timeit
-    print(timeit.timeit("test()", setup="from __main__ import test"))
+    print (dir(__main__))
+#    import timeit
+#    print(timeit.timeit("test()", setup="from __main__ import test"))
