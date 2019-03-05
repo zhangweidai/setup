@@ -59,6 +59,7 @@ def writeDropCsv(stocks, directory = "analysis"):
 
         df = pandas.read_csv(path)
         values = df['Avg'].tolist()
+        values = values[:-46]
 
         dividend = util.getDividend(astock, values[-1], json_dict)
 

@@ -14,8 +14,15 @@ import fix_yahoo_finance as yf
 from pandas_datareader import data as pdr
 import urllib.request, json
 
-def getTestItems(needed = 30):
+
+def formatDecimal(factor):
+    return "{:.2%}".format(factor-1)
+#print(formatDecimal(2.93))
+
+def getTestItems(needed = 30, simple = False):
     from math import sqrt
+    if simple:
+        return [i for i in range(1,needed)]
     return [round(sqrt(i), 2) for i in range(needed)]
 
 def getPath(path):
@@ -269,13 +276,15 @@ def writeFile(dictionary, cols, directory="all", name = "training"):
 
 def getWC(items):
     howmany = len(items)
-    half = int(howmany/2)
-    print (items[half:])
-    start = howmany-130 
 
+    half = int(howmany/2)
+    first =  max(items[:half])
+    second = min(items[half:])
+    wcb = round(second/first,3)
+
+    start = howmany-130 
     short = items[-10:]
     newlist = items[start:start+100]
-
     minv = min(short)
     maxv = max(short)
     maxv2 = max(newlist)
@@ -284,8 +293,8 @@ def getWC(items):
     for v in newlist:
         if v<maxv:
             up+=1
-    return round(minv/maxv2,3), up/100
-getWC(getTestItems(1000))
+    return round(minv/maxv2,3), up/100, wcb
+#print (getWC(getTestItems(1000, simple = True)))
 
 def getChanges(items):
     last = 1
@@ -399,7 +408,9 @@ def pullNewCsvFromYahoo(stocks, directory="all"):
 def loadFromUrl(astock, urlstr = "company/profile"):
     decoded = None
     try:
-        with urllib.request.urlopen("https://financialmodelingprep.com/api/{}/{}".format(urlstr, astock)) as url:
+        with urllib.request.urlopen(
+                "https://financialmodelingprep.com/api/{}/{}".format(urlstr, 
+                    astock)) as url:
             decoded = url.read().decode()
     except Exception as e:
         print ("Not FIND :" + astock)
@@ -431,7 +442,8 @@ def saveJsonData(stocks, directory="all"):
             data[astock] = [dividend, name]
 
     import pandas
-    df = pandas.DataFrame.from_dict(data, orient = 'index', columns=["Dividend", "Name"])
+    df = pandas.DataFrame.from_dict(data, orient = 'index', 
+            columns=["Dividend", "Name"])
     path = getPath("analysis/json_{}.csv".format(directory))
     df.to_csv(path)
 
@@ -553,14 +565,8 @@ def getDividend(astock, lastvalue, json_dict):
 
     return dividend
 
-
-def formatDecimal(factor):
-    return "{:.2%}".format(factor-1)
-#print(formatDecimal(2.93))
-
+def getWanted():
+    return {"PAYX":65}
 #json_dict = getData("gg_json")
 #print (getDividend("BLK", 300, json_dict))
-
-
-
 
