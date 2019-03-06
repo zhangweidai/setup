@@ -201,12 +201,9 @@ fu! DebugExtension()
       norm bywoMsgBox, %
       :norm pA%
    elseif expand('%:p') =~ ".py"
-      norm bywoprint "(pz-dbg) - 
-      :norm pA"
-      :norm A + __file__
-      :norm o
-      :norm iprint 
-      :norm pA
+      norm bywoprint("
+      :norm pA:" + 
+      :norm pA)
    else
       norm bywo$writeln($strcat("Dbg f: ", "<C-R>% : <Esc>pA ", <Esc>pA));<Esc>
    endif 
