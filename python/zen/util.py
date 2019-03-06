@@ -1,9 +1,6 @@
 import numpy as np
-try:
-    import matplotlib.pyplot as plt
-    from bs4 import BeautifulSoup
-except:
-    pass
+import matplotlib.pyplot as plt
+from bs4 import BeautifulSoup
 from scipy import stats
 import os
 import pandas
@@ -22,8 +19,11 @@ def formatDecimal(factor):
 def getTestItems(needed = 30, simple = False):
     from math import sqrt
     if simple:
-        return [i for i in range(1,needed)]
-    return [round(sqrt(i), 2) for i in range(needed)]
+        return [1,1,1,1,1,1,1,2,2,2,2,3,3,3,3,3,1,1,1,1,1,1,1,3,4,4,5,5,
+        6,6,7,7,7,8,8,7,6,6,5,4,6,5,4,3,9,7,8,9]
+    return [round(sqrt(i), 2) for i in range(1,needed)]
+#plt.plot(getTestItems(simple=True))
+#plt.show()
 
 def getPath(path):
     path = "{}/../zen_dump/{}".format(os.getcwd(), path)
@@ -33,8 +33,11 @@ def getPath(path):
     return path
 
 def getp(name):
-    path = getPath("pkl/{}.pkl".format(name))
-    return pickle.load(open(path, "rb"))
+    try:
+        path = getPath("pkl/{}.pkl".format(name))
+        return pickle.load(open(path, "rb"))
+    except:
+        return None
 
 def setp(data, name):
     path = getPath("pkl/{}.pkl".format(name))
@@ -348,26 +351,44 @@ def getFromHoldings():
             holds.append(entry.split("_")[0])
     return holds
 
-def getStocks(holding, andEtfs = False, difference = False, dev=False):
+subset = list()
+def getIVVStocks():
+    global subset
+    return subset
+
+def getStocks(holding = "IVV", andEtfs = True, difference = False, dev=False, ivv=False):
     if dev:
         return ["GOOG", "IVV"]
 
-    path = getPath("holdings/{}_holdings.csv".format(holding))
-    if not holding == "IVV":
-        listOfFiles = os.listdir('../zen_dump/holdings')  
-        for entry in listOfFiles:  
-            if holding in entry:
-                path = getPath("holdings/{}".format(entry))
-                break
+    global subset
 
-    data = pandas.read_csv(path)
-    if andEtfs:
-        return data['Ticker'].tolist() + getFromHoldings()
+    path = getPath("holdings/IVV_holdings.csv")
+    dataivv = pandas.read_csv(path)
+    subset = set(dataivv['Ticker'].tolist())
+    if ivv:
+        return list(subset) + getFromHoldings()
 
-    if (difference):
-        ivv = set(getStocks("IVV"))
-        return list(set(data['Ticker'].tolist()) - ivv)
-    return data['Ticker'].tolist()
+    path = getPath("holdings/IWB_holdings.csv")
+    dataiwb = pandas.read_csv(path)
+
+    ret = list(subset + set(dataiwb['Ticker'].tolist()) ) + getFromHoldings()
+    return ret
+
+#    if not holding == "IVV":
+#        listOfFiles = os.listdir('../zen_dump/holdings')  
+#        for entry in listOfFiles:  
+#            if holding in entry:
+#                path = getPath("holdings/{}".format(entry))
+#                break
+#
+#    data = pandas.read_csv(path)
+#    if andEtfs:
+#        return data['Ticker'].tolist() + getFromHoldings()
+#
+#    if (difference):
+#        ivv = set(getStocks("IVV"))
+#        return list(set(data['Ticker'].tolist()) - ivv)
+#    return data['Ticker'].tolist()
 
 doonce = True
 yf.pdr_override() # <== that's all it takes :-)
@@ -483,11 +504,9 @@ def saveProcessedFromYahoo(astock):
             df.at[idx, label] = temp
         avg.append(round(sub/4, 4))
 
-    idx = 4
-    df.insert(loc=idx, column='Avg', value=avg)
-
-    path = "/mnt/c/Users/Peter/Documents/setup/python/new/{}.csv".format(astock)
+    df.insert(loc=4, column='Avg', value=avg)
     df.to_csv(path)
+    return df
 
 #saveProcessedFromYahoo("IVV")
 
@@ -514,13 +533,23 @@ def writeMinimizedReport(stocks, directory = "report"):
     writeFile(percent_list, ["Final", "Dip"], directory, name="minimal_report")
 
 def getPointsAbove(items):
-    lastpart = int(len(items)/5)*4
+    total = len(items)
+    lastpart = int(total/5)*4
+
+    last_100 = total - 100
     last = items[-1]
     ret = []
     points = 0
     bonus = 1
     below = 0
+
+    higherPoints = 0
     for i,item in enumerate(items):
+
+        if i >= last_100 and item > last:
+            higherPoints += 1
+
+        continue
         s = last/item
         b = baseline[i]
         if s > b:
@@ -530,9 +559,10 @@ def getPointsAbove(items):
         elif s < b:
             below += b-s
     return round(points,3), round(below,2)
+print (getPointsAbove(getTestItems(300)))
 
 baseline = []
-def setBaselineScores():
+def loadUSMV_dict():
     global baseline
     path = getPath("csv/USMV.csv")
     df = pandas.read_csv(path)
@@ -542,7 +572,7 @@ def setBaselineScores():
     for b in values:
         ret.append(round(last/b,3))
     baseline = ret
-#print (setBaselineScores())
+#print (loadUSMV_dict())
 
 
 loadedDivs = dict()
@@ -565,8 +595,62 @@ def getDividend(astock, lastvalue, json_dict):
 
     return dividend
 
-def getWanted():
-    return {"PAYX":65}
 #json_dict = getData("gg_json")
 #print (getDividend("BLK", 300, json_dict))
+
+def getWanted():
+    return {"PAYX":65}
+
+def listRightIndex(alist, value):
+    return len(alist) - alist[-1::-1].index(value) -1
+
+def targetPrice(items):
+    lookrange = items
+    count = len(items)
+    if count == 0:
+        return
+
+    maxv = max(lookrange)
+    idx = listRightIndex(items, maxv)
+
+    if idx + 1 >= count-6 and count > 3 :
+        return targetPrice(items[:-2])
+
+    newlist = lookrange[idx:]
+    minv = min(newlist)
+    idx = listRightIndex(newlist, minv)
+    newlist = newlist[idx:]
+    if len(newlist) > 3:
+        return targetPrice(newlist)
+    return round((minv*1.10), 3)
+
+targets = dict()
+def getTargetPrice(astock):
+    global targets
+    if not targets:
+        dic = getp("targets")
+        if not dic:
+            for astock in getStocks(dev=True):
+                print (astock)
+                targets[astock] = targetPrice(getTestItems(simple=True))
+            setp(targets, "targets")
+        else:
+            targets = dic
+    return targets[astock]
+#print (targetPrice(getTestItems(simple=True)))
+
+
+
+def writeDict(port, name):
+    path = getPath("{}.csv".format(name))
+    with open(path, "w") as f:
+        for a in port:
+            try:
+                what = [a] + port[a]
+            except:
+                what = [a] + [port[a]]
+            value = ",".join(what)
+            f.write(value + "\n")
+#d  = {"bar" : ["name", str(2)], "d" : "2"}
+#writeDict(d, "test")
 

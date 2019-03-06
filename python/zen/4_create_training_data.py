@@ -26,4 +26,5 @@ def generateTrainingData(stocks):
         util.writeFile(percent_list, ["Final", "Dip"], "training_data", 
                        name=str(start).zfill(3))
 
-generateTrainingData(util.getStocks("IVV", andEtfs = True, dev=True))
+#generateTrainingData(util.getStocks("IVV", andEtfs = True, dev=True))
+generateTrainingData(util.getT

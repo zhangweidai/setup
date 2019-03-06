@@ -3,6 +3,7 @@ import pandas as pd
 import os
 port = dict()
 def process(path):
+    global port
     xl = pd.ExcelFile(path)
     df = xl.parse(xl.sheet_names[0])
     vals = df.columns.values
@@ -23,6 +24,7 @@ def getTrainingMotif():
             process(path)
 
 def getTrainingFidelity():
+    global port
     path = "../zen_dump/port/DetailedHoldings.xls"
     xl = pd.ExcelFile(path)
     df = xl.parse(xl.sheet_names[0])
@@ -34,9 +36,9 @@ def getTrainingFidelity():
         port.setdefault(sym, 0)
         port[sym] += count[i]
 
-getTrainingMotif()
-getTrainingFidelity()
-print (port)
-
-#file = './try.xlsx'
+def getPortfolio():
+    global port
+    getTrainingMotif()
+    getTrainingFidelity()
+    return port
 

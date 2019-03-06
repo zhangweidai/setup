@@ -10,9 +10,7 @@ import scipy
 stocks = ["GOOG"]
 directory = "all"
 
-def getVector(values, dividend, name, astock):
-    length = len(values)
-
+def getVector(values, dividend, name, astock, last):
     score, dipScore = util.getScore(values)
     discount = util.getDiscount(values)
     distrange, vari = util.getRangedDist(values)
@@ -39,11 +37,18 @@ def getVector(values, dividend, name, astock):
 #    for i,b in enumerate(changes):
 #        changes[i] = util.formatDecimal(b)
 
-    return [name, new, discount, dipScore, factor, length, dividend, 
-    distrange, vari, fd, pointsabove, pointsbelow, wc, probup, wcb] + changes
+    target = util.getTargetPrice(astock)
 
+    if name in sub:
+        name = name + "*"
+
+    return [name, new, discount, dipScore, target, last, dividend, 
+    distrange, vari, pointsabove, pointsbelow, wc, probup, wcb] + changes
+
+port = dict()
 def writeDropCsv(stocks, directory = "analysis"):
-    util.setBaselineScores()
+    global sub
+    util.loadUSMV_dict()
 
     name_idx = 1
     etfs = util.getFromHoldings()
@@ -54,12 +59,23 @@ def writeDropCsv(stocks, directory = "analysis"):
     if json_dict is None:
         return
 
+    port = util.getPortfolio()
+    portkeys = port.keys()
     for astock in stocks:
-        path = util.getPath("csv/{}.csv".format(astock))
 
-        df = pandas.read_csv(path)
+        path = util.getPath("csv/{}.csv".format(astock))
+        try:
+            df = pandas.read_csv(path)
+        except:
+            try:
+                df = util.saveProcessedFromYahoo(astock)
+            except:
+                continue
+
         values = df['Avg'].tolist()
-        values = values[:-46]
+        last = df['Close'].iloc[-1]
+
+#        values = values[:-46]
 
         dividend = util.getDividend(astock, values[-1], json_dict)
 
@@ -70,16 +86,23 @@ def writeDropCsv(stocks, directory = "analysis"):
             if astock in etfs:
                 name = "ETF"
 
-        percent_list[astock] = getVector(values, dividend, name, astock)
+        if astock in portkeys:
+            value = round(port[astock] * float(last),3)
+            port[astock] = [name, value]
+
+        percent_list[astock] = getVector(values, dividend, name, astock, last)
 
     headers = ["Name", "Score", "Discount", "Dip", 
-               "Factor", "Length", "Dividend", "DistRange", "Variance", 
-               "Factor/Discount", "PointsAbove", "PointsBelow", "WC", 
-               "ProbUp", "WCBad",
+               "Target", "Last", "Dividend", "DistRange", "Variance", 
+               "PointsAbove", "PointsBelow", "WC", 
+               "ProbUp", "WCBad", 
                "3", "6", "12", "24", "48", "96", "192", "384"]
-
+    
+    util.writeDict(port, "Portfolio")
     util.writeFile(percent_list, headers, directory, name = "main_report")
 
-writeDropCsv(util.getStocks("IVV", andEtfs = True))
+stocks = util.getStocks()
+sub = util.getIVVStocks()
+writeDropCsv(stocks)
 #writeMinimizedReport(util.getStocks("IVV", andEtfs = True), directory = "analysis")
 #writeMinimizedReport(util.getStocks("IVV", andEtfs = True))
