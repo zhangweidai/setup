@@ -10,13 +10,13 @@ import scipy
 
 base = util.loadUSMV_dict()
 total = len(base)
-low = 350
+low = 370
 stocks = util.getStocks()
-sub = util.getIVVStocks()
+sub = util.getivvstocks()
 i = 0
-start = ( total-low + i * 40 < total )
-while ( total-low + (i + 1) * 40 < total):
+start = ( total-low + i * 20 < total )
+while ( total-low + (i + 1) * 20 < total):
     i += 1
-    start = total - (total-low + i * 40)
+    start = total - (total-low + i * 20)
     util.loadUSMV_dict(start)
-    writeDropCsv(stocks, cut=start)
+    util.writeDropCsv(stocks, cut=start)

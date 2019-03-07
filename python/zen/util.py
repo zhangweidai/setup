@@ -347,19 +347,19 @@ def getFromHoldings():
     return holds
 
 subset = list()
-def getIVVStocks():
+def getivvstocks():
     global subset
+    if not subset:
+        path = getPath("holdings/IVV_holdings.csv")
+        dataivv = pandas.read_csv(path)
+        subset = set(dataivv['Ticker'].tolist())
     return subset
 
 def getStocks(holding = "IVV", andEtfs = True, difference = False, dev=False, ivv=False):
     if dev:
         return ["GOOG", "IVV"]
 
-    global subset
-
-    path = getPath("holdings/IVV_holdings.csv")
-    dataivv = pandas.read_csv(path)
-    subset = set(dataivv['Ticker'].tolist())
+    subset = getivvstocks()
     if ivv:
         return list(subset) + getFromHoldings()
 

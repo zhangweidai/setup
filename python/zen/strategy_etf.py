@@ -13,7 +13,7 @@ spent = 1
 tranfees = 0
 etftotal = 0
 etf = "USMV"
-ivv = util.getivvstocks()
+#ivv = util.getivvstocks()
 def tallyFrom(path, mode):
     global spent, tranfees, etftotal
     try:
@@ -108,13 +108,58 @@ modes = [["Score", False],
     ["96", False],
     ["192", False]]
 
-for mode in modes:
-    calcIt(mode)
+#for mode in modes:
+#    calcIt(mode)
 
-etfvalue = round(etftotal * latest_values[etf], 3)
-print("etf         : $" + str(etfvalue))
-print("etfchange   : " + util.formatDecimal(etfvalue/spent))
-print("spent       : " + str(spent))
+#etfvalue = round(etftotal * latest_values[etf], 3)
+#print("etf         : $" + str(etfvalue))
+#print("etfchange   : " + util.formatDecimal(etfvalue/spent))
+#print("spent       : " + str(spent))
+
+path = util.getPath("csv/USMV.csv")
+df = pandas.read_csv(path)
+values = df['Avg'].tolist()
+etfspent =  (sum(values))
+print("etfspent :" + str(etfspent))
+purchased = (len(values))
+print("purchased :" + str(purchased ))
+etfvalue = round(purchased * latest_values["USMV"], 3)
+print("etfvalue :" + str(etfvalue ))
+print (util.formatDecimal(etfvalue/etfspent))
+
+maxp = purchased
+occ = 1
+for i in range(1, 30):
+    perspend = etfspent / i
+    days = int(len(values) / i)
+#    print("days :" + str(days))
+#    print("perspend :" + str(perspend ))
+    purchased = 0
+    for count, value in enumerate(values):
+        if count % days == 0:
+            purchased += perspend / value
+
+    if purchased > maxp:
+        maxp = purchased
+        occ = i
+#        print ("")
+#        print (maxp)
+#        print (i)
+#        print (perspend * i)
+
+print("occ:" + str(occ))
+days = int(len(values) / occ)
+for count, value in enumerate(values):
+    if count % days == 0:
+        print("count:" + str(count))
+        print("value:" + str(value))
+
+#    else:
+#        print ("for {} i got {} total spent = {}".format(i,purchased, perspend * i))
+etfvalue = round(maxp * latest_values["USMV"], 3)
+print("etfvalue :" + str(etfvalue ))
+print (util.formatDecimal(etfvalue/etfspent))
+
 
 #print("\n")
 #try:
