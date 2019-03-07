@@ -51,8 +51,7 @@ def setp(data, name):
 #getPath("delme/file.csv")        
 
 def getDividendSchedule(month, date):
-    addy = "https://www.nasdaq.com/dividend-stocks/dividend-calendar.aspx?date=2019-{}-{}".format(
-            month, date)
+    addy = "https://www.nasdaq.com/dividend-stocks/dividend-calendar.aspx?date=2019-{}-{}".format(month, date)
     decoded = None
     try:
         with urllib.request.urlopen(addy) as url:
@@ -110,12 +109,12 @@ def parseDividendHtml(lines):
 
 def saveDivs():
     months = ["Mar", "Apr"]
-    months = ["Mar"]
+    #months = ["Mar"]
     for month in months:
         for i in range(1,30):
 
             # too late
-            if month == "Mar" and i < 5:
+            if month == "Mar" and i <= datetime.datetime.today().day + 1:
                 continue
 
             date = str(i).zfill(2)
@@ -126,8 +125,8 @@ def saveDivs():
     path = getPath("divs/div.pkl")
     pickle.dump(divData, open(path, "wb"))
     print ("Saved {} symbols".format(len(divData)))
+
 #saveDivs()
-loadedDivs = None
 
 def loadDivs():
     path = getPath("divs/div.pkl")
@@ -173,8 +172,6 @@ def regress(items):
     score = rs/(normalized_err)
     return score
 
-
-
 def averageRegress(items):
     count = int(len(items)/3)
     first = items[:count]
@@ -213,8 +210,6 @@ def dipScore(items):
             if tdip < 1:
                 dips.append(1-tdip)
             currentStack.popleft()
-#    print (statistics.stdev(dips))
-#    print (sum(dips)/len(dips))
     return round(sum(dips),6)
 #print (dipScore(getTestItems()))
 
@@ -371,7 +366,7 @@ def getStocks(holding = "IVV", andEtfs = True, difference = False, dev=False, iv
     path = getPath("holdings/IWB_holdings.csv")
     dataiwb = pandas.read_csv(path)
 
-    ret = list(subset + set(dataiwb['Ticker'].tolist()) ) + getFromHoldings()
+    ret = list(subset | set(dataiwb['Ticker'].tolist()) ) + getFromHoldings()
     return ret
 
 #    if not holding == "IVV":
@@ -390,41 +385,7 @@ def getStocks(holding = "IVV", andEtfs = True, difference = False, dev=False, iv
 #        return list(set(data['Ticker'].tolist()) - ivv)
 #    return data['Ticker'].tolist()
 
-doonce = True
 yf.pdr_override() # <== that's all it takes :-)
-def pullNewCsvFromYahoo(stocks, directory="all"):
-    startdate = "2017-01-09"
-    for astock in stocks:
-        if not astock:
-            continue
-        path = getPath("{}/{}.csv".format(directory, astock))
-        data = None
-        print (path)
-
-        try:
-            data = pdr.get_data_yahoo([astock], start=startdate, 
-                    end=str(datetime.date.today().isoformat()))
-        except Exception as e:
-            try:
-                data = pdr.get_data_yahoo([astock], start=startdate, 
-                        end=str(datetime.date.today().isoformat()))
-            except Exception as e:
-                print ("Problem  :" + astock)
-                print ('Failed: '+ str(e))
-                continue
-
-        try:
-            data.drop(columns = ["Adj Close"], inplace=True)
-        except:
-            print ("Problem with {}".format(astock))
-            continue
-        for idx,row in data.iterrows():
-            for label in ["Open","Close", "High", "Low"]:
-                data.at[idx, label] = round(data.at[idx, label], 4)
-    
-        path = getPath("{}/{}.csv".format(directory, astock))
-        data.to_csv(path)
-
 
 def loadFromUrl(astock, urlstr = "company/profile"):
     decoded = None
@@ -476,8 +437,7 @@ def getNumberOfDates():
 tday = datetime.date.today().isoformat()
 startdate = "2017-01-01"
 def saveProcessedFromYahoo(astock):
-
-    path = getPath("csv/{}.csv".format(astock), True)
+    path = getPath("csv/{}.csv".format(astock))
     if os.path.exists(path):
         return
 
@@ -491,7 +451,7 @@ def saveProcessedFromYahoo(astock):
             print (str(e))
 
     if df is None:
-        print ("problem with {}".format(astock))
+        print ("problem with {}; did not save".format(astock))
         return
 
     avg = list()
@@ -532,24 +492,17 @@ def writeMinimizedReport(stocks, directory = "report"):
         percent_list[astock] = getMinimizedVector(values)
     writeFile(percent_list, ["Final", "Dip"], directory, name="minimal_report")
 
+baseline = []
 def getPointsAbove(items):
     total = len(items)
     lastpart = int(total/5)*4
-
-    last_100 = total - 100
     last = items[-1]
-    ret = []
     points = 0
     bonus = 1
     below = 0
 
     higherPoints = 0
     for i,item in enumerate(items):
-
-        if i >= last_100 and item > last:
-            higherPoints += 1
-
-        continue
         s = last/item
         b = baseline[i]
         if s > b:
@@ -559,19 +512,27 @@ def getPointsAbove(items):
         elif s < b:
             below += b-s
     return round(points,3), round(below,2)
-print (getPointsAbove(getTestItems(300)))
+#print (getPointsAbove(getTestItems(300)))
 
-baseline = []
-def loadUSMV_dict():
-    global baseline
+cutDate = ""
+def getCutDate():
+    return cutDate
+
+def loadUSMV_dict(cut = 0):
+    global baseline, cutDate
     path = getPath("csv/USMV.csv")
     df = pandas.read_csv(path)
+    if cut:
+        df = df[:-1*cut]
+        cutDate = df['Date'].iloc[-1]
+
     values = df['Avg'].tolist()
     last = values[-1]
     ret = []
     for b in values:
         ret.append(round(last/b,3))
     baseline = ret
+    return baseline
 #print (loadUSMV_dict())
 
 
@@ -602,7 +563,7 @@ def getWanted():
     return {"PAYX":65}
 
 def listRightIndex(alist, value):
-    return len(alist) - alist[-1::-1].index(value) -1
+    return len(alist)- alist[-1::-1].index(value) -1
 
 def targetPrice(items):
     lookrange = items
@@ -622,25 +583,41 @@ def targetPrice(items):
     newlist = newlist[idx:]
     if len(newlist) > 3:
         return targetPrice(newlist)
-    return round((minv*1.10), 3)
+    return minv
+
+#path = getPath("csv/GOOG.csv")
+#df = pandas.read_csv(path)
+#values = df['Avg'].tolist()
+#bar = targetPrice(values)
+#idx = listRightIndex(values, bar)
+#print (df['Date'].tolist()[idx])
+
 
 targets = dict()
-def getTargetPrice(astock):
+def getTargetPrice(astock, cut = 0):
     global targets
     if not targets:
         dic = getp("targets")
         if not dic:
-            for astock in getStocks(dev=True):
-                print (astock)
-                targets[astock] = targetPrice(getTestItems(simple=True))
+            for stock in getStocks():
+                path = getPath("csv/{}.csv".format(stock))
+                df = pandas.read_csv(path)
+                if cut:
+                    df = df[:-1*cut]
+
+                values = df['Close'].tolist()
+                minv = targetPrice(values)
+                idx = listRightIndex(values, minv)
+                date = df['Date'].tolist()[idx]
+                targets[stock] = minv, date
             setp(targets, "targets")
         else:
             targets = dic
     return targets[astock]
-#print (targetPrice(getTestItems(simple=True)))
+#print (getTargetPrice("IVV"))
 
-
-
+port = dict()
+latestPrices = dict()
 def writeDict(port, name):
     path = getPath("{}.csv".format(name))
     with open(path, "w") as f:
@@ -649,8 +626,168 @@ def writeDict(port, name):
                 what = [a] + port[a]
             except:
                 what = [a] + [port[a]]
-            value = ",".join(what)
+            value = ",".join(str(x) for x in what)
             f.write(value + "\n")
-#d  = {"bar" : ["name", str(2)], "d" : "2"}
+#d  = {"bar" : ["name", str(2)], "d" : 2}
 #writeDict(d, "test")
 
+def loadFromUrl(astock, urlstr = "company/profile"):
+    decoded = None
+    try:
+        with urllib.request.urlopen("https://financialmodelingprep.com/api/{}/{}".format(urlstr, astock)) as url:
+            decoded = url.read().decode()
+    except Exception as e:
+        print ("Not FIND :" + astock)
+        print ('Failed: '+ str(e))
+
+    if not decoded:
+        return None
+
+    return json.loads(decoded.replace("<pre>",""))
+
+def updateJsonCompany(astock):
+    data = getData("gg_json")
+#    data = loadFromUrl(astock)
+    if data is None:
+        return ""
+    try:
+        return data[astock][1]
+    except:
+        pass
+    return ""
+
+    price = float(data[astock]["Price"])
+    dividend = round(float(data[astock]["LastDiv"])/float(price),4)
+#    with open(path, "a") as f:
+#        f.write("{},{},{}\n".format(astock, dividend, name))
+    return name
+
+
+def updatePort():
+    global port
+    for astock in port:
+        if not type(port[astock]) == list:
+            count = port[astock]
+
+            try:
+                path = getPath("csv/{}.csv".format(astock))
+                df = pandas.read_csv(path)
+            except:
+                continue
+
+            name = updateJsonCompany(astock)
+            try:
+                last = df['Close'].iloc[-1]
+                port[astock] = [name, round(float(last) * float(count),2)]
+            except:
+                continue
+
+def getVector(values, dividend, name, astock, last):
+    score, dipScore = getScore(values)
+    discount = getDiscount(values)
+    distrange, vari = getRangedDist(values)
+    dipScore = round(dipScore,3)
+
+    pointsabove = 0
+    pointsbelow = 0
+    if not astock == "USMV":
+        pointsabove, pointsbelow = getPointsAbove(values)
+
+    changes = getChanges(values)
+    factor = "NotEnoughData"
+    fd = 1
+    if changes:
+        factor = round(np.prod(changes),3)
+        fd = round(float(factor)/float(discount), 3)
+
+#    discount = formatDecimal(discount)
+
+    new = round((((pointsabove-(pointsbelow/3.1415))* fd)/dipScore) + 
+            math.sqrt(score), 3)
+
+    wc, probup, wcb = getWC(values)
+#    for i,b in enumerate(changes):
+#        changes[i] = formatDecimal(b)
+
+    date = ""
+#    target, date = getTargetPrice(astock, cut)
+    target = targetPrice(values)
+#    target = "{}({})".format(target, date)
+
+    if astock in subset:
+        name = "**" + name
+
+    return [name, new, discount, dipScore, target, last, dividend, 
+    distrange, vari, pointsabove, pointsbelow, wc, probup, wcb] + changes
+
+def writeDropCsv(stocks, directory = "analysis", cut = 0):
+    global port
+
+    name_idx = 1
+    etfs = getFromHoldings()
+
+    #global percent_list, notinvested
+    percent_list = {}
+    json_dict = getData("gg_json")
+    if json_dict is None:
+        return
+
+    portkeys = []
+    if not cut:
+        import portfolio
+        port = portfolio.getPortfolio()
+        portkeys = port.keys()
+    report_name = "_{}".format(getCutDate())
+    for astock in stocks:
+
+        path = getPath("csv/{}.csv".format(astock))
+        try:
+            df = pandas.read_csv(path)
+        except:
+            try:
+                df = saveProcessedFromYahoo(astock)
+            except Exception as e:
+                print (str(e))
+                print ("problem with {}".format(astock))
+                continue
+
+        if cut:
+            df = df[:-1*cut]
+
+        values = df['Avg'].tolist()
+        if len(values) < 200:
+#            print ("Can't do {} with {}".format(astock, str(cut)))
+            continue
+
+        last = df['Close'].iloc[-1]
+        latestPrices[astock] = last
+
+#        values = values[:-46]
+        dividend = getDividend(astock, values[-1], json_dict)
+
+        try:
+            name = json_dict[astock][name_idx]
+        except:
+            name = ""
+            if astock in etfs:
+                name = "ETF"
+
+        if astock in portkeys:
+            value = round(port[astock] * float(last),3)
+            port[astock] = [name, value]
+
+        percent_list[astock] = getVector(values, dividend, name, astock, last)
+
+    headers = ["Name", "Score", "Discount", "Dip", 
+               "Target", "Last", "Dividend", "DistRange", "Variance", 
+               "PointsAbove", "PointsBelow", "WC", 
+               "ProbUp", "WCBad", 
+               "3", "6", "12", "24", "48", "96", "192", "384"]
+
+    if not cut:
+        updatePort() 
+        writeDict(port, "Portfolio")
+        setp(latestPrices, "latestValues")
+    writeFile(percent_list, headers, directory, name = "main_report{}".format(report_name))
+
+#updateJsonCompany("COST")

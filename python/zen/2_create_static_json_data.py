@@ -2,26 +2,11 @@ import urllib.request, json
 import os
 import util
 
-def loadFromUrl(astock, urlstr):
-    decoded = None
-    try:
-        with urllib.request.urlopen("https://financialmodelingprep.com/api/{}/{}".format(urlstr, astock)) as url:
-            decoded = url.read().decode()
-    except Exception as e:
-        print ("Not FIND :" + astock)
-        print ('Failed: '+ str(e))
-
-    if not decoded:
-        return None
-
-    return json.loads(decoded.replace("<pre>",""))
-
-
 def saveJson(stocks, urlstr, dirstr, removeVec):
     for astock in stocks:
         data = None
-        path = util.getPath("{}/{}.json".format(dirstr, astock)
-        data = loadFromUrl(astock, urlstr)
+        path = util.getPath("{}/{}.json".format(dirstr, astock))
+        data = util.loadFromUrl(astock, urlstr)
 
         if not data:
             continue
@@ -53,7 +38,7 @@ pmc = dict()
 name = dict()
 def getJsonData(astock):
     global dividends, cap, beta, pmc, name
-    path = util.getPath("income/{}.json".format(astock)
+    path = util.getPath("income/{}.json".format(astock))
     data = None
     if os.path.exists(path):
         with open(path) as f:
@@ -66,7 +51,7 @@ def getJsonData(astock):
         except:
             pass
 
-    path = util.getPath("info/{}.json".format(astock)
+    path = util.getPath("info/{}.json".format(astock))
     info_data = None
     if os.path.exists(path):
         with open(path) as f:
@@ -93,12 +78,6 @@ def saveJsonData(stocks):
     for astock in stocks:
         getJsonData(astock)
 
-#    beta["NORMAL"] = 1
-#    normalizeDict(dividends)
-#    normalizeDict(beta)
-#    normalizeDict(cap)
-#    normalizeDict(pmc)
-
     data = dict()
     for astock in stocks:
         try:
@@ -108,14 +87,8 @@ def saveJsonData(stocks):
 
     return data
 
-stocks = util.getStocks("IVV")
-adata = saveJsonData(stocks)
-import pandas
-df = pandas.DataFrame.from_dict(adata, orient = 'index', columns=["Dividend", "Name"])
-path = util.getPath("analysis/gg_json.csv")
-df.to_csv(path)
-
 #removeVec = ["CEO", "image", "sector", "exchange", "Changes", "industry", "website"]
+util.updateJsonCompany("COST")
 #removeVec = []
 #saveJson(stocks, "financials/income-statement", "income", removeVec)
 #saveFinance(["GOOG", "ZEN"], "company/profile")

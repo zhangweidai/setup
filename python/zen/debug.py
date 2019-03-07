@@ -1,5 +1,5 @@
 import pandas as pd
-from util import getTestItems, targetPrice
+from util import getTestItems, targetPrice, getPath
 
 def dipScore(items):
     SIZE = 100
@@ -17,4 +17,9 @@ def dipScore(items):
             currentStack.popleft()
     return round(sum(dips),6)
 
-print (targetPrice(getTestItems(simple=True)))
+path = getPath("csv/GOOG.csv")
+df = pd.read_csv(path)
+print (df)
+df = df[:-100]
+print (df)
+#print (targetPrice(getTestItems(simple=True)))

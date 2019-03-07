@@ -34,17 +34,18 @@ def getDataFromYahoo(astock):
     return data
 
 pulled = False
+latest = dict()
 def updateCsv(astock, directory = "../new"):
     global pulled
-    path = "{}/{}/{}.csv".format(os.getcwd(), directory, astock)
     loaded = None
 
 #    last = str(time.ctime(os.path.getmtime(path)))
 #    if "Feb 27" in last:
 #        return
 
+    path = util.getPath("csv/{}.csv".format(astock))
     if not os.path.exists(path):
-        util.pullNewCsvFromYahoo([astock], directory)
+        util.saveProcessedFromYahoo(astock)
         pulled = True
         return
 
@@ -68,15 +69,15 @@ def updateCsv(astock, directory = "../new"):
                          float(low) + float(closed))/4, 4)
                 f.write("{},{},{},{},{},{}\n".format(cdate, opend, high, 
                                                      low, closed, avg))
+                latest[astock] = closed
             
         if cdate == lastdate:
             appending = True
 
-stocks = util.getStocks("IVV", andEtfs=True)
+stocks = util.getStocks()
 for astock in stocks:
     updateCsv(astock)
-#util.pullNewCsvFromYahoo(stocks, "../new")
-#    updateCsv(astock, directory = "ijh")
+util.setp(latest, "lastValues")
 
 #if pulled:
 #    util.saveJsonData(stocks, "ijh")
