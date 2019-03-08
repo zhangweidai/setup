@@ -514,17 +514,22 @@ def getPointsAbove(items):
     return round(points,3), round(below,2)
 #print (getPointsAbove(getTestItems(300)))
 
-cutDate = ""
-def getCutDate():
-    return cutDate
+endDate = ""
+startDate = ""
+def getEndDate():
+    return endDate
 
-def loadUSMV_dict(cut = 0):
-    global baseline, cutDate
+def getStartDate():
+    return startDate
+
+def loadUSMV_dict(end = None, start=None):
+    global baseline, endDate
     path = getPath("csv/USMV.csv")
     df = pandas.read_csv(path)
-    if cut:
-        df = df[:-1*cut]
-        cutDate = df['Date'].iloc[-1]
+    df = df[start:end]
+
+    endDate = df['Date'].iloc[-1]
+    startDate = df['Date'].iloc[0]
 
     values = df['Avg'].tolist()
     last = values[-1]
@@ -594,7 +599,7 @@ def targetPrice(items):
 
 
 targets = dict()
-def getTargetPrice(astock, cut = 0):
+def getTargetPrice(astock, end = None, start = None):
     global targets
     if not targets:
         dic = getp("targets")
@@ -602,8 +607,7 @@ def getTargetPrice(astock, cut = 0):
             for stock in getStocks():
                 path = getPath("csv/{}.csv".format(stock))
                 df = pandas.read_csv(path)
-                if cut:
-                    df = df[:-1*cut]
+                df = df[start:end]
 
                 values = df['Close'].tolist()
                 minv = targetPrice(values)
@@ -710,7 +714,7 @@ def getVector(values, dividend, name, astock, last):
 #        changes[i] = formatDecimal(b)
 
     date = ""
-#    target, date = getTargetPrice(astock, cut)
+#    target, date = getTargetPrice(astock, end)
     target = targetPrice(values)
 #    target = "{}({})".format(target, date)
 
@@ -720,7 +724,7 @@ def getVector(values, dividend, name, astock, last):
     return [name, new, discount, dipScore, target, last, dividend, 
     distrange, vari, pointsabove, pointsbelow, wc, probup, wcb] + changes
 
-def writeDropCsv(stocks, directory = "analysis", cut = 0):
+def writeDropCsv(stocks, directory = "analysis", end = None, start = None):
     global port
 
     name_idx = 1
@@ -733,30 +737,29 @@ def writeDropCsv(stocks, directory = "analysis", cut = 0):
         return
 
     portkeys = []
-    if not cut:
+    if not end:
         import portfolio
         port = portfolio.getPortfolio()
         portkeys = port.keys()
-    report_name = "_{}".format(getCutDate())
+    report_name = "_{}".format(getEndDate())
     for astock in stocks:
 
         path = getPath("csv/{}.csv".format(astock))
         try:
             df = pandas.read_csv(path)
+            df = df[start:end]
         except:
             try:
                 df = saveProcessedFromYahoo(astock)
+                df = df[start:end]
             except Exception as e:
                 print (str(e))
                 print ("problem with {}".format(astock))
                 continue
 
-        if cut:
-            df = df[:-1*cut]
-
         values = df['Avg'].tolist()
         if len(values) < 200:
-#            print ("Can't do {} with {}".format(astock, str(cut)))
+#            print ("Can't do {} with {}".format(astock, str(end)))
             continue
 
         last = df['Close'].iloc[-1]
@@ -784,7 +787,7 @@ def writeDropCsv(stocks, directory = "analysis", cut = 0):
                "ProbUp", "WCBad", 
                "3", "6", "12", "24", "48", "96", "192", "384"]
 
-    if not cut:
+    if not end:
         updatePort() 
         writeDict(port, "Portfolio")
         setp(latestPrices, "latestValues")

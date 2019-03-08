@@ -14,6 +14,8 @@ tranfees = 0
 etftotal = 0
 etf = "USMV"
 ivv = util.getivvstocks()
+etfs = util.getFromHoldings()
+etfvs = dict()
 def tallyFrom(path, mode):
     global spent, tranfees, etftotal
     try:
@@ -31,8 +33,10 @@ def tallyFrom(path, mode):
     symbols = loaded['Unnamed: 0'].tolist()
     prices = loaded['Last'].tolist()
 
-    etfn = float(loaded[loaded['Unnamed: 0'] == etf]['Last'])
-    etftotal += spend / etfn
+    for anetf in etfs:
+        etfn = float(loaded[loaded['Unnamed: 0'] == anetf]['Last'])
+        etfvs.setdefault(anetf, 0)
+        etfvs[anetf] += spend / etfn
 
     per = spend / size
     spent += spend
@@ -90,7 +94,7 @@ def calcIt(mode):
     for astock in purchase:
         curr_account_size += purchase[astock] * latest_values[astock]
     change = round(curr_account_size / (spent + tranfees),3)
-    print ("mode: {}".format(mode[0]))
+    print ("mode  : {}".format(mode[0]))
     print ("change: {}".format(util.formatDecimal(change)))
 
 modes = [["Score", False],
@@ -111,10 +115,19 @@ modes = [["Score", False],
 for mode in modes:
     calcIt(mode)
 
-etfvalue = round(etftotal * latest_values[etf], 3)
-print("etf         : $" + str(etfvalue))
-print("etfchange   : " + util.formatDecimal(etfvalue/spent))
-print("spent       : " + str(spent))
+maxeft = 0
+eft_name = ""
+for etf in eftvs:
+    etfvalue = round(etftotal * latest_values[etf], 3)
+    if etfvalue > maxeft:
+        maxeft = eftvalue 
+        etf_name = etf
+
+print("name   : " + etf_name)
+print("etf    : $" + str(maxetf))
+print("change : " + util.formatDecimal(maxetf/spent))
+print("spent  : " + str(spent))
+
 
 #print("\n")
 #try:
