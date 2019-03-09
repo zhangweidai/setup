@@ -25,10 +25,8 @@ def getDataFromYahoo(astock):
             print (str(e))
             return None
     
-    data.drop(columns = ["Adj Close"], inplace=True)
-    
     for idx,row in data.iterrows():
-        for label in ["Open", "Close", "High", "Low"]:
+        for label in ["Open", "Close", "High", "Low", "Adj Close"]:
             data.at[idx, label] = round(data.at[idx, label], 3)
 
     return data
@@ -38,10 +36,6 @@ latest = dict()
 def updateCsv(astock):
     global pulled
     loaded = None
-
-#    last = str(time.ctime(os.path.getmtime(path)))
-#    if "Feb 27" in last:
-#        return
 
     path = util.getPath("csv/{}.csv".format(astock))
     if not os.path.exists(path):
@@ -65,10 +59,9 @@ def updateCsv(astock):
                 high = data.at[idx, "High"]
                 low = data.at[idx, "Low"]
                 closed = data.at[idx, "Close"]
-                avg = round((float(opend) + float(high) + 
-                         float(low) + float(closed))/4, 4)
-                f.write("{},{},{},{},{},{}\n".format(cdate, opend, high, 
-                                                     low, closed, avg))
+                adj = data.at[idx, "Adj Close"]
+                vol = data.at[idx, "Volume"]
+                f.write("{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, adj, vol))
                 latest[astock] = closed
             
         if cdate == lastdate:

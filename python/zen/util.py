@@ -870,8 +870,13 @@ def writeStrategyReport(stocks, start = None, end = None):
         name = ""
         if astock in getFromHoldings():
             name = "ETF"
-        lasth = max(df['High'].iloc[:7])
-        lastl = min(df['Low'].iloc[:3])
+#        if astock == "TRV":
+#            what = df['High'].iloc[-7:]
+#            print(what)
+#            raise SystemExit
+
+        lasth = max(df['High'].iloc[-10:])
+        lastl = min(df['Low'].iloc[-5:])
         last = df['Close'].iloc[-1]
 
         percent_list[astock] = getVectorForStrategy(values, astock) + [name, last, lastl, lasth]

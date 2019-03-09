@@ -7,33 +7,40 @@ import util
 import time
 
 spend = 2000
-reportname = "main_report_"
+reportname = "strategy_report_"
 size = 10
-purchase = dict()
 spent = 1
 tranfees = 0
-etftotal = 0
 ivv = util.getivvstocks()
 etfs = util.getFromHoldings()
 etfvs = dict()
+
+saved_size = 0
+saved_portfolio = dict()
+cost_basis = dict()
+purchases = dict()
+purchasesl = dict()
+purchasesh = dict()
+more_etf = True
+path_dict = {}
 def tallyFrom(path, mode):
-    global spent, tranfees, etftotal
+    global spent, tranfees, cost_basis
+    loaded = None
     try:
-        loaded = pandas.read_csv(path)
+        if path in path_dict:
+            loaded = path_dict[path]
+        else:
+            loaded = pandas.read_csv(path)
+            path_dict[path] = loaded
+
         if loaded is None:
-            print ("problem")
             return
     except:
-        print ("problem")
         return
     
-    loaded.sort_values(by=[mode[0]], inplace=True, 
-                       ascending=mode[1])
+    loaded.sort_values(by=[mode[0]], inplace=True, ascending=mode[1])
 
-    symbols = loaded['Unnamed: 0'].tolist()
-    prices = loaded['Last'].tolist()
-
-    if mode[0] == "Score":
+    if mode[0] == "Score" and more_etf:
         for anetf in etfs:
             etfn = float(loaded[loaded['Unnamed: 0'] == anetf]['Last'])
             etfvs.setdefault(anetf, 0)
@@ -44,16 +51,40 @@ def tallyFrom(path, mode):
     spent += spend
     tranfees += 10
     purchased = 0
-    for i, price in enumerate(prices):
-        symbol = symbols[i]
-        #if not symbol in ivv:
-        #    continue
-        amount = per / price
-        purchase.setdefault(symbol, 0)
-        purchase[symbol] += round(amount,5)
+
+    for idx,row in loaded.iterrows():
+        symbol = loaded.at[idx, "Unnamed: 0"]
+        if symbol in etfs:
+            continue
+
+        last = loaded.at[idx, "Last"]
+        lasth = loaded.at[idx, "LastH"]
+        lastl = loaded.at[idx, "LastL"]
+
+        amount = per / last
+        amounth = per / lasth
+        amountl = per / lastl
+
+        if mode[0] == "Dip" and size == 20:
+            cost_basis.setdefault(symbol, 0)
+            cost_basis[symbol] += per
+
+        purchases.setdefault(symbol, 0)
+        purchasesl.setdefault(symbol, 0)
+        purchasesh.setdefault(symbol, 0)
+
+        purchases[symbol] += round(amount,5)
+        purchasesh[symbol] += round(amounth,5)
+        purchasesl[symbol] += round(amountl,5)
+
         purchased += 1
         if purchased == size:
             break
+
+#path = util.getPath("analysis/strategy_report_2015-11-23.csv")
+#tallyFrom(path, ["Score", True])
+#print (etfvs)
+#raise SystemExit
 rememberedFiles = []
 def getFiles():
     global rememberedFiles
@@ -83,27 +114,55 @@ def getTrainingTemps(mode):
 
 changeDict = dict()
 latest_values = util.getp("latestValues")
-def calcIt(mode, day_adjust):
-    global purchase, curr_account_size, spent, tranfees, etftotal
+mode_average = dict()
+def calcIt(mode):
+    global purchases, purchasesl, purchasesh,  spent, tranfees, mode_average
+    global saved_portfolio
     spent = 1
     tranfees = 0
-    curr_account_size = 0
-    purchase = dict()
-    etftotal = 0
-    getTrainingTemps(mode)
-    for astock in purchase:
-        curr_account_size += purchase[astock] * latest_values[astock]
-    change = round(curr_account_size / (spent + tranfees),3)
-    change = util.formatDecimal(change)
-    print ("{0:12} {1:6}".format(mode[0], change))
+    asize = 0
+    asizel= 0
+    asizeh= 0
 
-modes = [["Score", False],
-    ["Discount", True],
-    ["Dip", False],
+    purchases = dict()
+    purchasesl = dict()
+    purchasesh = dict()
+
+    getTrainingTemps(mode)
+
+    for astock in purchases:
+        asize += purchases[astock] * latest_values[astock]
+        asizel += purchasesl[astock] * latest_values[astock]
+        asizeh += purchasesh[astock] * latest_values[astock]
+
+    if mode[0] == "Dip" and size == 20:
+        saved_portfolio = purchases
+        saved_size = asize
+
+    low = round(asizel / (spent + tranfees),3)
+    high = round(asizeh / (spent + tranfees),3)
+    close = round(asize / (spent + tranfees),3)
+
+    changel = util.formatDecimal(low)
+    changeh = util.formatDecimal(high)
+    change = util.formatDecimal(close)
+
+    mode_average.setdefault(mode[0], [])
+#    mode_average[mode[0]].append(low)
+    mode_average[mode[0]].append(high)
+    mode_average[mode[0]].append(close)
+
+    one =   "C {0:12} {1:8}".format(mode[0], change)
+    two =   "H {0:12} {1:8}".format(mode[0], changeh)
+    three = "L {0:12} {1:8}".format(mode[0], changel)
+    return ["{} {} {}".format(one, two, three)]
+
+modes = [["Score", True],
+    ["Discount", False],
+    ["Dip", True],
     ["Variance", True],
     ["PointsAbove", False],
-    ["WC", False],
-    ["WCBad", False]
+    ["WC", True]
     ]
 #    ["3", True],
 #    ["6", False],
@@ -113,26 +172,75 @@ modes = [["Score", False],
 #    ["96", False],
 #    ["192", False]]
 
-print("report   : {}".format(size) + reportname)
-for day_adjust in range(15):
-    for mode in modes:
-        calcIt(mode, day_adjust)
-    break
+def etfData():
+    maxetf = 0
+    etf_name = ""
 
-maxetf = 0
-etf_name = ""
-for etf in etfvs:
-    etfvalue = round(etfvs[etf] * latest_values[etf], 3)
-    if etfvalue > maxetf:
-        maxetf = etfvalue 
-        etf_name = etf
+    ret = []
+    for etf in etfvs:
+        etfvalue = round(etfvs[etf] * latest_values[etf], 3)
+        if etfvalue > maxetf:
+            maxetf = etfvalue 
+            etf_name = etf
 
-try:
-    print("name   : " + etf_name)
-    print("etf    : $" + str(maxetf))
-    print("change : " + util.formatDecimal(maxetf/spent))
-    print("spent  : " + str(spent))
-    print("latest : " + str(latest_values[etf_name]))
-except Exception as e:
-    print ('Failed: '+ str(e))
-    pass
+    for etf in etfvs:
+        if etf == etf_name:
+            etfvalue = round(etfvs[etf] * latest_values[etf], 3)
+            change = util.formatDecimal(etfvalue/spent)
+            ret.append("{0:4}({1:5})\n".format(etf, change))
+
+    for i,etf in enumerate(etfvs):
+        if not etf == etf_name:
+            etfvalue = round(etfvs[etf] * latest_values[etf], 3)
+            change = util.formatDecimal(etfvalue/spent)
+            ret.append("{0:4}({1:5})".format(etf, change))
+            if i == 6:
+                ret.append("\n")
+    return [["".join(ret), "{}\n".format(spent)]]
+
+
+def doit():
+    global size, more_etf
+    testingModes = [10, 15, 20, 30]
+    appended = []
+    for csize in testingModes:
+        size = csize
+        appended.append(["stocks {}".format(size)])
+        for mode in modes:
+            appended.append(calcIt(mode))
+        more_etf = False
+
+    
+    import numpy as np
+    appended.append(["\n"])
+    for mode in mode_average:
+        items = mode_average[mode]
+        average = sum(items)/len(items)
+        vari = round(np.var(items),3)
+
+        appended.append(["A {0:12} {1:8} {2}".format(mode, 
+                    util.formatDecimal(average), vari)])
+
+    appended += etfData()
+    appended = [item for sublist in appended for item in sublist]
+
+    newdict = dict()
+    for astock in saved_portfolio:
+        value = round(saved_portfolio[astock] * latest_values[astock])
+        cost = cost_basis[astock]
+        change = util.formatDecimal(value/cost)
+#        appended.append("{0:4} {1:8} {2:8}".format(astock, cost, change))
+        newdict[astock] = [value, cost, change]
+
+    import pandas
+    df = pandas.DataFrame.from_dict(newdict, orient = 'index', 
+            columns=["Value", "Cost", "Change"])
+    path = util.getPath("analysis/stocks_strat.csv")
+    df.to_csv(path)
+        
+    path = util.getPath("analysis/report.txt")
+    with open(path, "w") as f:
+        f.write("\n".join(appended))
+doit()
+
+

@@ -27,7 +27,3 @@ ranges = getRanges(util.getNumberOfDates())
 for vals in ranges:
     util.loadUSMV_dict(start=vals[0], end=vals[1])
     util.writeStrategyReport(stocks, start=vals[0], end=vals[1])
-    break
-
-
-
