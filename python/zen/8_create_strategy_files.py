@@ -1,11 +1,11 @@
-def getRanges(values):
+def getRanges(count):
     ret = []
-    items =  len(values)
     minimum = 25
     minrequired = 200
     i = 1
-    last = (items % minimum)
-    while ((i * minimum) + minrequired < items):
+    last = (count % minimum)
+    end = 0
+    while ((i * minimum) + minrequired < count):
         start = ((i-1) * minimum) 
         
         end = ((i) * minimum) + minrequired
@@ -13,40 +13,21 @@ def getRanges(values):
         i += 1
     
     start = ((i-1) * minimum)
-    end = start + last + minrequired
-
-    ret.append([start, end])
+    tend = start + last + minrequired + minimum
+    if tend <= count:
+        ret.append([start, tend])
+    else:
+        ret[-1][-1] = count
     return ret
 
-#import util 
-#print (getRanges(util.getTestItems(500)))
+import util
 
-from pandas_datareader import data as pdr
-from portfolio import getPortfolio
-import fix_yahoo_finance as yf
-import numpy as np
-import pandas
-import math
-import os
-import util 
-import scipy 
-
-base = util.loadUSMV_dict()
-total = len(base)
-low = 370
 stocks = util.getStocks()
-sub = util.getivvstocks()
-i = 0
-#endi = ( total-low + i * 20 < total)
-#while ( total-low + (i + 1) * 20 < total):
-#    i += 1
-#    endi = total - (total-low + i * 20)
-#    util.loadUSMV_dict(endi)
-#    util.writeDropCsv(stocks, end=endi, start=100)
-#
-for vals in getRanges():
-    util.loadUSMV_dict()
-    util.writeDropCsv(stocks, end=endi, start=100)
+ranges = getRanges(util.getNumberOfDates())
+for vals in ranges:
+    util.loadUSMV_dict(start=vals[0], end=vals[1])
+    util.writeStrategyReport(stocks, start=vals[0], end=vals[1])
+    break
 
 
 

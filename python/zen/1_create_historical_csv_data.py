@@ -1,6 +1,6 @@
 import util
 
-stocks = util.getStocks("IVV", andEtfs=True)
+stocks = util.getStocks()
 for astock in stocks:
     try:
         util.saveProcessedFromYahoo(astock)
@@ -8,3 +8,5 @@ for astock in stocks:
         print (str(e))
         print ("problem with {}".format(astock))
         continue
+removed = util.getRemovedStocks()
+util.setp(removed, "removedstocks")

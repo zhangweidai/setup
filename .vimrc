@@ -202,8 +202,8 @@ fu! DebugExtension()
       :norm pA%
    elseif expand('%:p') =~ ".py"
       norm bywoprint("
-      :norm pA:" + 
-      :norm pA)
+      :norm pA: {}".format( 
+      :norm pA))
    else
       norm bywo$writeln($strcat("Dbg f: ", "<C-R>% : <Esc>pA ", <Esc>pA));<Esc>
    endif 

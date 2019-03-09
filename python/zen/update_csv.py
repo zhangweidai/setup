@@ -35,7 +35,7 @@ def getDataFromYahoo(astock):
 
 pulled = False
 latest = dict()
-def updateCsv(astock, directory = "../new"):
+def updateCsv(astock):
     global pulled
     loaded = None
 

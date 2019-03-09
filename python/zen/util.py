@@ -7,10 +7,11 @@ import pandas
 import datetime
 import pickle
 import fix_yahoo_finance as yf
+import fnmatch
 #import statistics
 from pandas_datareader import data as pdr
 import urllib.request, json
-
+csvColumn = "Adj Close"
 
 def formatDecimal(factor):
     return "{:.2%}".format(factor-1)
@@ -326,7 +327,6 @@ def getEtfList():
     return data['Symbol'].tolist()
 
 def getTrainingTemps():
-    import fnmatch
     pattern = "*.csv"  
     holds = []
     listOfFiles = os.listdir('../zen_dump/training_data')  
@@ -336,14 +336,18 @@ def getTrainingTemps():
     return holds
 #print (getTrainingTemps())
 
+etfs = None
 def getFromHoldings():
-    import fnmatch
+    global etfs
+    if etfs:
+        return etfs
     pattern = "*.csv"  
     holds = []
     listOfFiles = os.listdir('../zen_dump/holdings')  
     for entry in listOfFiles:  
         if fnmatch.fnmatch(entry, pattern):
             holds.append(entry.split("_")[0])
+    etfs = holds
     return holds
 
 subset = list()
@@ -366,8 +370,10 @@ def getStocks(holding = "IVV", andEtfs = True, difference = False, dev=False, iv
     path = getPath("holdings/IWB_holdings.csv")
     dataiwb = pandas.read_csv(path)
 
+    removed = getp("removedstocks")
     ret = list(subset | set(dataiwb['Ticker'].tolist()) ) + getFromHoldings()
-    return ret
+    ret = set(ret) - set(removed)
+    return list(ret)
 
 #    if not holding == "IVV":
 #        listOfFiles = os.listdir('../zen_dump/holdings')  
@@ -435,8 +441,14 @@ def getNumberOfDates():
     return num_lines-1
 
 tday = datetime.date.today().isoformat()
-startdate = "2017-01-01"
+startdate = "2015-01-05"
+expected_count = 1050
+removed = []
+def getRemovedStocks():
+    return removed
+
 def saveProcessedFromYahoo(astock):
+    global removed
     path = getPath("csv/{}.csv".format(astock))
     if os.path.exists(path):
         return
@@ -444,7 +456,8 @@ def saveProcessedFromYahoo(astock):
     df = None
     try:
         df = pdr.get_data_yahoo([astock], start=startdate, end=str(tday))
-    except:
+    except Exception as e:
+        print (str(e))
         try:
             df = pdr.get_data_yahoo([astock], start=startdate, end=str(tday))
         except Exception as e:
@@ -452,23 +465,32 @@ def saveProcessedFromYahoo(astock):
 
     if df is None:
         print ("problem with {}; did not save".format(astock))
+        removed.append(astock)
         return
 
-    avg = list()
-    df.drop(columns = ["Adj Close"], inplace=True)
-    for idx,row in df.iterrows():
-        sub = 0
-        for label in ["Open", "Close", "High", "Low"]:
-            temp = round(df.at[idx, label], 4)
-            sub += temp
-            df.at[idx, label] = temp
-        avg.append(round(sub/4, 4))
+    count = len(df)
+    if count != expected_count:
+        print ("not enough data for {} {} ".format(astock, str(count)))
+        removed.append(astock)
+        return
 
-    df.insert(loc=4, column='Avg', value=avg)
+#    avg = list()
+#    df.drop(columns = ["Adj Close"], inplace=True)
+    for idx,row in df.iterrows():
+        if df.at[idx, "Volume"] == "0":
+            print ("corrupt data ".format(astock))
+            removed.append(astock)
+            return
+
+        for label in ["Open", "Close", "High", "Low", "Adj Close"]:
+            df.at[idx, label] = round(df.at[idx, label], 4)
     df.to_csv(path)
     return df
+#        avg.append(round(sub/4, 4))
 
-#saveProcessedFromYahoo("IVV")
+#    df.insert(loc=4, column='Avg', value=avg)
+#    return df
+#saveProcessedFromYahoo("AMD")
 
 def getMinimizedVector(values):
     try:
@@ -488,9 +510,10 @@ def writeMinimizedReport(stocks, directory = "report"):
     for astock in stocks:
         path = getPath("csv_mini/{}.csv".format(astock))
         df = pandas.read_csv(path)
-        values = df['Avg'].tolist()
+        values = df['Adj Close'].tolist()
         percent_list[astock] = getMinimizedVector(values)
-    writeFile(percent_list, ["Final", "Dip"], directory, name="minimal_report")
+    writeFile(percent_list, ["Final", "Dip"], directory, 
+            name="minimal_report")
 
 baseline = []
 def getPointsAbove(items):
@@ -522,16 +545,23 @@ def getEndDate():
 def getStartDate():
     return startDate
 
+numberOfDates = 0
+
+#def getNumberOfDates():
+#    return numberOfDates
+
 def loadUSMV_dict(end = None, start=None):
-    global baseline, endDate
-    path = getPath("csv/USMV.csv")
+    global baseline, endDate, numberOfDates, startDate
+    path = getPath("csv/IUSG.csv")
+#    path = getPath("csv/USMV.csv")
     df = pandas.read_csv(path)
     df = df[start:end]
 
     endDate = df['Date'].iloc[-1]
     startDate = df['Date'].iloc[0]
 
-    values = df['Avg'].tolist()
+    values = df[csvColumn].tolist()
+    numberOfDates = len(values)
     last = values[-1]
     ret = []
     for b in values:
@@ -694,7 +724,7 @@ def getVector(values, dividend, name, astock, last):
 
     pointsabove = 0
     pointsbelow = 0
-    if not astock == "USMV":
+    if not astock == "IUSG":
         pointsabove, pointsbelow = getPointsAbove(values)
 
     changes = getChanges(values)
@@ -724,7 +754,7 @@ def getVector(values, dividend, name, astock, last):
     return [name, new, discount, dipScore, target, last, dividend, 
     distrange, vari, pointsabove, pointsbelow, wc, probup, wcb] + changes
 
-def writeDropCsv(stocks, directory = "analysis", end = None, start = None):
+def writeDropCsv(stocks, directory = "analysis", start = None, end = None):
     global port
 
     name_idx = 1
@@ -741,29 +771,30 @@ def writeDropCsv(stocks, directory = "analysis", end = None, start = None):
         import portfolio
         port = portfolio.getPortfolio()
         portkeys = port.keys()
-    report_name = "_{}".format(getEndDate())
+    start_str = "{}_".format(getStartDate())
+    end_str = "_{}".format(getEndDate())
     for astock in stocks:
 
         path = getPath("csv/{}.csv".format(astock))
         try:
             df = pandas.read_csv(path)
-            df = df[start:end]
         except:
             try:
                 df = saveProcessedFromYahoo(astock)
-                df = df[start:end]
             except Exception as e:
                 print (str(e))
                 print ("problem with {}".format(astock))
                 continue
-
-        values = df['Avg'].tolist()
+        df = df[start:end]
+        values = df[csvColumn].tolist()
         if len(values) < 200:
 #            print ("Can't do {} with {}".format(astock, str(end)))
             continue
 
-        last = df['Close'].iloc[-1]
-        latestPrices[astock] = last
+        last = 0
+        if start == None and end == None: 
+            last = df['Close'].iloc[-1]
+            latestPrices[astock] = last
 
 #        values = values[:-46]
         dividend = getDividend(astock, values[-1], json_dict)
@@ -773,6 +804,7 @@ def writeDropCsv(stocks, directory = "analysis", end = None, start = None):
         except:
             name = ""
             if astock in etfs:
+                last = df['Close'].iloc[-1]
                 name = "ETF"
 
         if astock in portkeys:
@@ -787,10 +819,66 @@ def writeDropCsv(stocks, directory = "analysis", end = None, start = None):
                "ProbUp", "WCBad", 
                "3", "6", "12", "24", "48", "96", "192", "384"]
 
-    if not end:
+    r_name = "on_{}{}".format(on_type, end_str)
+    if end == None and start == None:
         updatePort() 
         writeDict(port, "Portfolio")
         setp(latestPrices, "latestValues")
-    writeFile(percent_list, headers, directory, name = "main_report{}".format(report_name))
+        r_name = "complete_report"
+    writeFile(percent_list, headers, directory, name = r_name)
 
+def getVectorForStrategy(values, astock):
+    score, dipScore = getScore(values)
+    discount = getDiscount(values)
+    distrange, vari = getRangedDist(values)
+    dipScore = round(dipScore,3)
+    pointsabove = 0
+    pointsbelow = 0
+    if not astock == "IUSG":
+        pointsabove, pointsbelow = getPointsAbove(values)
+    changes = getChanges(values)
+    factor = 1
+    fd = 1
+    if changes:
+        factor = round(np.prod(changes),3)
+        fd = round(float(factor)/float(discount), 3)
+    new = round((((pointsabove-(pointsbelow/3.1415))* fd)/dipScore) + math.sqrt(score), 3)
+    wc, probup, wcb = getWC(values)
+    return [new, discount, dipScore, vari, pointsabove, pointsbelow, wc]
+
+def writeStrategyReport(stocks, start = None, end = None):
+    percent_list = {}
+    for astock in stocks:
+        path = getPath("csv/{}.csv".format(astock))
+        try:
+            df = pandas.read_csv(path)
+        except:
+            try:
+                df = saveProcessedFromYahoo(astock)
+            except Exception as e:
+                print (str(e))
+                print ("problem with {}".format(astock))
+                continue
+        df = df[start:end]
+        values = df[csvColumn].tolist()
+        if len(values) < 200:
+            continue
+
+        last = 0
+        lasth = 0
+        lastl = 0
+        name = ""
+        if astock in getFromHoldings():
+            name = "ETF"
+        lasth = max(df['High'].iloc[:7])
+        lastl = min(df['Low'].iloc[:3])
+        last = df['Close'].iloc[-1]
+
+        percent_list[astock] = getVectorForStrategy(values, astock) + [name, last, lastl, lasth]
+
+    headers = ["Score", "Discount", "Dip", "Variance", "PointsAbove", 
+    "PointsBelow", "WC", "ETF", "Last", "LastL", "LastH"]
+
+    r_name = "strategy_report_{}".format(getEndDate())
+    writeFile(percent_list, headers, "analysis", name = r_name)
 #updateJsonCompany("COST")

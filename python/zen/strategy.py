@@ -7,12 +7,12 @@ import util
 import time
 
 spend = 2000
+reportname = "main_report_"
 size = 10
 purchase = dict()
 spent = 1
 tranfees = 0
 etftotal = 0
-etf = "USMV"
 ivv = util.getivvstocks()
 etfs = util.getFromHoldings()
 etfvs = dict()
@@ -33,10 +33,12 @@ def tallyFrom(path, mode):
     symbols = loaded['Unnamed: 0'].tolist()
     prices = loaded['Last'].tolist()
 
-    for anetf in etfs:
-        etfn = float(loaded[loaded['Unnamed: 0'] == anetf]['Last'])
-        etfvs.setdefault(anetf, 0)
-        etfvs[anetf] += spend / etfn
+    if mode[0] == "Score":
+        for anetf in etfs:
+            etfn = float(loaded[loaded['Unnamed: 0'] == anetf]['Last'])
+            etfvs.setdefault(anetf, 0)
+            buycount = spend / etfn
+            etfvs[anetf] += buycount
 
     per = spend / size
     spent += spend
@@ -44,22 +46,21 @@ def tallyFrom(path, mode):
     purchased = 0
     for i, price in enumerate(prices):
         symbol = symbols[i]
-#        if not symbol in ivv:
-#            continue
+        #if not symbol in ivv:
+        #    continue
         amount = per / price
         purchase.setdefault(symbol, 0)
         purchase[symbol] += round(amount,5)
         purchased += 1
         if purchased == size:
             break
-
 rememberedFiles = []
 def getFiles():
     global rememberedFiles
     import fnmatch
     if rememberedFiles:
         return rememberedFiles
-    pattern = "main_report_*.csv"
+    pattern = "{}*.csv".format(reportname)
     holds = []
     parentdir = util.getPath("analysis")
     listOfFiles = os.listdir(parentdir)
@@ -70,7 +71,6 @@ def getFiles():
         if fnmatch.fnmatch(entry, pattern):
             rememberedFiles.append("{}/{}".format(parentdir, entry))
     return rememberedFiles
-
 
 def getTrainingTemps(mode):
     paths = getFiles()
@@ -83,7 +83,7 @@ def getTrainingTemps(mode):
 
 changeDict = dict()
 latest_values = util.getp("latestValues")
-def calcIt(mode):
+def calcIt(mode, day_adjust):
     global purchase, curr_account_size, spent, tranfees, etftotal
     spent = 1
     tranfees = 0
@@ -94,55 +94,45 @@ def calcIt(mode):
     for astock in purchase:
         curr_account_size += purchase[astock] * latest_values[astock]
     change = round(curr_account_size / (spent + tranfees),3)
-    print ("mode  : {}".format(mode[0]))
-    print ("change: {}".format(util.formatDecimal(change)))
+    change = util.formatDecimal(change)
+    print ("{0:12} {1:6}".format(mode[0], change))
 
 modes = [["Score", False],
     ["Discount", True],
-    ["Dip", True],
-    ["Variance", False],
+    ["Dip", False],
+    ["Variance", True],
     ["PointsAbove", False],
     ["WC", False],
-    ["WCBad", False],
-    ["3", True],
-    ["6", False],
-    ["12", False],
-    ["24", False],
-    ["48", False],
-    ["96", False],
-    ["192", False]]
+    ["WCBad", False]
+    ]
+#    ["3", True],
+#    ["6", False],
+#    ["12", True],
+#    ["24", False],
+#    ["48", False],
+#    ["96", False],
+#    ["192", False]]
 
-for mode in modes:
-    calcIt(mode)
+print("report   : {}".format(size) + reportname)
+for day_adjust in range(15):
+    for mode in modes:
+        calcIt(mode, day_adjust)
+    break
 
-maxeft = 0
-eft_name = ""
-for etf in eftvs:
-    etfvalue = round(etftotal * latest_values[etf], 3)
-    if etfvalue > maxeft:
-        maxeft = eftvalue 
+maxetf = 0
+etf_name = ""
+for etf in etfvs:
+    etfvalue = round(etfvs[etf] * latest_values[etf], 3)
+    if etfvalue > maxetf:
+        maxetf = etfvalue 
         etf_name = etf
 
-print("name   : " + etf_name)
-print("etf    : $" + str(maxetf))
-print("change : " + util.formatDecimal(maxetf/spent))
-print("spent  : " + str(spent))
-
-
-#print("\n")
-#try:
-#    change = round(curr_account_size / (spent + tranfees),3)
-#    print("account     : $" + str(round(curr_account_size,3)))
-#    print("spent       : $" + str(spent + tranfees))
-#    print("tranfees    : $" + str(tranfees))
-#    change = round(curr_account_size / (spent + tranfees),3)
-#    print("change      : " + util.formatDecimal(change))
-#    etfvalue = round(etftotal * latest_values[etf])
-#    print("etf         : $" + str(etfvalue))
-#    print("etfchange   : " + util.formatDecimal(etfvalue/spent))
-#    print("stock count : " + str(len(purchase)))
-##    print(purchase)
-#
-#except Exception as e:
-#    print ('Failed: '+ str(e))
- 
+try:
+    print("name   : " + etf_name)
+    print("etf    : $" + str(maxetf))
+    print("change : " + util.formatDecimal(maxetf/spent))
+    print("spent  : " + str(spent))
+    print("latest : " + str(latest_values[etf_name]))
+except Exception as e:
+    print ('Failed: '+ str(e))
+    pass
