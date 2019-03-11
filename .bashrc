@@ -133,7 +133,9 @@ alias scopeme='find "$PWD/" -name "*.py" -o -iname "*.cfg" > cscope.files && csc
 alias pysite='python -m site'
 alias vgitrc='vim ~/.gitconfig'
 
-
+alias goa="cds; cd python/zen_dump/analysis"
+alias pl="cds; cd python/zen; py ~/setup/python/zen/stock_plot.py"
+alias ka="killall python3"
 #sudo -S true
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!

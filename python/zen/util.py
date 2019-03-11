@@ -3,15 +3,17 @@ import matplotlib.pyplot as plt
 from bs4 import BeautifulSoup
 from scipy import stats
 import os
+import math
 import pandas
 import datetime
 import pickle
 import fix_yahoo_finance as yf
 import fnmatch
-#import statistics
 from pandas_datareader import data as pdr
 import urllib.request, json
-csvColumn = "Adj Close"
+from collections import deque
+
+csvColumn = "Close"
 
 def formatDecimal(factor):
     return "{:.2%}".format(factor-1)
@@ -23,8 +25,7 @@ def getTestItems(needed = 30, simple = False):
         return [1,1,1,1,1,1,1,2,2,2,2,3,3,3,3,3,1,1,1,1,1,1,1,3,4,4,5,5,
         6,6,7,7,7,8,8,7,6,6,5,4,6,5,4,3,9,7,8,9]
     return [round(sqrt(i), 2) for i in range(1,needed)]
-#plt.plot(getTestItems(simple=True))
-#plt.show()
+
 
 def getPath(path):
     path = "{}/../zen_dump/{}".format(os.getcwd(), path)
@@ -68,8 +69,8 @@ def getDividendSchedule(month, date):
 
     return decoded.split("\n")
 
-import re
 def getSymbol(text):
+    import re
     m = re.search(r"\((.*?)\)", text)
     if m:
         return m.group(1)
@@ -196,7 +197,6 @@ def averageRegress(items):
 #    return low
 #print (get3DayLow(getTestItems(), 20))
 
-from collections import deque
 def dipScore(items):
     SIZE = 7
     currentStack = deque([])
@@ -214,14 +214,12 @@ def dipScore(items):
     return round(sum(dips),6)
 #print (dipScore(getTestItems()))
 
-import math
 def getFactors(items):
     one = (items[-50] + items[-50])/2
     two = (items[-180] + items[-181])/2
     final = (items[-1] + items[-2])/2
 
     return round((((final/two)+1)/7)+(((final/one)+1)/2),5)
-
 
 def getScore(items):
     num =  averageRegress(items)
@@ -336,18 +334,18 @@ def getTrainingTemps():
     return holds
 #print (getTrainingTemps())
 
-etfs = None
 def getFromHoldings():
-    global etfs
-    if etfs:
-        return etfs
+    try: return getFromHoldings.etfs
+    except: pass
+
     pattern = "*.csv"  
     holds = []
     listOfFiles = os.listdir('../zen_dump/holdings')  
     for entry in listOfFiles:  
         if fnmatch.fnmatch(entry, pattern):
             holds.append(entry.split("_")[0])
-    etfs = holds
+
+    getFromHoldings.etfs = holds
     return holds
 
 subset = list()
@@ -359,7 +357,17 @@ def getivvstocks():
         subset = set(dataivv['Ticker'].tolist())
     return subset
 
-def getStocks(holding = "IVV", andEtfs = True, difference = False, dev=False, ivv=False):
+def diff_IWB_and_IUSG():
+    path1 = getPath("holdings/IWB_holdings.csv")
+    path2 = getPath("holdings/IUSG_holdings_growth.csv")
+    dataiwb = set(pandas.read_csv(path1)['Ticker'].tolist())
+    data = set(pandas.read_csv(path2)['Ticker'].tolist())
+    return (data-dataiwb)
+
+
+def getStocks(holding = "IVV", andEtfs = True, 
+        difference = False, dev=False, ivv=False):
+
     if dev:
         return ["GOOG", "IVV"]
 
@@ -367,29 +375,21 @@ def getStocks(holding = "IVV", andEtfs = True, difference = False, dev=False, iv
     if ivv:
         return list(subset) + getFromHoldings()
 
+    try: return getStocks.ret
+    except: pass
+
     path = getPath("holdings/IWB_holdings.csv")
     dataiwb = pandas.read_csv(path)
 
+    path2 = getPath("holdings/IUSG_holdings_growth.csv")
+    data = set(pandas.read_csv(path2)['Ticker'].tolist())
+
     removed = getp("removedstocks")
     ret = list(subset | set(dataiwb['Ticker'].tolist()) ) + getFromHoldings()
-    ret = set(ret) - set(removed)
-    return list(ret)
+    ret = list(set(ret) - (set(removed) | set(data)))
 
-#    if not holding == "IVV":
-#        listOfFiles = os.listdir('../zen_dump/holdings')  
-#        for entry in listOfFiles:  
-#            if holding in entry:
-#                path = getPath("holdings/{}".format(entry))
-#                break
-#
-#    data = pandas.read_csv(path)
-#    if andEtfs:
-#        return data['Ticker'].tolist() + getFromHoldings()
-#
-#    if (difference):
-#        ivv = set(getStocks("IVV"))
-#        return list(set(data['Ticker'].tolist()) - ivv)
-#    return data['Ticker'].tolist()
+    getStocks.ret = ret
+    return ret
 
 yf.pdr_override() # <== that's all it takes :-)
 
@@ -436,13 +436,15 @@ def saveJsonData(stocks, directory="all"):
     df.to_csv(path)
 
 def getNumberOfDates():
+    try : return getNumberOfDates.ret
+    except : pass
     path = getPath("csv/GOOG.csv")
-    num_lines = sum(1 for line in open(path))
-    return num_lines-1
+    getNumberOfDates.ret = sum(1 for line in open(path)) - 1
+    return getNumberOfDates.ret
 
 tday = datetime.date.today().isoformat()
 startdate = "2015-01-05"
-expected_count = 1050
+#expected_count = 1050
 removed = []
 def getRemovedStocks():
     return removed
@@ -451,6 +453,9 @@ def saveProcessedFromYahoo(astock):
     global removed
     path = getPath("csv/{}.csv".format(astock))
     if os.path.exists(path):
+        return
+
+    if not astock.isalpha():
         return
 
     df = None
@@ -468,14 +473,6 @@ def saveProcessedFromYahoo(astock):
         removed.append(astock)
         return
 
-    count = len(df)
-    if count != expected_count:
-        print ("not enough data for {} {} ".format(astock, str(count)))
-        removed.append(astock)
-        return
-
-#    avg = list()
-#    df.drop(columns = ["Adj Close"], inplace=True)
     for idx,row in df.iterrows():
         if df.at[idx, "Volume"] == "0":
             print ("corrupt data ".format(astock))
@@ -484,13 +481,17 @@ def saveProcessedFromYahoo(astock):
 
         for label in ["Open", "Close", "High", "Low", "Adj Close"]:
             df.at[idx, label] = round(df.at[idx, label], 4)
+
     df.to_csv(path)
+    try : trimStock(astock, getTrimStock(astock))
+    except: pass
     return df
+
+
 #        avg.append(round(sub/4, 4))
 
 #    df.insert(loc=4, column='Avg', value=avg)
 #    return df
-#saveProcessedFromYahoo("AMD")
 
 def getMinimizedVector(values):
     try:
@@ -546,10 +547,6 @@ def getStartDate():
     return startDate
 
 numberOfDates = 0
-
-#def getNumberOfDates():
-#    return numberOfDates
-
 def loadUSMV_dict(end = None, start=None):
     global baseline, endDate, numberOfDates, startDate
     path = getPath("csv/IUSG.csv")
@@ -595,7 +592,10 @@ def getDividend(astock, lastvalue, json_dict):
 #print (getDividend("BLK", 300, json_dict))
 
 def getWanted():
-    return {"PAYX":65}
+    return {
+        "PAYX":65,
+        "EXAS":65,
+    }
 
 def listRightIndex(alist, value):
     return len(alist)- alist[-1::-1].index(value) -1
@@ -846,19 +846,54 @@ def getVectorForStrategy(values, astock):
     wc, probup, wcb = getWC(values)
     return [new, discount, dipScore, vari, pointsabove, pointsbelow, wc]
 
-def writeStrategyReport(stocks, start = None, end = None):
-    percent_list = {}
-    for astock in stocks:
+savedReads = dict()
+
+def getCsv(astock, idx = None):
+    global savedReads
+    if idx == 0:
+        idx = "Unnamed: 0"
+
+    df = None
+    try:
+        if savedReads and (astock in savedReads):
+            if idx:
+                return df[idx].tolist()
+            return savedReads[astock]
+    except Exception as e:
+        return None
+
+    try:
         path = getPath("csv/{}.csv".format(astock))
-        try:
+        df = pandas.read_csv(path)
+    except:
+        # allow getCsv to return from specified csv files
+        path = getPath(astock)
+        if os.path.exists(path):
             df = pandas.read_csv(path)
-        except:
+        else:
             try:
                 df = saveProcessedFromYahoo(astock)
             except Exception as e:
                 print (str(e))
                 print ("problem with {}".format(astock))
-                continue
+                return None
+
+    savedReads[astock] = df
+    if idx:
+        return df[idx].tolist()
+
+    return df
+
+def writeStrategyReport(stocks, start = None, end = None):
+    percent_list = {}
+    for astock in stocks:
+        df = getCsv(astock)
+        if df is None:
+            continue
+
+        if df["Date"].count() != getNumberOfDates():
+            continue
+
         df = df[start:end]
         values = df[csvColumn].tolist()
         if len(values) < 200:
@@ -870,13 +905,9 @@ def writeStrategyReport(stocks, start = None, end = None):
         name = ""
         if astock in getFromHoldings():
             name = "ETF"
-#        if astock == "TRV":
-#            what = df['High'].iloc[-7:]
-#            print(what)
-#            raise SystemExit
 
-        lasth = max(df['High'].iloc[-10:])
-        lastl = min(df['Low'].iloc[-5:])
+        lasth = max(df['High'].iloc[-8:])
+        lastl = min(df['Low'].iloc[-4:])
         last = df['Close'].iloc[-1]
 
         percent_list[astock] = getVectorForStrategy(values, astock) + [name, last, lastl, lasth]
@@ -887,3 +918,58 @@ def writeStrategyReport(stocks, start = None, end = None):
     r_name = "strategy_report_{}".format(getEndDate())
     writeFile(percent_list, headers, "analysis", name = r_name)
 #updateJsonCompany("COST")
+
+def plot(astock, start = None, end = None):
+    df = getCsv(astock)
+    df = df[start:end]
+    values = df[csvColumn].tolist()
+    plt.plot(values)
+    plt.show()
+
+def getTrimStock(astock):
+    try : return getp("trims")[astock]
+    except : return None
+#print (getTrimStock("VST"))
+
+def resetStock(astock):
+    global savedReads
+    path = getPath("csv/{}.csv".format(astock))
+    os.remove(path)
+
+    trims = getp("trims")
+    del trims[astock]
+    setp(trims, "trims")
+
+    saveProcessedFromYahoo("VST")
+    del savedReads[astock]
+
+def trimStock(astock, end):
+    global savedReads
+    if not end:
+        return
+    try:
+        path = getPath("csv/{}.csv".format(astock))
+        os.system("sed -i {},{}d {}".format(2,end, path))
+    except:
+        print ("Did not trim csv {}".format(path))
+        pass
+
+    end = int(end)
+
+    try: trimStock.trims[astock] += end
+    except : 
+        trimStock.trims = getp("trims")
+        try : trimStock.trims[astock] = end
+        except : 
+            trimStock.trims = dict()
+            trimStock.trims[astock] = end
+
+    del savedReads[astock]
+    setp(trimStock.trims, "trims")
+#print (getTrimStock("GOOG"))
+#trimStock("VST", 200)
+
+
+#plot("EXAS")
+
+#saveProcessedFromYahoo("VST")

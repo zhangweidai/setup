@@ -1,6 +1,6 @@
 def getRanges(count):
     ret = []
-    minimum = 25
+    minimum = 30
     minrequired = 200
     i = 1
     last = (count % minimum)
@@ -27,3 +27,4 @@ ranges = getRanges(util.getNumberOfDates())
 for vals in ranges:
     util.loadUSMV_dict(start=vals[0], end=vals[1])
     util.writeStrategyReport(stocks, start=vals[0], end=vals[1])
+    break
