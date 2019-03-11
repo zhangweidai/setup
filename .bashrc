@@ -135,6 +135,7 @@ alias vgitrc='vim ~/.gitconfig'
 
 alias goa="cds; cd python/zen_dump/analysis"
 alias pl="cds; cd python/zen; py ~/setup/python/zen/stock_plot.py"
+alias ipy="ipython"
 alias ka="killall python3"
 #sudo -S true
 
