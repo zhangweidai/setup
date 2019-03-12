@@ -133,8 +133,13 @@ alias scopeme='find "$PWD/" -name "*.py" -o -iname "*.cfg" > cscope.files && csc
 alias pysite='python -m site'
 alias vgitrc='vim ~/.gitconfig'
 
+if [ `whoami` ==  "zoe" ]; then
+    alias pl="cds; b; cd setup2; cd python/zen; py ~/setup2/python/zen/stock_plot.py"
+else
+    alias pl="cds; cd python/zen; py ~/setup/python/zen/stock_plot.py"
+fi
+
 alias goa="cds; cd python/zen_dump/analysis"
-alias pl="cds; cd python/zen; py ~/setup/python/zen/stock_plot.py"
 alias ipy="ipython"
 alias ka="killall python3"
 #sudo -S true

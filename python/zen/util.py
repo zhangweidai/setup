@@ -369,7 +369,7 @@ def getStocks(holding = "IVV", andEtfs = True,
         difference = False, dev=False, ivv=False):
 
     if dev:
-        return ["GOOG", "IVV"]
+        return ["BA", "BRO", "IFF", "MU", "SM", "WCC"]
 
     subset = getivvstocks()
     if ivv:

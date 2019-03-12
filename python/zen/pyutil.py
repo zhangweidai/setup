@@ -9,6 +9,7 @@ class Modes(Enum):
     none = 0
     trim = 1
     zoom = 2
+    average = 3
 
 class Zen(Enum):
     lastStock = 0
@@ -113,3 +114,32 @@ class SnaptoCursor(object):
         print('x=%1.2f, y=%1.2f' % (x, y))
         plt.draw()
 
+def averageValues(values, by = 5):
+    ret = []
+    lastavg = 0
+    leng = len(values)
+    for i,value in enumerate(values):
+        end = i+by
+        if end < leng:
+            avg = round(sum(values[i:end])/float(by), 4)
+        else:
+            avg = lastavg
+        ret.append(avg)
+        lastavg = avg
+    return ret
+
+def changeValues(values, by = 5):
+    ret = []
+    last = 0
+    leng = len(values)
+    for i,value in enumerate(values):
+        end = i+by
+        if end < leng:
+            change = round(values[end]/float(values[i]), 4)
+        else:
+            change = last
+        ret.append(change)
+        last = change
+    return ret
+#print changeValues([i for i in range(1,40)])
+#print [i for i in range(40)]

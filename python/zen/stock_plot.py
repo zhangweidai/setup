@@ -12,13 +12,21 @@ import util
 from matplotlib.pyplot import figure
 from tkinter import simpledialog; 
 from pyutil import Modes, Zen, settings
+import pyutil
 
 currentMode = Modes.none
 
- # Set figure width to 12 and height to 9
-plt.rcParams["figure.figsize"] = [16,10]
-stocks = getCsv("analysis/why_buy_these.csv", 0)
-stocks = [stock.split("/")[-1] for stock in stocks]
+lap = True
+if lap:
+    plt.rcParams["figure.figsize"] = [11,6]
+    xcount = 7
+else:
+    plt.rcParams["figure.figsize"] = [16,10]
+    xcount = 10
+
+#stocks = getCsv("analysis/why_buy_these.csv", 0)
+stocks = getStocks(dev=True)
+#stocks = [stock.split("/")[-1] for stock in stocks]
 
 
 stock_count = len(stocks)
@@ -31,24 +39,29 @@ def getCurrentStock():
 
 values = None
 df = None
-xcount = 10
 dates = None
+csvColumn = "Close"
+endx = 0
+maxvalues = 0
 def rebuild(start = None, end = None):
-    global ax, values, df, dates
+    global ax, values, df, dates, maxvalues
     ax.cla()
     astock = stocks[current_idx]
     df = getCsv(astock)
+    maxvalues = len(df)
     df = df[start:end]
     values = df[csvColumn].tolist()
+    ax.plot(df["Low"].tolist())
+    ax.plot(df["High"].tolist())
     ax.plot(values)
+
+    if currentMode == Modes.average:
+        ax.plot(pyutil.averageValues(values))
+
     ax.set_title(astock)
 
     startx = 0 
     endx = len(values)-1
-#    if start:
-#        startx = start 
-#    if end:
-#        endx = end 
 
     byx = int((endx-startx)/xcount)
     dates = df['Date'].tolist()
@@ -58,6 +71,7 @@ def rebuild(start = None, end = None):
     plt.xticks( xranges, xlabels)
 
     fig.canvas.draw()
+    fig.canvas.get_tk_widget().focus_set()
                 
 def nexti():
     global current_idx
@@ -71,9 +85,39 @@ def previ():
         current_idx -= 1
         rebuild()
 
+def interpret(answer):
+    if answer == "reset":
+        util.resetStock(getCurrentStock())
+        rebuild()
+    elif "recent" in answer:
+        count = 15
+        try: count = int(answer.split(' ')[1])
+        except: pass
+        rebuild(maxvalues-count, maxvalues)
+
+def setCurrentMode(mode):
+    global currentMode
+    currentMode = mode
+    rebuild()
+
 def press(event):
+    if len(event.key) == 1:
+        try: press.last += event.key
+        except: press.last = event.key
+    if len(press.last) > 3: press.last = press.last[1:]
+
     global current_idx, fig, currentMode
+
+    if press.last == "aa" or press.last == "aaa":
+        press.last = ""
+    elif press.last == "avg":
+        setCurrentMode(Modes.average)
+    elif press.last == "cle" or press.last == "cls":
+        setCurrentMode(Modes.none)
+
     print('press', event.key)
+    print(press.last)
+
     sys.stdout.flush()
 #        visible = xl.get_visible()
 #        xl.set_visible(not visible)
@@ -86,7 +130,6 @@ def press(event):
             currentMode = Modes.zoom
         else:
             rebuild()
-#            xadjust = 0
             currentMode = Modes.none
     elif event.key == 'x':
         from pyutil import restart_program
@@ -105,10 +148,11 @@ def press(event):
         currentMode = Modes.trim
     elif event.key == ' ':
         answer = simpledialog.askstring("Advanced", "cmd:", parent = None)
-        if answer == "reset":
-            util.resetStock(getCurrentStock())
+        try:
+            interpret(answer)
+        except:
+            pass
         fig.canvas.get_tk_widget().focus_set()
-        rebuild()
 #            trimStock(getCurrentStock(), answer)
 #            rebuild()
 def handle_close(evt):
@@ -131,7 +175,6 @@ def move_figure(f, x, y):
         # This works for QT and GTK. You can also use window.setGeometry
         f.canvas.manager.window.move(x, y)
 
-csvColumn = "Close"
 xl = None
 fig = None
 
@@ -186,11 +229,12 @@ def onclick(event):
         rebuild()
 #print (getTrimStock("VST"))
 def configurePlots(fig, ax):
-    adjust = 0.05
+    adjust = 0.10
     fig.subplots_adjust(left=adjust, bottom=adjust, 
                         right=1-adjust, top=1-adjust)
 
     move_figure(fig, 1920, 0)
+    move_figure(fig, 0, 0)
     fig.canvas.mpl_connect('key_press_event', press)
     fig.canvas.mpl_connect('scroll_event', handle_scroll)
     fig.canvas.mpl_connect('button_press_event', onclick)
@@ -203,9 +247,7 @@ def multiPlot():
     global fig, ax
     plt.close(fig)
     fig, ax = plt.subplots(nrows=2, ncols=2)
-
     configurePlots(fig, ax)
-
     plt.show()
 
 #plt.get_current_fig_manager().window.wm_geometry("+0+0")
@@ -218,12 +260,14 @@ def plot(astock, start = None, end = None):
     plt.rcParams['toolbar'] = 'None'
     fig, ax = plt.subplots()
     configurePlots(fig, ax)
-
-#    ax.set_title(astock)
-#    ax.plot(values)
     rebuild()
 
     plt.show()
 
-current_idx = settings(Zen.lastStock)
-plot(stocks[current_idx])
+try:
+    current_idx = settings(Zen.lastStock, default=0)
+    plot(stocks[current_idx])
+except:
+    pass
+
+
