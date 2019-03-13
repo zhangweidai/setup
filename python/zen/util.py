@@ -19,7 +19,9 @@ def formatDecimal(factor):
     return "{:.2%}".format(factor-1)
 #print(formatDecimal(2.93))
 
-def getTestItems(needed = 30, simple = False):
+def getTestItems(needed = 30, simple = False, astock=None):
+    if astock:
+        return getCsv(astock)[csvColumn].tolist()
     from math import sqrt
     if simple:
         return [1,1,1,1,1,1,1,2,2,2,2,3,3,3,3,3,1,1,1,1,1,1,1,3,4,4,5,5,
@@ -197,22 +199,27 @@ def averageRegress(items):
 #    return low
 #print (get3DayLow(getTestItems(), 20))
 
-def dipScore(items):
-    SIZE = 7
+def dipScore(items, interval=7, avg=3, retAvg=False):
     currentStack = deque([])
     low = deque([])
     dips = []
+    gains = []
     for i,price in enumerate(items):
         currentStack.append(price)
-        if len(currentStack) == SIZE:
-            start = (max(list(currentStack)[:3]))
-            end = (min(list(currentStack)[-3:]))
+        if len(currentStack) == interval:
+            start = (max(list(currentStack)[:avg]))
+            end = (min(list(currentStack)[-1*avg:]))
             tdip = (end/start)
-            if tdip < 1:
+            if tdip < 1 and not retAvg:
                 dips.append(1-tdip)
+            elif tdip < 1 and retAvg:
+                dips.append(tdip)
+            elif retAvg and tdip > 1:
+                gains.append(tdip)
             currentStack.popleft()
+    if retAvg:
+        return round(sum(dips)/len(dips),5), round(sum(gains)/len(gains),5), 
     return round(sum(dips),6)
-#print (dipScore(getTestItems()))
 
 def getFactors(items):
     one = (items[-50] + items[-50])/2
@@ -886,6 +893,7 @@ def getCsv(astock, idx = None):
 
 def writeStrategyReport(stocks, start = None, end = None):
     percent_list = {}
+    buyList = []
     for astock in stocks:
         df = getCsv(astock)
         if df is None:
@@ -910,10 +918,19 @@ def writeStrategyReport(stocks, start = None, end = None):
         lastl = min(df['Low'].iloc[-4:])
         last = df['Close'].iloc[-1]
 
+        target, date = getTargetPrice(astock)
+        if last > target:
+            notation = ""
+            if astock in getivvstocks():
+                notation = "**"
+            buyList.append(astock + notation)
+
         percent_list[astock] = getVectorForStrategy(values, astock) + [name, last, lastl, lasth]
 
     headers = ["Score", "Discount", "Dip", "Variance", "PointsAbove", 
     "PointsBelow", "WC", "ETF", "Last", "LastL", "LastH"]
+    if buyList:
+        print ("Buy List : {}".format(", ".join(buyList)))
 
     r_name = "strategy_report_{}".format(getEndDate())
     writeFile(percent_list, headers, "analysis", name = r_name)
@@ -973,3 +990,7 @@ def trimStock(astock, end):
 #plot("EXAS")
 
 #saveProcessedFromYahoo("VST")
+
+def getAverageStats(values, interval=3, last=30):
+    values = values[-1*last:]
+    return dipScore(items, interval=interval, avg=1, retAvg=True)

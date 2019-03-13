@@ -51,8 +51,8 @@ def rebuild(start = None, end = None):
     maxvalues = len(df)
     df = df[start:end]
     values = df[csvColumn].tolist()
-    ax.plot(df["Low"].tolist())
-    ax.plot(df["High"].tolist())
+    ax.plot(df["Low"].tolist(), linewidth = .5)
+    ax.plot(df["High"].tolist(), linewidth = .5)
     ax.plot(values)
 
     if currentMode == Modes.average:
