@@ -14,59 +14,57 @@ from tkinter import simpledialog;
 from pyutil import Modes, Zen, settings
 import pyutil
 
-currentMode = Modes.none
-
-lap = True
-if lap:
-    plt.rcParams["figure.figsize"] = [11,6]
-    xcount = 7
-else:
-    plt.rcParams["figure.figsize"] = [16,10]
-    xcount = 10
-
-#stocks = getCsv("analysis/why_buy_these.csv", 0)
-stocks = getStocks(dev=True)
-#stocks = [stock.split("/")[-1] for stock in stocks]
-
-
-stock_count = len(stocks)
-start = None
-end = None
-ax = None
-
 def getCurrentStock():
     return stocks[current_idx]
 
-values = None
-df = None
-dates = None
-csvColumn = "Close"
-endx = 0
-maxvalues = 0
 def rebuild(start = None, end = None):
-    global ax, values, df, dates, maxvalues
+    global ax, values, df, dates, maxvalues, current_idx, stocks
     ax.cla()
     astock = stocks[current_idx]
     df = getCsv(astock)
     maxvalues = len(df)
     df = df[start:end]
     values = df[csvColumn].tolist()
-    ax.plot(df["Low"].tolist())
-    ax.plot(df["High"].tolist())
-    ax.plot(values)
 
-    if currentMode == Modes.average:
+    if Modes.more in currentMode:
+        ax.plot(df["Low"].tolist())
+        ax.plot(df["High"].tolist())
+
+    if Modes.change in currentMode:
+        ax.plot(pyutil.averageValues(pyutil.changeValues(values)))
+        ax.axhline(y=1)
+    else:
+        ax.plot(values)
+
+    if Modes.average in currentMode:
         ax.plot(pyutil.averageValues(values))
 
-    ax.set_title(astock)
+    addl = ""
+    if Modes.target in currentMode:
+        addl = "(TARGET)"
+        
+    ax.set_title("{}{}".format(astock, addl))
 
     startx = 0 
     endx = len(values)-1
 
-    byx = int((endx-startx)/xcount)
-    dates = df['Date'].tolist()
+    try: plt.scatter( endx, util.getTargetPrice(astock)[0], s=80, color="red")
+    except Exception as e:
+        print ('TargetPrice : '+ str(e))
 
-    xranges = [i for i in range(startx, endx, byx)]
+    byx = int((endx-startx)/xcount)
+    try:
+        dates = df['Date'].tolist()
+    except Exception as e:
+        print ('Deleting : '+ str(e))
+        print (astock)
+        util.delStock(astock)
+        stocks = getStocks(reset=True)
+        current_idx += 1
+        rebuild()
+        return
+
+    xranges = [i for i in range(startx, endx+1, byx)]
     xlabels = [ "{}\n({})".format(i,dates[i]) for i in xranges]
     plt.xticks( xranges, xlabels)
 
@@ -86,6 +84,8 @@ def previ():
         rebuild()
 
 def interpret(answer):
+    global current_idx
+    print("answer: {}".format( answer))
     if answer == "reset":
         util.resetStock(getCurrentStock())
         rebuild()
@@ -94,17 +94,23 @@ def interpret(answer):
         try: count = int(answer.split(' ')[1])
         except: pass
         rebuild(maxvalues-count, maxvalues)
+    else:
+        current_idx = stocks.index(answer.upper())
+        print("current_idx : {}".format(current_idx))
+        rebuild()
 
 def setCurrentMode(mode):
     global currentMode
-    currentMode = mode
+    currentMode ^= mode
     rebuild()
 
 def press(event):
     if len(event.key) == 1:
         try: press.last += event.key
         except: press.last = event.key
-    if len(press.last) > 3: press.last = press.last[1:]
+    try: 
+        if len(press.last) > 3: press.last = press.last[1:]
+    except : pass
 
     global current_idx, fig, currentMode
 
@@ -114,9 +120,15 @@ def press(event):
         setCurrentMode(Modes.average)
     elif press.last == "cle" or press.last == "cls":
         setCurrentMode(Modes.none)
+    elif press.last == "mor":
+        setCurrentMode(Modes.more)
+    elif press.last == "cha":
+        setCurrentMode(Modes.change)
+    elif press.last == "tar":
+        setCurrentMode(Modes.target)
 
-    print('press', event.key)
-    print(press.last)
+#    print('press', event.key)
+#    print(press.last)
 
     sys.stdout.flush()
 #        visible = xl.get_visible()
@@ -124,6 +136,7 @@ def press(event):
 #    if event.key == 'left':
     if event.key == 'q':
         settings(Zen.lastStock, value=current_idx)
+        util.saveTargets()
     # zz
     elif event.key == 'z':
         if not currentMode == Modes.zoom:
@@ -134,29 +147,39 @@ def press(event):
     elif event.key == 'x':
         from pyutil import restart_program
         settings(Zen.lastStock, current_idx)
+        util.saveTargets()
         restart_program()
+
     elif event.key == '0':
         current_idx = 0
         rebuild()
-    elif event.key == '9':
-        multiPlot()
+#    elif event.key == '9':
+#        multiPlot()
     elif event.key == 'j':
         nexti()
     elif event.key == 'k':
         previ()
-    elif event.key == 't':
-        currentMode = Modes.trim
+#    elif event.key == 't':
+#        currentMode = Modes.trim
     elif event.key == ' ':
         answer = simpledialog.askstring("Advanced", "cmd:", parent = None)
         try:
             interpret(answer)
-        except:
+        except Exception as e:
+            print ('Failed2: '+ str(e))
             pass
         fig.canvas.get_tk_widget().focus_set()
+    elif event.key == '=':
+        pyutil.increaseAvg(True)
+        rebuild()
+    elif event.key == '-':
+        pyutil.increaseAvg(False)
+        rebuild()
 #            trimStock(getCurrentStock(), answer)
 #            rebuild()
 def handle_close(evt):
     settings(Zen.lastStock, value=current_idx)
+    util.saveTargets()
 
 def handle_scroll(evt):
     if evt.button == "up":
@@ -175,18 +198,13 @@ def move_figure(f, x, y):
         # This works for QT and GTK. You can also use window.setGeometry
         f.canvas.manager.window.move(x, y)
 
-xl = None
-fig = None
-
-savedxdata = None
-#xadjust = 0
 def onrelease(event):
     global values, currentMode
     if not savedxdata:
         return
 
-    print("event: {}".format(event.xdata))
-    print("savedxdata: {}".format( savedxdata))
+#    print("event: {}".format(event.xdata))
+#    print("savedxdata: {}".format( savedxdata))
     leng = len(values)
     if event.xdata > leng or savedxdata > leng:
         currentMode = Modes.none
@@ -217,6 +235,11 @@ def onrelease(event):
         currentMode = Modes.none
 
 def onclick(event):
+    if Modes.target in currentMode and event.ydata:
+        util.setTargetPrice(getCurrentStock(), round(event.ydata,3))
+        nexti()
+        return
+
     global df, savedxdata
     savedxdata = event.xdata
     print("savedxdata : {}".format( savedxdata ))
@@ -234,7 +257,7 @@ def configurePlots(fig, ax):
                         right=1-adjust, top=1-adjust)
 
     move_figure(fig, 1920, 0)
-    move_figure(fig, 0, 0)
+#    move_figure(fig, 0, 0)
     fig.canvas.mpl_connect('key_press_event', press)
     fig.canvas.mpl_connect('scroll_event', handle_scroll)
     fig.canvas.mpl_connect('button_press_event', onclick)
@@ -264,10 +287,37 @@ def plot(astock, start = None, end = None):
 
     plt.show()
 
-try:
-    current_idx = settings(Zen.lastStock, default=0)
-    plot(stocks[current_idx])
-except:
-    pass
 
+if __name__ == "__main__":
+    currentMode = Modes.none
+    lap = False
+    if lap:
+        plt.rcParams["figure.figsize"] = [11,6]
+        xcount = 7
+    else:
+        plt.rcParams["figure.figsize"] = [16,10]
+        xcount = 10
+#    stocks = getCsv("analysis/why_buy_these.csv", 0)
+#    stocks = [stock.split("/")[-1] for stock in stocks]
+    stocks = getStocks()
+    stock_count = len(stocks)
+    start = None
+    end = None
+    ax = None
+    values = None
+    df = None
+    dates = None
+    csvColumn = "Close"
+    endx = 0
+    maxvalues = 0
+    xl = None
+    fig = None
+    savedxdata = None
+
+    try:
+        current_idx = settings(Zen.lastStock, default=0)
+        plot(stocks[current_idx])
+    except Exception as e:
+        print ('Failed3: '+ str(e))
+        pass
 

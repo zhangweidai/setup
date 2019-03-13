@@ -64,7 +64,7 @@ def getDividendSchedule(month, date):
             with urllib.request.urlopen(addy) as url:
                 decoded = BeautifulSoup(url.read(), 'html.parser').get_text()
         except Exception as e:
-            print ('Failed: '+ str(e))
+            print ('Failed1: '+ str(e))
             return None
 
     return decoded.split("\n")
@@ -348,14 +348,15 @@ def getFromHoldings():
     getFromHoldings.etfs = holds
     return holds
 
-subset = list()
 def getivvstocks():
-    global subset
-    if not subset:
-        path = getPath("holdings/IVV_holdings.csv")
-        dataivv = pandas.read_csv(path)
-        subset = set(dataivv['Ticker'].tolist())
-    return subset
+    try : return getivvstocks.ret
+    except : pass
+
+    path = getPath("holdings/IUSG_holdings_growth.csv")
+    dataivv = pandas.read_csv(path)
+    getivvstocks.ret = set(dataivv['Ticker'].tolist())
+
+    return getivvstocks.ret
 
 def diff_IWB_and_IUSG():
     path1 = getPath("holdings/IWB_holdings.csv")
@@ -366,7 +367,7 @@ def diff_IWB_and_IUSG():
 
 
 def getStocks(holding = "IVV", andEtfs = True, 
-        difference = False, dev=False, ivv=False):
+        difference = False, dev=False, ivv=False, reset = False):
 
     if dev:
         return ["BA", "BRO", "IFF", "MU", "SM", "WCC"]
@@ -375,19 +376,23 @@ def getStocks(holding = "IVV", andEtfs = True,
     if ivv:
         return list(subset) + getFromHoldings()
 
-    try: return getStocks.ret
-    except: pass
+    if not reset:
+        try: return getStocks.ret
+        except: pass
 
     path = getPath("holdings/IWB_holdings.csv")
     dataiwb = pandas.read_csv(path)
+    data1 = set(pandas.read_csv(path)['Ticker'].tolist())
 
     path2 = getPath("holdings/IUSG_holdings_growth.csv")
-    data = set(pandas.read_csv(path2)['Ticker'].tolist())
+    data2 = set(pandas.read_csv(path2)['Ticker'].tolist())
+    ret = list(data1 | data2 | subset)
 
-    removed = getp("removedstocks")
-    ret = list(subset | set(dataiwb['Ticker'].tolist()) ) + getFromHoldings()
-    ret = list(set(ret) - (set(removed) | set(data)))
-
+#    removed = getp("removedstocks")
+#    print( removed )
+#    ret = list(subset | set(dataiwb['Ticker'].tolist()) ) + getFromHoldings()
+#    ret = list(set(ret) - (set(removed) | set(data)))
+#
     getStocks.ret = ret
     return ret
 
@@ -627,6 +632,13 @@ def targetPrice(items):
 #idx = listRightIndex(values, bar)
 #print (df['Date'].tolist()[idx])
 
+def saveTargets():
+    setp(targets, "targets")
+
+def setTargetPrice(astock, price):
+    global targets
+    targets[astock] = price, ""
+
 
 targets = dict()
 def getTargetPrice(astock, end = None, start = None):
@@ -748,7 +760,7 @@ def getVector(values, dividend, name, astock, last):
     target = targetPrice(values)
 #    target = "{}({})".format(target, date)
 
-    if astock in subset:
+    if astock in getivvstocks():
         name = "**" + name
 
     return [name, new, discount, dipScore, target, last, dividend, 
@@ -873,6 +885,8 @@ def getCsv(astock, idx = None):
         else:
             try:
                 df = saveProcessedFromYahoo(astock)
+                df.to_csv(path) 
+                df = pandas.read_csv(path)
             except Exception as e:
                 print (str(e))
                 print ("problem with {}".format(astock))
@@ -886,6 +900,7 @@ def getCsv(astock, idx = None):
 
 def writeStrategyReport(stocks, start = None, end = None):
     percent_list = {}
+    ivv = getivvstocks()
     for astock in stocks:
         df = getCsv(astock)
         if df is None:
@@ -905,6 +920,8 @@ def writeStrategyReport(stocks, start = None, end = None):
         name = ""
         if astock in getFromHoldings():
             name = "ETF"
+        elif astock in ivv:
+            name = "iusg"
 
         lasth = max(df['High'].iloc[-8:])
         lastl = min(df['Low'].iloc[-4:])
@@ -931,16 +948,27 @@ def getTrimStock(astock):
     except : return None
 #print (getTrimStock("VST"))
 
+def delStock(astock):
+    try: 
+        path = getPath("csv/{}.csv".format(astock))
+        os.remove(path)
+    except:
+        pass
+    os.system("./scrub.sh {}".format(astock))
+
 def resetStock(astock):
     global savedReads
-    path = getPath("csv/{}.csv".format(astock))
-    os.remove(path)
+    try: 
+        path = getPath("csv/{}.csv".format(astock))
+        os.remove(path)
+    except:
+        pass
 
     trims = getp("trims")
     del trims[astock]
     setp(trims, "trims")
 
-    saveProcessedFromYahoo("VST")
+    saveProcessedFromYahoo(astock)
     del savedReads[astock]
 
 def trimStock(astock, end):

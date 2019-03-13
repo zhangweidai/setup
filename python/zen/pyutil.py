@@ -1,15 +1,26 @@
 import os
 import sys
 from multiprocessing import Process
-from enum import Enum
+from enum import IntFlag, Enum
 from util import getp, setp
 import logging
 
-class Modes(Enum):
+class Modes(IntFlag):
     none = 0
     trim = 1
     zoom = 2
-    average = 3
+    average = 4
+    more = 8
+    change = 16
+    target = 32
+
+#bar = Modes.zoom 
+#bar |= Modes.average
+#if Modes.zoom in bar:
+#    print ("so far so good")
+#bar ^= Modes.zoom
+#if Modes.zoom in bar:
+#    print ("so far so good")
 
 class Zen(Enum):
     lastStock = 0
@@ -114,14 +125,22 @@ class SnaptoCursor(object):
         print('x=%1.2f, y=%1.2f' % (x, y))
         plt.draw()
 
-def averageValues(values, by = 5):
+avgFactor = 5
+def increaseAvg(add):
+    global avgFactor
+    if add:
+        avgFactor += 2
+    elif avgFactor > 4:
+        avgFactor -= 2
+
+def averageValues(values):
     ret = []
     lastavg = 0
     leng = len(values)
     for i,value in enumerate(values):
-        end = i+by
+        end = i+avgFactor
         if end < leng:
-            avg = round(sum(values[i:end])/float(by), 4)
+            avg = round(sum(values[i:end])/float(avgFactor), 4)
         else:
             avg = lastavg
         ret.append(avg)
