@@ -13,6 +13,7 @@ class Modes(IntFlag):
     more = 8
     change = 16
     target = 32
+    recent = 64
 
 #bar = Modes.zoom 
 #bar |= Modes.average
@@ -24,19 +25,19 @@ class Modes(IntFlag):
 
 class Zen(Enum):
     lastStock = 0
+    lastMode = 1
 
 #def setSettings():
-#def saveSettings():
-def settings(setting, value = None, default = None):
-    if value != None:
-        try : settings.setdict[setting] = value
+def settings(setting, setValue = None, default = None):
+    if setValue != None:
+        try : settings.setdict[setting] = setValue
         except : 
             try : 
                 settings.setdict = getp("settings")
-                settings.setdict[setting] = value
+                settings.setdict[setting] = setValue
             except : 
                 settings.setdict = dict()
-                settings.setdict[setting] = value
+                settings.setdict[setting] = setValue
         setp(settings.setdict, "settings")
     else:
         try : return settings.setdict[setting]

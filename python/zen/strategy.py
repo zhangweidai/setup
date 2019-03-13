@@ -167,7 +167,7 @@ def getTrainingTemps(mode, ascending):
             pass
 
 changeDict = dict()
-latest_values = util.getp("latestValues")
+latest_values = util.getp("lastValues")
 mode_average = dict()
 def calcIt(mode, ascending):
     global purchases, purchasesl, purchasesh,  spent, tranfees, mode_average
@@ -293,8 +293,9 @@ def writeCostDict(newdict):
     df = pandas.DataFrame.from_dict(newdict, orient = 'index', 
             columns=["Value", "Cost", "Change", 
             "DollarChange", "PurchaseDates"])
-    path = util.getPath("analysis/selection_{}.csv".format(title))
+    path = util.getPath("report/selection_{}.csv".format(title))
     df.to_csv(path)
+    print ("written {}".format(path))
         
 
 #writeCostDict(newdict)
@@ -336,9 +337,10 @@ def doit():
     appended += etfData()
     appended = [item for sublist in appended for item in sublist]
 
-    path = util.getPath("analysis/report_{}.txt".format(title))
+    path = util.getPath("report/report_{}.txt".format(title))
     with open(path, "w") as f:
         f.write("\n".join(appended))
+    print ("written {}".format(path))
 
     newdict = costToDict()
     writeCostDict(newdict)

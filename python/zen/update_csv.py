@@ -8,7 +8,7 @@ import time
 
 #main()
 yf.pdr_override()
-startdate = date.today() - timedelta(days=4)
+startdate = date.today() - timedelta(days=6)
 
 def getDataFromYahoo(astock):
     data = None
@@ -32,9 +32,10 @@ def getDataFromYahoo(astock):
     return data
 
 pulled = False
-latest = dict()
+latest = util.getp("lastValues")
+#latest = dict()
 def updateCsv(astock):
-    global pulled
+    global pulled, latest
     loaded = None
 
     path = util.getPath("csv/{}.csv".format(astock))
@@ -49,6 +50,8 @@ def updateCsv(astock):
     if data is None:
         return
 
+#    latest[astock] = loaded.tail(1)["Close"].item()
+#    return
     appending = False
     for idx,row in data.iterrows():
         cdate = str(idx.to_pydatetime()).split(" ")[0]
@@ -61,7 +64,8 @@ def updateCsv(astock):
                 closed = data.at[idx, "Close"]
                 adj = data.at[idx, "Adj Close"]
                 vol = data.at[idx, "Volume"]
-                f.write("{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, adj, vol))
+                f.write("{},{},{},{},{},{},{}\n".format(cdate, opend, high, low, 
+                            closed, adj, vol))
                 latest[astock] = closed
             
         if cdate == lastdate:

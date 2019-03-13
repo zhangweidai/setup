@@ -355,23 +355,44 @@ def getFromHoldings():
     getFromHoldings.etfs = holds
     return holds
 
-def getivvstocks():
+def getiusgstocks(etf = "IUSG"):
+    try : return getiusgstocks.ret
+    except : pass
+
+    path = getPath("holdings/{}_holdings.csv".format(etf))
+    dataivv = pandas.read_csv(path)
+    getiusgstocks.ret = set(dataivv['Ticker'].tolist())
+    return getiusgstocks.ret
+
+def getivvstocks(etf = "IVV"):
     try : return getivvstocks.ret
     except : pass
 
-    path = getPath("holdings/IUSG_holdings_growth.csv")
+    path = getPath("holdings/{}_holdings.csv".format(etf))
     dataivv = pandas.read_csv(path)
     getivvstocks.ret = set(dataivv['Ticker'].tolist())
-
     return getivvstocks.ret
 
 def diff_IWB_and_IUSG():
     path1 = getPath("holdings/IWB_holdings.csv")
-    path2 = getPath("holdings/IUSG_holdings_growth.csv")
+    path2 = getPath("holdings/IUSG_holdings.csv")
     dataiwb = set(pandas.read_csv(path1)['Ticker'].tolist())
     data = set(pandas.read_csv(path2)['Ticker'].tolist())
     return (data-dataiwb)
 
+def saveAdded(astock):
+    getAdded.added = getp("addedStocks")
+    if getAdded.added == None:
+        getAdded.added = list()
+    getAdded.added.append(astock)
+    setp(getAdded.added, "addedStocks")
+
+def getAdded():
+    getAdded.added = getp("addedStocks")
+    if getAdded.added == None:
+        getAdded.added = list()
+    return getAdded.added
+getAdded.added = list()
 
 def getStocks(holding = "IVV", andEtfs = True, 
         difference = False, dev=False, ivv=False, reset = False):
@@ -391,15 +412,16 @@ def getStocks(holding = "IVV", andEtfs = True,
     dataiwb = pandas.read_csv(path)
     data1 = set(pandas.read_csv(path)['Ticker'].tolist())
 
-    path2 = getPath("holdings/IUSG_holdings_growth.csv")
+    path2 = getPath("holdings/IUSG_holdings.csv")
     data2 = set(pandas.read_csv(path2)['Ticker'].tolist())
-    ret = list(data1 | data2 | subset)
+    ret = list(data1 | data2 | subset) + getFromHoldings() + getAdded()
 
 #    removed = getp("removedstocks")
 #    print( removed )
 #    ret = list(subset | set(dataiwb['Ticker'].tolist()) ) + getFromHoldings()
 #    ret = list(set(ret) - (set(removed) | set(data)))
 #
+    ret.sort()
     getStocks.ret = ret
     return ret
 
@@ -447,23 +469,23 @@ def saveJsonData(stocks, directory="all"):
     path = getPath("analysis/json_{}.csv".format(directory))
     df.to_csv(path)
 
-def getNumberOfDates():
+def getNumberOfDates(csvdir = "csv"):
     try : return getNumberOfDates.ret
     except : pass
-    path = getPath("csv/GOOG.csv")
+    path = getPath("{}/IVV.csv".format(csvdir))
     getNumberOfDates.ret = sum(1 for line in open(path)) - 1
     return getNumberOfDates.ret
 
 tday = datetime.date.today().isoformat()
-startdate = "2015-01-05"
+startdate = "2000-01-05"
 #expected_count = 1050
 removed = []
 def getRemovedStocks():
     return removed
 
-def saveProcessedFromYahoo(astock):
+def saveProcessedFromYahoo(astock, csvdir = "csv", add=False):
     global removed
-    path = getPath("csv/{}.csv".format(astock))
+    path = getPath("{}/{}.csv".format(csvdir,astock))
     if os.path.exists(path):
         return
 
@@ -472,11 +494,13 @@ def saveProcessedFromYahoo(astock):
 
     df = None
     try:
-        df = pdr.get_data_yahoo([astock], start=startdate, end=str(tday))
+        df = pdr.get_data_yahoo([astock], start=startdate, end=str(tday),
+                pause=0.3, adjust_price=True )
     except Exception as e:
         print (str(e))
         try:
-            df = pdr.get_data_yahoo([astock], start=startdate, end=str(tday))
+            df = pdr.get_data_yahoo([astock], start=startdate, end=str(tday),
+                pause=0.3, adjust_price=True )
         except Exception as e:
             print (str(e))
 
@@ -497,6 +521,10 @@ def saveProcessedFromYahoo(astock):
     df.to_csv(path)
     try : trimStock(astock, getTrimStock(astock))
     except: pass
+
+    if add:
+        saveAdded(astock)
+
     return df
 
 
@@ -559,10 +587,9 @@ def getStartDate():
     return startDate
 
 numberOfDates = 0
-def loadUSMV_dict(end = None, start=None):
+def loadUSMV_dict(end = None, start=None, csvdir="csv"):
     global baseline, endDate, numberOfDates, startDate
-    path = getPath("csv/IUSG.csv")
-#    path = getPath("csv/USMV.csv")
+    path = getPath("{}/IUSG.csv".format(csvdir))
     df = pandas.read_csv(path)
     df = df[start:end]
 
@@ -578,7 +605,6 @@ def loadUSMV_dict(end = None, start=None):
     baseline = ret
     return baseline
 #print (loadUSMV_dict())
-
 
 loadedDivs = dict()
 def getDividend(astock, lastvalue, json_dict):
@@ -842,7 +868,7 @@ def writeDropCsv(stocks, directory = "analysis", start = None, end = None):
     if end == None and start == None:
         updatePort() 
         writeDict(port, "Portfolio")
-        setp(latestPrices, "latestValues")
+#        setp(latestPrices, "latestValues")
         r_name = "complete_report"
     writeFile(percent_list, headers, directory, name = r_name)
 
@@ -867,7 +893,7 @@ def getVectorForStrategy(values, astock):
 
 savedReads = dict()
 
-def getCsv(astock, idx = None):
+def getCsv(astock, idx = None, csvdir="csv"):
     global savedReads
     if idx == 0:
         idx = "Unnamed: 0"
@@ -882,7 +908,7 @@ def getCsv(astock, idx = None):
         return None
 
     try:
-        path = getPath("csv/{}.csv".format(astock))
+        path = getPath("{}/{}.csv".format(csvdir, astock))
         df = pandas.read_csv(path)
     except:
         # allow getCsv to return from specified csv files
@@ -905,21 +931,27 @@ def getCsv(astock, idx = None):
 
     return df
 
-def writeStrategyReport(stocks, start = None, end = None):
+def writeStrategyReport(stocks, start = None, end = None, 
+        reportname="strategy_report_", csvdir="csv",
+        reportdir = "analysis"):
     percent_list = {}
     ivv = getivvstocks()
+    iusg = getiusgstocks()
     buyList = []
     for astock in stocks:
-        df = getCsv(astock)
+        df = getCsv(astock, csvdir=csvdir)
         if df is None:
             continue
 
-        if df["Date"].count() != getNumberOfDates():
+        df = df[start:end]
+        if df["Date"].count() != numberOfDates:
             continue
 
-        df = df[start:end]
         values = df[csvColumn].tolist()
         if len(values) < 200:
+            continue
+
+        if df['Date'].iloc[0] != getStartDate():
             continue
 
         last = 0
@@ -928,29 +960,42 @@ def writeStrategyReport(stocks, start = None, end = None):
         name = ""
         if astock in getFromHoldings():
             name = "ETF"
-        elif astock in ivv:
-            name = "iusg"
+        else:
+            if astock in ivv:
+                name = "ivv"
+            if astock in iusg:
+                name += "iusg"
 
         lasth = max(df['High'].iloc[-8:])
         lastl = min(df['Low'].iloc[-4:])
         last = df['Close'].iloc[-1]
 
-        target, date = getTargetPrice(astock)
-        if last > target:
-            notation = ""
-            if astock in getivvstocks():
-                notation = "**"
-            buyList.append(astock + notation)
+        if "main" in reportname:
+            try:
+                target, date = getTargetPrice(astock)
+                if last > target:
+                    notation = ""
+                    if astock in ivv:
+                        notation = "*"
+                    buyList.append(astock + notation)
+            except:
+                pass
 
-        percent_list[astock] = getVectorForStrategy(values, astock) + [name, last, lastl, lasth]
+        try:
+            percent_list[astock] = getVectorForStrategy(values, astock) + [name, last, lastl, lasth]
+        except Exception as e:
+            print ('FailedGet: '+ str(e))
+            print (astock)
+            
 
     headers = ["Score", "Discount", "Dip", "Variance", "PointsAbove", 
     "PointsBelow", "WC", "ETF", "Last", "LastL", "LastH"]
-    if buyList:
+
+    if buyList and "main" in reportname:
         print ("Buy List : {}".format(", ".join(buyList)))
 
-    r_name = "strategy_report_{}".format(getEndDate())
-    writeFile(percent_list, headers, "analysis", name = r_name)
+    r_name = "{}{}".format(reportname, getEndDate())
+    writeFile(percent_list, headers, reportdir, name = r_name)
 #updateJsonCompany("COST")
 
 def plot(astock, start = None, end = None):

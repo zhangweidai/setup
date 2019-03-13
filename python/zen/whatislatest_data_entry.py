@@ -5,7 +5,7 @@ import datetime
 import sys
 import util
 
-lookup = "GOOG"
+lookup = "IVV"
 if len(sys.argv) == 2:
     lookup = sys.argv[1]
 
@@ -14,12 +14,14 @@ tday = datetime.date.today().isoformat()
 yf.pdr_override() # <== that's all it takes :-)
 print (tday)
 try:
-    startdate = "2015-01-01"
-    data = pdr.get_data_yahoo([lookup], start=startdate, end=str(tday))
+    startdate = "2019-03-05"
+    data = pdr.get_data_yahoo(["GOOG", "IVV"], start=startdate, 
+                              end=str(tday))
 #    data.rename( columns={'Unnamed: 0':'Date'}, inplace=True )
-#    dates = data["Date"].tolist()
-    path = util.getPath("csv/{}.csv".format(lookup))
-    data.to_csv(path)
+    dates = data.tail()
+    print(dates)
+#    path = util.getPath("csv/{}.csv".format(lookup))
+#    data.to_csv(path)
 except Exception as e:
     print (data.columns)
     print ('Deleting : '+ str(e))

@@ -15,45 +15,69 @@ from pyutil import Modes, Zen, settings
 import pyutil
 
 def getCurrentStock():
-    return stocks[current_idx]
+    return stocks[idx]
 
-def rebuild(start = None, end = None):
-    global ax, values, df, dates, maxvalues, current_idx, stocks
-    ax.cla()
-    astock = stocks[current_idx]
-    df = getCsv(astock)
-    maxvalues = len(df)
-    df = df[start:end]
-    values = df[csvColumn].tolist()
-    ax.plot(df["Low"].tolist(), linewidth = .5)
-    ax.plot(df["High"].tolist(), linewidth = .5)
-    ax.plot(values)
-
-    if Modes.more in currentMode:
-        ax.plot(df["Low"].tolist())
-        ax.plot(df["High"].tolist())
-
-    if Modes.change in currentMode:
-        ax.plot(pyutil.averageValues(pyutil.changeValues(values)))
-        ax.axhline(y=1)
-    else:
-        ax.plot(values)
-
-    if Modes.average in currentMode:
-        ax.plot(pyutil.averageValues(values))
+def updateTitle(force_ax = None):
+    global ax
+    local_ax = ax
+    if force_ax is not None:
+        local_ax = force_ax
 
     addl = ""
     if Modes.target in currentMode:
-        addl = "(TARGET)"
-        
-    ax.set_title("{}{}".format(astock, addl))
+        addl += "(TARGET)"
+    if Modes.trim in currentMode:
+        addl += "(TRIM)"
+    local_ax.set_title("{}{}".format(getCurrentStock(), addl))
+    fig.canvas.draw()
+
+
+def rebuild(start = None, end = None, 
+        force_ax = None,
+        force_idx = None
+        ):
+    global ax, values, df, dates, maxvalues, idx, stocks
+    local_ax = ax
+    local_idx = idx
+    if force_ax is not None: local_ax = force_ax
+    if force_idx: local_idx = force_idx
+
+    local_ax.cla()
+    astock = stocks[local_idx]
+    df = getCsv(astock)
+    maxvalues = len(df)
+
+    if Modes.recent in currentMode:
+        start = maxvalues-rebuild.recentIncrement
+
+    df = df[start:end]
+    values = df[csvColumn].tolist()
+    local_ax.plot(values)
+
+    if Modes.more in currentMode:
+        local_ax.plot(df["Low"].tolist(), linewidth = .5)
+        local_ax.plot(df["High"].tolist(), linewidth = .5)
+
+    if Modes.change in currentMode:
+        modified = pyutil.averageValues(pyutil.changeValues(values))
+        local_ax.plot(modified)
+        local_ax.axhline(y=1)
+    else:
+        local_ax.plot(values)
+
+    if Modes.average in currentMode:
+        local_ax.plot(pyutil.averageValues(values))
+
+    updateTitle(force_ax)
 
     startx = 0 
     endx = len(values)-1
 
-    try: plt.scatter( endx, util.getTargetPrice(astock)[0], s=80, color="red")
+    try: plt.scatter( endx, util.getTargetPrice(astock)[0], s=80, 
+            color="red")
     except Exception as e:
-        print ('TargetPrice : '+ str(e))
+        pass
+#        print ('TargetPrice : '+ str(e))
 
     byx = int((endx-startx)/xcount)
     try:
@@ -63,59 +87,79 @@ def rebuild(start = None, end = None):
         print (astock)
         util.delStock(astock)
         stocks = getStocks(reset=True)
-        current_idx += 1
+        idx += 1
         rebuild()
         return
 
+    if not byx:
+        byx = 1
     xranges = [i for i in range(startx, endx+1, byx)]
     xlabels = [ "{}\n({})".format(i,dates[i]) for i in xranges]
     plt.xticks( xranges, xlabels)
 
     fig.canvas.draw()
     fig.canvas.get_tk_widget().focus_set()
+rebuild.recentIncrement = 35
                 
 def nexti():
-    global current_idx
-    if current_idx+1 < stock_count:
-        current_idx += 1
+    global idx
+    if idx+1 < stock_count:
+        idx += 1
         rebuild()
 
 def previ():
-    global current_idx
-    if current_idx > 0:
-        current_idx -= 1
+    global idx
+    if idx > 0:
+        idx -= 1
         rebuild()
 
 def interpret(answer):
-    global current_idx
+    global idx, stocks
     print("answer: {}".format( answer))
     if answer == "reset":
         util.resetStock(getCurrentStock())
         rebuild()
-    elif "recent" in answer:
-        count = 15
-        try: count = int(answer.split(' ')[1])
-        except: pass
-        rebuild(maxvalues-count, maxvalues)
+#    elif "recent" in answer:
+#        count = 15
+#        try: count = int(answer.split(' ')[1])
+#        except: pass
+#        rebuild(maxvalues-count, maxvalues)
     else:
-        current_idx = stocks.index(answer.upper())
-        print("current_idx : {}".format(current_idx))
+        try:
+            idx = stocks.index(answer.upper())
+            print("idx : {}".format(idx))
+        except:
+            try:
+                answer = answer.upper()
+                util.saveProcessedFromYahoo(answer, csvdir = "csv", add=True)
+                stocks = getStocks()
+                if answer in stocks:
+                    print ("so far so good")
+            except Exception as e:
+                print ('Failed2: '+ str(e))
+                pass
         rebuild()
 
-def setCurrentMode(mode):
+def setCurrentMode(mode, build = True):
     global currentMode
     currentMode ^= mode
-    rebuild()
+    if build:
+        rebuild()
+    else:
+        updateTitle()
 
 def press(event):
     if len(event.key) == 1:
         try: press.last += event.key
         except: press.last = event.key
+    else : 
+        return
     try: 
-        if len(press.last) > 3: press.last = press.last[1:]
+        if len(press.last) > 3 and len(event.key) == 1: 
+            press.last = press.last[1:]
     except : pass
 
-    global current_idx, fig, currentMode
+    global idx, fig, currentMode
 
     if press.last == "aa" or press.last == "aaa":
         press.last = ""
@@ -128,18 +172,21 @@ def press(event):
     elif press.last == "cha":
         setCurrentMode(Modes.change)
     elif press.last == "tar":
-        setCurrentMode(Modes.target)
+        setCurrentMode(Modes.target, build=False)
+    elif press.last == "rec":
+        setCurrentMode(Modes.recent)
+    elif press.last == "tri":
+        setCurrentMode(Modes.trim, build=False)
 
-#    print('press', event.key)
-#    print(press.last)
+    print("last press :{}".format(press.last))
 
     sys.stdout.flush()
 #        visible = xl.get_visible()
 #        xl.set_visible(not visible)
 #    if event.key == 'left':
     if event.key == 'q':
-        settings(Zen.lastStock, value=current_idx)
-        util.saveTargets()
+        saveSettings()
+
     # zz
     elif event.key == 'z':
         if not currentMode == Modes.zoom:
@@ -149,21 +196,18 @@ def press(event):
             currentMode = Modes.none
     elif event.key == 'x':
         from pyutil import restart_program
-        settings(Zen.lastStock, current_idx)
-        util.saveTargets()
+        saveSettings()
         restart_program()
 
     elif event.key == '0':
-        current_idx = 0
+        idx = 0
         rebuild()
-#    elif event.key == '9':
-#        multiPlot()
+    elif event.key == '9':
+        multiPlot()
     elif event.key == 'j':
         nexti()
     elif event.key == 'k':
         previ()
-#    elif event.key == 't':
-#        currentMode = Modes.trim
     elif event.key == ' ':
         answer = simpledialog.askstring("Advanced", "cmd:", parent = None)
         try:
@@ -172,17 +216,26 @@ def press(event):
             print ('Failed2: '+ str(e))
             pass
         fig.canvas.get_tk_widget().focus_set()
-    elif event.key == '=':
-        pyutil.increaseAvg(True)
-        rebuild()
-    elif event.key == '-':
-        pyutil.increaseAvg(False)
-        rebuild()
-#            trimStock(getCurrentStock(), answer)
-#            rebuild()
+
+    handleIncrease(event.key)
+press.last = ""
+
 def handle_close(evt):
-    settings(Zen.lastStock, value=current_idx)
-    util.saveTargets()
+    saveSettings()
+
+def handleIncrease(key):
+    if key == '=':
+        if Modes.average in currentMode:
+            pyutil.increaseAvg(True)
+        if Modes.recent in currentMode:
+            rebuild.recentIncrement += 5
+        rebuild()
+    elif key == '-':
+        if Modes.average in currentMode:
+            pyutil.increaseAvg(False)
+        if Modes.recent in currentMode and rebuild.recentIncrement > 6:
+            rebuild.recentIncrement -= 5 
+        rebuild()
 
 def handle_scroll(evt):
     if evt.button == "up":
@@ -224,8 +277,8 @@ def onrelease(event):
     date2 = dates[x1]
 #    date1 = df["Date"][x2]
 #    date2 = df["Date"][x1]
-    value1 = values[x1]
-    value2 = values[x2]
+    value1 = values[x2]
+    value2 = values[x1]
 #    value1 = df["Close"][x2]
 #    value2 = df["Close"][x1]
     print ("\nChange: {}".format(util.formatDecimal(answer)))
@@ -253,14 +306,15 @@ def onclick(event):
         astock = getCurrentStock()
         trimStock(astock, int(event.xdata))
         rebuild()
+
 #print (getTrimStock("VST"))
-def configurePlots(fig, ax):
+def configurePlots(fig):
     adjust = 0.10
     fig.subplots_adjust(left=adjust, bottom=adjust, 
                         right=1-adjust, top=1-adjust)
 
-    move_figure(fig, 1920, 0)
-#    move_figure(fig, 0, 0)
+#    move_figure(fig, 1920, 0)
+    move_figure(fig, 0, 0)
     fig.canvas.mpl_connect('key_press_event', press)
     fig.canvas.mpl_connect('scroll_event', handle_scroll)
     fig.canvas.mpl_connect('button_press_event', onclick)
@@ -268,12 +322,20 @@ def configurePlots(fig, ax):
     fig.canvas.mpl_connect('close_event', handle_close)
     fig.canvas.mpl_connect('mouse_move_event', handle_close)
 
+multiax = None
+def updateMultiPlot():
+    next_idx = idx
+    for ax1 in multiax:
+        for ax2 in ax1:
+            rebuild(force_ax = ax2, force_idx = next_idx)
+            next_idx += 1
 
 def multiPlot():
-    global fig, ax
+    global fig, multiax
     plt.close(fig)
-    fig, ax = plt.subplots(nrows=2, ncols=2)
-    configurePlots(fig, ax)
+    fig, multiax = plt.subplots(nrows=2, ncols=2)
+    configurePlots(fig)
+    updateMultiPlot()
     plt.show()
 
 #plt.get_current_fig_manager().window.wm_geometry("+0+0")
@@ -285,14 +347,23 @@ def plot(astock, start = None, end = None):
     values = df[csvColumn].tolist()
     plt.rcParams['toolbar'] = 'None'
     fig, ax = plt.subplots()
-    configurePlots(fig, ax)
+    configurePlots(fig)
     rebuild()
 
     plt.show()
 
+def saveSettings():
+    donotPersist = [Modes.target, Modes.trim]
+    global currentMode
+    settings(Zen.lastStock, setValue = idx)
+    for mode in donotPersist:
+        if mode in currentMode:
+            currentMode ^= mode
+    settings(Zen.lastMode, setValue = currentMode)
+    util.saveTargets()
 
 if __name__ == "__main__":
-    currentMode = Modes.none
+    currentMode = settings(Zen.lastMode, default=Modes.none)
     lap = False
     if lap:
         plt.rcParams["figure.figsize"] = [11,6]
@@ -300,8 +371,7 @@ if __name__ == "__main__":
     else:
         plt.rcParams["figure.figsize"] = [16,10]
         xcount = 10
-#    stocks = getCsv("analysis/why_buy_these.csv", 0)
-#    stocks = [stock.split("/")[-1] for stock in stocks]
+
     stocks = getStocks()
     stock_count = len(stocks)
     start = None
@@ -318,8 +388,8 @@ if __name__ == "__main__":
     savedxdata = None
 
     try:
-        current_idx = settings(Zen.lastStock, default=0)
-        plot(stocks[current_idx])
+        idx = settings(Zen.lastStock, default=0)
+        plot(stocks[idx])
     except Exception as e:
         print ('Failed3: '+ str(e))
         pass
