@@ -1,7 +1,7 @@
 import util
 
-stocks = util.getStocks(ivv=True)
-for astock in stocks:
+#stocks = util.getStocks(ivv=True)
+for astock in ["SPY"]:
     try:
         util.saveProcessedFromYahoo(astock, csvdir="historical")
     except Exception as e:

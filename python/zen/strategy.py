@@ -13,8 +13,9 @@ import pandas
 import util
 import time
 
+report_root = "report"
 title = "standard"
-
+his_idx = 0
 spentidx = 0
 amountidx = 1
 datesidx = 2
@@ -37,8 +38,9 @@ class Cost():
     def __hash__(self):
         return hash(tuple(self.__dict__[k] 
                           for k in sorted(self.__dict__)))
-
+hisdict = dict()
 topdict = dict()
+latest_values = dict()
 def isTop(hashable, symbol):
     global topdict
     if not topdict:
@@ -63,8 +65,8 @@ purchasesl = dict()
 purchasesh = dict()
 more_etf = True
 path_dict = {}
-def tallyFrom(path, mode, ascending):
-    global spent, tranfees, cost_basis
+def tallyFrom(path, mode, ascending, isLast = False):
+    global spent, tranfees, cost_basis, latest_values
     loaded = None
     try:
         if path in path_dict:
@@ -75,22 +77,38 @@ def tallyFrom(path, mode, ascending):
 
         if loaded is None:
             return
-    except:
+    except Exception as e:
+        print ('2Failed: '+ str(e))
         return
     
     loaded.sort_values(by=[mode], inplace=True, ascending=ascending)
 
     if mode == "Score" and more_etf:
+        print("path: {}".format( path))
         for anetf in etfs:
-            etfn = float(loaded[loaded['Unnamed: 0'] == anetf]['Last'])
-            etfvs.setdefault(anetf, 0)
-            buycount = spend / etfn
-            etfvs[anetf] += buycount
+            try:
+                etfn = float(loaded[loaded['Unnamed: 0'] == anetf]['Last'])
+                etfvs.setdefault(anetf, 0)
+                buycount = spend / etfn
+                etfvs[anetf] += buycount
+
+                if anetf == "USMV":
+                    print("etfn : {}".format( etfn ))
+            except Exception as e:
+                continue
 
     per = spend / size
     spent += spend
     tranfees += 10
     purchased = 0
+    if isLast and more_etf:
+        print("whatpath: {}".format( path))
+        for idx,row in loaded.iterrows():
+            symbol = loaded.at[idx, "Unnamed: 0"]
+            last = loaded.at[idx, "Last"]
+            latest_values[symbol] = last
+            if symbol == "USMV":
+                print("LAST : {}".format( last ))
     
     count = 0
     for idx,row in loaded.iterrows():
@@ -145,29 +163,36 @@ def getFiles():
     import fnmatch
     if rememberedFiles:
         return rememberedFiles
-    pattern = "{}*.csv".format(reportname)
     holds = []
-    parentdir = util.getPath("analysis")
+    reportname = "history_{}".format(his_idx)
+    pattern = "{}*.csv".format(reportname)
+    parentdir = util.getPath("history")
     listOfFiles = os.listdir(parentdir)
     for entry in listOfFiles:  
         date = entry.split("_")
-        if len(date) < 3 or "-" not in date[2]:
+        if his_idx == 0 and len(date) < 3 or "-" not in date[2]:
             continue
         if fnmatch.fnmatch(entry, pattern):
             rememberedFiles.append("{}/{}".format(parentdir, entry))
+    rememberedFiles.sort()
     return rememberedFiles
+#his_idx = 7
+#print (getFiles())
+#raise SystemExit
 
 def getTrainingTemps(mode, ascending):
     paths = getFiles()
-    for path in paths:
+    leng = len(paths)
+    for i,path in enumerate(paths):
         try:
-            tallyFrom(path, mode, ascending)
+            tallyFrom(path, mode, ascending, isLast=(i==leng-1))
         except Exception as e:
             print ('Failed: '+ str(e))
+            print("path : {}".format( path ))
             pass
 
 changeDict = dict()
-latest_values = util.getp("lastValues")
+#latest_values = util.getp("lastValues")
 mode_average = dict()
 def calcIt(mode, ascending):
     global purchases, purchasesl, purchasesh,  spent, tranfees, mode_average
@@ -219,26 +244,48 @@ def calcIt(mode, ascending):
 
 def etfData():
     maxetf = 0
-    etf_name = ""
+    max_etf_name = ""
 
     ret = []
     for etf in etfvs:
         etfvalue = round(etfvs[etf] * latest_values[etf], 3)
         if etfvalue > maxetf:
             maxetf = etfvalue 
-            etf_name = etf
+            max_etf_name = etf
 
     for etf in etfvs:
-        if etf == etf_name:
+        if etf == max_etf_name:
             etfvalue = round(etfvs[etf] * latest_values[etf], 3)
-            change = util.formatDecimal(etfvalue/spent)
+            change = etfvalue/spent
+
+            print ("adding etf")
+            print("etf: {}".format( etf))
+            hisdict.setdefault(etf, [])
+            hisdict[etf].append(change)
+            print("change: {}".format( change))
+
+            change = util.formatDecimal(change)
             ret.append("{0:4}({1:5})\n".format(etf, change))
 
     for i,etf in enumerate(etfvs):
-        if not etf == etf_name:
+        if not etf == max_etf_name:
             etfvalue = round(etfvs[etf] * latest_values[etf], 3)
-            change = util.formatDecimal(etfvalue/spent)
+            print("etf: {}".format( etf))
+            print("etfvalue : {}".format( etfvalue ))
+            print("latest : {}".format( latest_values[etf] ))
+            print("quant : {}".format( etfvs[etf] ))
+            change = etfvalue/spent
+            print("spent: {}".format( spent))
+            print ("adding etf")
+            print("change: {}".format( change))
+
+            hisdict.setdefault(etf, [])
+            hisdict[etf].append(change)
+
+            change = util.formatDecimal(change)
             ret.append("{0:4}({1:5})".format(etf, change))
+
+
             if i == 6:
                 ret.append("\n")
     return [["".join(ret), "{}\n".format(spent)]]
@@ -293,7 +340,8 @@ def writeCostDict(newdict):
     df = pandas.DataFrame.from_dict(newdict, orient = 'index', 
             columns=["Value", "Cost", "Change", 
             "DollarChange", "PurchaseDates"])
-    path = util.getPath("report/selection_{}.csv".format(title))
+    path = util.getPath("{}/selection_{}_{}.csv".format(report_root, 
+                                                        title, his_idx))
     df.to_csv(path)
     print ("written {}".format(path))
         
@@ -324,6 +372,9 @@ def doit():
         average = sum(items)/len(items)
         vari = round(np.var(items),3)
     
+        hisdict.setdefault(mode, [])
+        hisdict[mode].append(average)
+
         appended.append(["A {0:12} {1:8} {2}".format(mode, 
                         util.formatDecimal(average), vari)])
         if i % 2 == 1:
@@ -333,11 +384,10 @@ def doit():
         prevavg = average
         prevvar = vari
 
-
     appended += etfData()
     appended = [item for sublist in appended for item in sublist]
 
-    path = util.getPath("report/report_{}.txt".format(title))
+    path = util.getPath("{}/report_{}_{}.txt".format(report_root, title, his_idx))
     with open(path, "w") as f:
         f.write("\n".join(appended))
     print ("written {}".format(path))
@@ -345,4 +395,26 @@ def doit():
     newdict = costToDict()
     writeCostDict(newdict)
 
-doit()
+#"".join(bar)
+report_root = "final"
+for i in range(1, 10):
+    if not i == 6:
+        continue
+
+    more_etf = True
+    his_idx = i
+    spent = 1
+    doit()
+    latest_values = dict()
+    rememberedFiles = []
+
+import csv
+path = util.getPath("final/historyreport.csv")
+with open(path, 'w') as f:
+    for key in hisdict.keys():
+        appended = []
+        for item in hisdict[key]:
+            appended.append(util.formatDecimal(item))
+        avg = util.formatDecimal(sum(hisdict[key])/len(hisdict[key]))
+        percentages  = " ".join(appended)
+        f.write("{},{},{}\n".format(key, avg, percentages))

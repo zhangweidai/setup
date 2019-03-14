@@ -1,8 +1,8 @@
-def getRanges(count):
+def getRanges(count, forHistory = False):
     ret = []
-    minimum = 30
-    minrequired = 200
-    i = 1
+    minimum = 35
+    minrequired = 250
+    i = 3 if forHistory else 1
     last = (count % minimum)
     end = 0
     while ((i * minimum) + minrequired < count):
@@ -34,16 +34,17 @@ def standard():
         util.writeStrategyReport(stocks, start=vals[0], end=vals[1])
 
 def historical():
-#    stocks = util.getStocks()
-    ranges = getRanges(util.getNumberOfDates(csvdir="historical"))
+    stocks = util.getStocks(ivv = True)
+    ranges = getRanges(util.getNumberOfDates(csvdir="historical"), 
+            forHistory = True)
     grouping = 0
     for i,vals in enumerate(ranges):
-        if i % 15 == 0 and grouping < 10:
+        if i % 15 == 0:
             grouping += 1
-        print("grouping : {}".format( grouping ))
-#        util.loadUSMV_dict(start=vals[0], end=vals[1])
-#        util.writeStrategyReport(stocks, start=vals[0], end=vals[1],
-#                                reportname = "history_{}".format(grouping),
-#                                reportdir = "history")
+
+        util.loadUSMV_dict(start=vals[0], end=vals[1], csvdir="historical")
+        util.writeStrategyReport(stocks, start=vals[0], end=vals[1],
+                                reportname = "history_{}_".format(grouping),
+                                reportdir = "history", csvdir="historical")
         break
 historical()

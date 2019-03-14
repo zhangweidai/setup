@@ -9,6 +9,7 @@ import time
 #main()
 yf.pdr_override()
 startdate = date.today() - timedelta(days=6)
+today = date.today().isoformat()
 
 def getDataFromYahoo(astock):
     data = None
@@ -34,6 +35,7 @@ def getDataFromYahoo(astock):
 pulled = False
 latest = util.getp("lastValues")
 #latest = dict()
+problem = []
 def updateCsv(astock):
     global pulled, latest
     loaded = None
@@ -46,9 +48,15 @@ def updateCsv(astock):
 
     loaded = pandas.read_csv(path)
     lastdate = loaded.tail(1)["Date"].item()
+    if lastdate == today:
+        return
+
     data = getDataFromYahoo(astock)
     if data is None:
+        problem.append(astock)
+        print (astock)
         return
+
 
 #    latest[astock] = loaded.tail(1)["Close"].item()
 #    return
@@ -74,7 +82,9 @@ def updateCsv(astock):
 stocks = util.getStocks()
 for astock in stocks:
     updateCsv(astock)
+print("problem : {}".format( problem ))
 util.setp(latest, "lastValues")
+
 
 #if pulled:
 #    util.saveJsonData(stocks, "ijh")

@@ -472,18 +472,19 @@ def saveJsonData(stocks, directory="all"):
 def getNumberOfDates(csvdir = "csv"):
     try : return getNumberOfDates.ret
     except : pass
-    path = getPath("{}/IVV.csv".format(csvdir))
+    path = getPath("{}/WMT.csv".format(csvdir))
     getNumberOfDates.ret = sum(1 for line in open(path)) - 1
     return getNumberOfDates.ret
 
 tday = datetime.date.today().isoformat()
-startdate = "2000-01-05"
 #expected_count = 1050
 removed = []
 def getRemovedStocks():
     return removed
 
 def saveProcessedFromYahoo(astock, csvdir = "csv", add=False):
+    saveStartDate = "2015-01-05" if csvdir == "csv" else "2000-01-05"
+
     global removed
     path = getPath("{}/{}.csv".format(csvdir,astock))
     if os.path.exists(path):
@@ -494,12 +495,12 @@ def saveProcessedFromYahoo(astock, csvdir = "csv", add=False):
 
     df = None
     try:
-        df = pdr.get_data_yahoo([astock], start=startdate, end=str(tday),
+        df = pdr.get_data_yahoo([astock], start=saveStartDate, end=str(tday),
                 pause=0.3, adjust_price=True )
     except Exception as e:
         print (str(e))
         try:
-            df = pdr.get_data_yahoo([astock], start=startdate, end=str(tday),
+            df = pdr.get_data_yahoo([astock], start=saveStartDate, end=str(tday),
                 pause=0.3, adjust_price=True )
         except Exception as e:
             print (str(e))
@@ -589,8 +590,9 @@ def getStartDate():
 numberOfDates = 0
 def loadUSMV_dict(end = None, start=None, csvdir="csv"):
     global baseline, endDate, numberOfDates, startDate
-    path = getPath("{}/IUSG.csv".format(csvdir))
-    df = pandas.read_csv(path)
+    df = getCsv("SPY", csvdir=csvdir)
+#    path = getPath("{}/SPY.csv".format(csvdir))
+#    df = pandas.read_csv(path)
     df = df[start:end]
 
     endDate = df['Date'].iloc[-1]
@@ -799,78 +801,78 @@ def getVector(values, dividend, name, astock, last):
     return [name, new, discount, dipScore, target, last, dividend, 
     distrange, vari, pointsabove, pointsbelow, wc, probup, wcb] + changes
 
-def writeDropCsv(stocks, directory = "analysis", start = None, end = None):
-    global port
-
-    name_idx = 1
-    etfs = getFromHoldings()
-
-    #global percent_list, notinvested
-    percent_list = {}
-    json_dict = getData("gg_json")
-    if json_dict is None:
-        return
-
-    portkeys = []
-    if not end:
-        import portfolio
-        port = portfolio.getPortfolio()
-        portkeys = port.keys()
-    start_str = "{}_".format(getStartDate())
-    end_str = "_{}".format(getEndDate())
-    for astock in stocks:
-
-        path = getPath("csv/{}.csv".format(astock))
-        try:
-            df = pandas.read_csv(path)
-        except:
-            try:
-                df = saveProcessedFromYahoo(astock)
-            except Exception as e:
-                print (str(e))
-                print ("problem with {}".format(astock))
-                continue
-        df = df[start:end]
-        values = df[csvColumn].tolist()
-        if len(values) < 200:
-#            print ("Can't do {} with {}".format(astock, str(end)))
-            continue
-
-        last = 0
-        if start == None and end == None: 
-            last = df['Close'].iloc[-1]
-            latestPrices[astock] = last
-
-#        values = values[:-46]
-        dividend = getDividend(astock, values[-1], json_dict)
-
-        try:
-            name = json_dict[astock][name_idx]
-        except:
-            name = ""
-            if astock in etfs:
-                last = df['Close'].iloc[-1]
-                name = "ETF"
-
-        if astock in portkeys:
-            value = round(port[astock] * float(last),3)
-            port[astock] = [name, value]
-
-        percent_list[astock] = getVector(values, dividend, name, astock, last)
-
-    headers = ["Name", "Score", "Discount", "Dip", 
-               "Target", "Last", "Dividend", "DistRange", "Variance", 
-               "PointsAbove", "PointsBelow", "WC", 
-               "ProbUp", "WCBad", 
-               "3", "6", "12", "24", "48", "96", "192", "384"]
-
-    r_name = "on_{}{}".format(on_type, end_str)
-    if end == None and start == None:
-        updatePort() 
-        writeDict(port, "Portfolio")
-#        setp(latestPrices, "latestValues")
-        r_name = "complete_report"
-    writeFile(percent_list, headers, directory, name = r_name)
+#def writeDropCsv(stocks, directory = "analysis", start = None, end = None):
+#    global port
+#
+#    name_idx = 1
+#    etfs = getFromHoldings()
+#
+#    #global percent_list, notinvested
+#    percent_list = {}
+#    json_dict = getData("gg_json")
+#    if json_dict is None:
+#        return
+#
+#    portkeys = []
+#    if not end:
+#        import portfolio
+#        port = portfolio.getPortfolio()
+#        portkeys = port.keys()
+#    start_str = "{}_".format(getStartDate())
+#    end_str = "_{}".format(getEndDate())
+#    for astock in stocks:
+#
+#        path = getPath("csv/{}.csv".format(astock))
+#        try:
+#            df = pandas.read_csv(path)
+#        except:
+#            try:
+#                df = saveProcessedFromYahoo(astock)
+#            except Exception as e:
+#                print (str(e))
+#                print ("problem with {}".format(astock))
+#                continue
+#        df = df[start:end]
+#        values = df[csvColumn].tolist()
+#        if len(values) < 200:
+##            print ("Can't do {} with {}".format(astock, str(end)))
+#            continue
+#
+#        last = 0
+#        if start == None and end == None: 
+#            last = df['Close'].iloc[-1]
+#            latestPrices[astock] = last
+#
+##        values = values[:-46]
+#        dividend = getDividend(astock, values[-1], json_dict)
+#
+#        try:
+#            name = json_dict[astock][name_idx]
+#        except:
+#            name = ""
+#            if astock in etfs:
+#                last = df['Close'].iloc[-1]
+#                name = "ETF"
+#
+#        if astock in portkeys:
+#            value = round(port[astock] * float(last),3)
+#            port[astock] = [name, value]
+#
+#        percent_list[astock] = getVector(values, dividend, name, astock, last)
+#
+#    headers = ["Name", "Score", "Discount", "Dip", 
+#               "Target", "Last", "Dividend", "DistRange", "Variance", 
+#               "PointsAbove", "PointsBelow", "WC", 
+#               "ProbUp", "WCBad", 
+#               "3", "6", "12", "24", "48", "96", "192", "384"]
+#
+#    r_name = "on_{}{}".format(on_type, end_str)
+#    if end == None and start == None:
+#        updatePort() 
+#        writeDict(port, "Portfolio")
+##        setp(latestPrices, "latestValues")
+#        r_name = "complete_report"
+#    writeFile(percent_list, headers, directory, name = r_name)
 
 def getVectorForStrategy(values, astock):
     score, dipScore = getScore(values)
@@ -917,7 +919,7 @@ def getCsv(astock, idx = None, csvdir="csv"):
             df = pandas.read_csv(path)
         else:
             try:
-                df = saveProcessedFromYahoo(astock)
+                df = saveProcessedFromYahoo(astock, csvdir)
                 df.to_csv(path) 
                 df = pandas.read_csv(path)
             except Exception as e:
@@ -940,19 +942,24 @@ def writeStrategyReport(stocks, start = None, end = None,
     buyList = []
     for astock in stocks:
         df = getCsv(astock, csvdir=csvdir)
+
         if df is None:
             continue
 
-        df = df[start:end]
-        if df["Date"].count() != numberOfDates:
-            continue
+        if start and end:
+            dist = end - start
+            try:
+                tstart = list(df["Date"]).index(getStartDate())
+            except Exception as e:
+                print ('FailedGet: '+ str(e))
+                print (astock)
+                continue
+            df = df[tstart:tstart+dist]
 
         values = df[csvColumn].tolist()
-        if len(values) < 200:
-            continue
 
-        if df['Date'].iloc[0] != getStartDate():
-            continue
+#        if df['Date'].iloc[0] != getStartDate():
+#            continue
 
         last = 0
         lasth = 0
@@ -984,8 +991,9 @@ def writeStrategyReport(stocks, start = None, end = None,
         try:
             percent_list[astock] = getVectorForStrategy(values, astock) + [name, last, lastl, lasth]
         except Exception as e:
+            import traceback
+            print (traceback.format_exc())
             print ('FailedGet: '+ str(e))
-            print (astock)
             
 
     headers = ["Score", "Discount", "Dip", "Variance", "PointsAbove", 
@@ -1067,3 +1075,5 @@ def trimStock(astock, end):
 def getAverageStats(values, interval=3, last=30):
     values = values[-1*last:]
     return dipScore(items, interval=interval, avg=1, retAvg=True)
+
+#print (list(getCsv("KO", csvdir="historical")["Date"]).index("2001-12-28"))

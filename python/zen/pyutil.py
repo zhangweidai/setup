@@ -14,6 +14,8 @@ class Modes(IntFlag):
     change = 16
     target = 32
     recent = 64
+    multi = 128
+    history = 256
 
 #bar = Modes.zoom 
 #bar |= Modes.average
