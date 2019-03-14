@@ -67,7 +67,7 @@ more_etf = True
 path_dict = {}
 etf_purchase_times = dict()
 def tallyFrom(path, mode, ascending, isLast = False):
-    global spent, tranfees, cost_basis, latest_values
+    global spent, tranfees, cost_basis, latest_values, etf_purchase_times
     loaded = None
     try:
         if path in path_dict:
@@ -85,7 +85,6 @@ def tallyFrom(path, mode, ascending, isLast = False):
     loaded.sort_values(by=[mode], inplace=True, ascending=ascending)
 
     if mode == "Score" and more_etf:
-        print("path: {}".format( path))
         for anetf in etfs:
             try:
                 etfn = float(loaded[loaded['Unnamed: 0'] == anetf]['Last'])
@@ -96,8 +95,6 @@ def tallyFrom(path, mode, ascending, isLast = False):
                 etf_purchase_times.setdefault(anetf, 0)
                 etf_purchase_times[anetf] += 1
 
-                if anetf == "USMV":
-                    print("etfn : {}".format( etfn ))
             except Exception as e:
                 continue
 
@@ -106,13 +103,10 @@ def tallyFrom(path, mode, ascending, isLast = False):
     tranfees += 10
     purchased = 0
     if isLast and more_etf:
-        print("whatpath: {}".format( path))
         for idx,row in loaded.iterrows():
             symbol = loaded.at[idx, "Unnamed: 0"]
             last = loaded.at[idx, "Last"]
             latest_values[symbol] = last
-            if symbol == "USMV":
-                print("LAST : {}".format( last ))
     
     count = 0
     for idx,row in loaded.iterrows():
@@ -260,13 +254,12 @@ def etfData():
     for etf in etfvs:
         if etf == max_etf_name:
             etfvalue = round(etfvs[etf] * latest_values[etf], 3)
+            count = etf_purchase_times[etf]
+            spent = count * spend
             change = etfvalue/spent
 
-            print ("adding etf")
-            print("etf: {}".format( etf))
             hisdict.setdefault(etf, [])
-            hisdict[etf].append(change)
-            print("change: {}".format( change))
+            hisdict[etf].append(change/count)
 
             change = util.formatDecimal(change)
             ret.append("{0:4}({1:5})\n".format(etf, change))
@@ -274,26 +267,20 @@ def etfData():
     for i,etf in enumerate(etfvs):
         if not etf == max_etf_name:
             etfvalue = round(etfvs[etf] * latest_values[etf], 3)
-            print("etf: {}".format( etf))
-            print("etfvalue : {}".format( etfvalue ))
-            print("latest : {}".format( latest_values[etf] ))
-            print("quant : {}".format( etfvs[etf] ))
 
-            etf_purchase_times = dict()
+            count = etf_purchase_times[etf]
+            spent = count * spend
             change = etfvalue/spent
-            print("spent: {}".format( spent))
-            print ("adding etf")
-            print("change: {}".format( change))
 
             hisdict.setdefault(etf, [])
-            hisdict[etf].append(change)
+            hisdict[etf].append(change/count)
 
             change = util.formatDecimal(change)
             ret.append("{0:4}({1:5})".format(etf, change))
 
-
             if i == 6:
                 ret.append("\n")
+
     return [["".join(ret), "{}\n".format(spent)]]
 
 
@@ -404,8 +391,8 @@ def doit():
 #"".join(bar)
 report_root = "final"
 for i in range(1, 10):
-    if not i == 6:
-        continue
+#    if not i == 6:
+#        continue
 
     more_etf = True
     his_idx = i
