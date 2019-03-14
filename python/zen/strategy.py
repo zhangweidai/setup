@@ -65,6 +65,7 @@ purchasesl = dict()
 purchasesh = dict()
 more_etf = True
 path_dict = {}
+etf_purchase_times = dict()
 def tallyFrom(path, mode, ascending, isLast = False):
     global spent, tranfees, cost_basis, latest_values
     loaded = None
@@ -91,6 +92,9 @@ def tallyFrom(path, mode, ascending, isLast = False):
                 etfvs.setdefault(anetf, 0)
                 buycount = spend / etfn
                 etfvs[anetf] += buycount
+
+                etf_purchase_times.setdefault(anetf, 0)
+                etf_purchase_times[anetf] += 1
 
                 if anetf == "USMV":
                     print("etfn : {}".format( etfn ))
@@ -274,6 +278,8 @@ def etfData():
             print("etfvalue : {}".format( etfvalue ))
             print("latest : {}".format( latest_values[etf] ))
             print("quant : {}".format( etfvs[etf] ))
+
+            etf_purchase_times = dict()
             change = etfvalue/spent
             print("spent: {}".format( spent))
             print ("adding etf")
@@ -406,6 +412,7 @@ for i in range(1, 10):
     spent = 1
     doit()
     latest_values = dict()
+    etf_purchase_times = dict()
     rememberedFiles = []
 
 import csv
