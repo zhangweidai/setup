@@ -1,7 +1,6 @@
 """
 Show how to connect to keypress events
 """
-from __future__ import print_function
 import sys
 import matplotlib
 import numpy as np
@@ -11,11 +10,14 @@ from util import getCsv, getStocks, trimStock, getTrimStock
 import util
 from matplotlib.pyplot import figure
 from tkinter import simpledialog; 
-from pyutil import Modes, Zen, settings
-import pyutil
+try:
+    from pyutil import Modes, Zen, settings
+    import pyutil
+except
+    pass
 
 def getCurrentStock(force_idx = None):
-    return stocks[force_idx if force_idx else idx]
+    return stocks[force_idx or idx]
 
 def updateTitle(force_ax = None, force_idx = None):
     global ax
@@ -41,8 +43,7 @@ def rebuild(start = None, end = None,
 
     local_ax.cla()
     astock = stocks[force_idx]
-    csvdir = "historical" if Modes.history in currentMode else "csv"
-    df = getCsv(astock, csvdir=csvdir)
+    df = getCsv(astock)
     if df is None:
         return
 
@@ -74,11 +75,8 @@ def rebuild(start = None, end = None,
     startx = 0 
     endx = len(values)-1
 
-    try: local_ax.scatter(endx, util.getTargetPrice(astock)[0], s=80, 
-            color="red")
-    except Exception as e:
-        pass
-#        print ('TargetPrice : '+ str(e))
+    try: local_ax.scatter(endx, util.getTargetPrice(astock)[0], s=80, color="red")
+    except Exception as e: pass
 
     byx = int((endx-startx)/xcount)
     try:
@@ -143,8 +141,7 @@ def interpret(answer):
         except:
             try:
                 answer = answer.upper()
-                csvdir = "historical" if Modes.history in currentMode else "csv"
-                util.saveProcessedFromYahoo(answer, csvdir = csvdir, add=True)
+                util.saveProcessedFromYahoo(answer, add=True)
                 stocks = getStocks(ivv=ivvonly)
             except Exception as e:
                 print ('Failed2: '+ str(e))
@@ -195,9 +192,14 @@ def press(event):
         setCurrentMode(Modes.trim, build=False)
     elif press.last == "his":
         setCurrentMode(Modes.history, build=False)
+
+        if Modes.history in currentMode:
+            getCsv.csvdir = "historical"
+        else:
+            getCsv.csvdir = "csv"
+
         stocks = getStocks(ivv=ivvonly)
         updateDisplay()
-        
 
     print("last press :{}".format(press.last))
 

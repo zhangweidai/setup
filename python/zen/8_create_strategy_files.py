@@ -30,21 +30,18 @@ def standard():
     stocks = util.getStocks()
     ranges = getRanges(util.getNumberOfDates())
     for vals in ranges:
-        util.loadUSMV_dict(start=vals[0], end=vals[1])
         util.writeStrategyReport(stocks, start=vals[0], end=vals[1])
 
 def historical():
     stocks = util.getStocks(ivv = True)
-    ranges = getRanges(util.getNumberOfDates(csvdir="historical"), 
-            forHistory = True)
+    ranges = getRanges(util.getNumberOfDates(), forHistory = True)
     grouping = 0
     for i,vals in enumerate(ranges):
         if i % 15 == 0:
             grouping += 1
 
-        util.loadUSMV_dict(start=vals[0], end=vals[1], csvdir="historical")
         util.writeStrategyReport(stocks, start=vals[0], end=vals[1],
                                 reportname = "history_{}_".format(grouping),
-                                reportdir = "history", csvdir="historical")
+                                reportdir = "history")
         break
 historical()

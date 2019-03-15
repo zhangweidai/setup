@@ -3,6 +3,13 @@ import pandas as pd
 import timeit
 import pickle
 
+import debug
+debug.dipScore.mode = 2
+print(debug.dipScore())
+debug.dipScore.mode = 2
+print(debug.dipScore())
+raise SystemExit
+
 en_de = {"red" : "rot", "green" : "grun", "blue" : "blau", "yellow": "gelb"}
 
 def Test_pan1():

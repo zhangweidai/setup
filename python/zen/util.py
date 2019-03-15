@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from bs4 import BeautifulSoup
 from scipy import stats
 import os
 import math
@@ -13,7 +12,8 @@ from pandas_datareader import data as pdr
 import urllib.request, json
 from collections import deque
 
-csvColumn = "Close"
+CsvColumn = "Close"
+EtfBaselineTicker = "SPY"
 
 def formatDecimal(factor):
     return "{:.2%}".format(factor-1)
@@ -21,13 +21,12 @@ def formatDecimal(factor):
 
 def getTestItems(needed = 30, simple = False, astock=None):
     if astock:
-        return getCsv(astock)[csvColumn].tolist()
+        return getCsv(astock)[CsvColumn].tolist()
     from math import sqrt
     if simple:
         return [1,1,1,1,1,1,1,2,2,2,2,3,3,3,3,3,1,1,1,1,1,1,1,3,4,4,5,5,
         6,6,7,7,7,8,8,7,6,6,5,4,6,5,4,3,9,7,8,9]
     return [round(sqrt(i), 2) for i in range(1,needed)]
-
 
 def getPath(path):
     path = "{}/../zen_dump/{}".format(os.getcwd(), path)
@@ -46,96 +45,6 @@ def getp(name):
 def setp(data, name):
     path = getPath("pkl/{}.pkl".format(name))
     pickle.dump(data, open(path, "wb"))
-
-#setp(getTestItems(20), "saved_values")
-#items = (getTestItems(2000))
-#setp(items, "saved_values")
-#items = getp("saved_values")
-#print (items)
-#getPath("delme/file.csv")        
-
-def getDividendSchedule(month, date):
-    addy = "https://www.nasdaq.com/dividend-stocks/dividend-calendar.aspx?date=2019-{}-{}".format(month, date)
-    decoded = None
-    try:
-        with urllib.request.urlopen(addy) as url:
-            decoded = BeautifulSoup(url.read(), 'html.parser').get_text()
-#                    from_encoding=url.info().getparam('charset')).prettify()
-    except:
-        try:
-            with urllib.request.urlopen(addy) as url:
-                decoded = BeautifulSoup(url.read(), 'html.parser').get_text()
-        except Exception as e:
-            print ('Failed1: '+ str(e))
-            return None
-
-    return decoded.split("\n")
-
-def getSymbol(text):
-    import re
-    m = re.search(r"\((.*?)\)", text)
-    if m:
-        return m.group(1)
-    return None
-
-divData = dict()
-def parseDividendHtml(lines):
-    global divData
-    symbol = ""
-    started = False
-    for line in lines:
-        line = line.strip()
-        if not line:
-            symbol = ""
-            continue
-        
-        if "Payment Date" in line:
-            started = True
-            continue
-
-        if started and "Previous" in line:
-            break
-
-        if not started:
-            continue
-
-        if symbol:
-            divData.setdefault(symbol, list())
-            if len(divData[symbol]) < 4:
-                divData[symbol].append(line)
-        else:
-            symbol = getSymbol(line)
-
-        if ' </tr>' in line:
-            symbol = ""
-#path = getPath("divs/Mar_01.html")
-#parseDividendHtml(path)
-
-def saveDivs():
-    months = ["Mar", "Apr"]
-    #months = ["Mar"]
-    for month in months:
-        for i in range(1,30):
-
-            # too late
-            if month == "Mar" and i <= datetime.datetime.today().day + 1:
-                continue
-
-            date = str(i).zfill(2)
-            lines = getDividendSchedule(month, date)
-            if lines:
-                parseDividendHtml(lines)
-
-    path = getPath("divs/div.pkl")
-    pickle.dump(divData, open(path, "wb"))
-    print ("Saved {} symbols".format(len(divData)))
-
-#saveDivs()
-
-def loadDivs():
-    path = getPath("divs/div.pkl")
-    return pickle.load(open(path, "rb"))
-#loadDivs()
 
 def getRangedDist(items):
     if len(items) < 18:
@@ -187,18 +96,6 @@ def averageRegress(items):
     return (f1 + f2 + f3)
 #print (averageRegress(getTestItems()))
 
-#def get3DayLow(items, idx):
-#    size = len(items)
-#    if idx + 3 >= size:
-#        idx = size - 3
-#    low = items[idx]
-#    for i in range(1,3):
-#        print (i)
-#        if items[idx+i] < low:
-#            low = items[idx+i]
-#    return low
-#print (get3DayLow(getTestItems(), 20))
-
 def dipScore(items, interval=7, avg=3, retAvg=False):
     currentStack = deque([])
     low = deque([])
@@ -234,28 +131,6 @@ def getScore(items):
     return (num,bottom)
 #a,b = getScore(getTestItems())
 #print (a/b)
-
-def getData(filename, asList = False):
-    path = filename
-    if not os.path.exists(filename):
-        path = getPath("analysis/{}.csv".format(filename))
-
-    if not os.path.exists(path):
-        print ("could not find" + path)
-        return None
-
-    trend = pandas.read_csv(path)
-    whatdict = trend.to_dict('split')
-    ret = dict()
-    if not asList:
-        for company_data in whatdict['data']:
-            ret[company_data[0]] = company_data[1:]
-    else:
-        ret = list()
-        for company_data in whatdict['data']:
-            ret.append(company_data)
-
-    return ret
 
 def writeFile(dictionary, cols, directory="all", name = "training"):
     df = pandas.DataFrame.from_dict(dictionary, orient = 'index', columns=cols)
@@ -404,6 +279,14 @@ def getStocks(holding = "IVV", andEtfs = True,
     if ivv:
         return list(subset) + getFromHoldings()
 
+    val = getStocks.fromCsv
+    if val and len(val) == 3:
+        path = getPath(val[0])
+        df = pandas.read_csv(path)
+        df.sort_values(by=[val[1]], inplace=True, ascending=val[2])
+        retCol = df.columns[0]
+        return df[retCol].tolist()
+
     if not reset:
         try: return getStocks.ret
         except: pass
@@ -421,72 +304,33 @@ def getStocks(holding = "IVV", andEtfs = True,
 #    ret = list(subset | set(dataiwb['Ticker'].tolist()) ) + getFromHoldings()
 #    ret = list(set(ret) - (set(removed) | set(data)))
 #
-    ret.sort()
     getStocks.ret = ret
     return ret
+#getStocks.fromCsv = None
+#getStocks.fromCsv = ("holdings/IVV_holdings.csv", "Weight (%)", True)
+#print (getStocks())
 
 yf.pdr_override() # <== that's all it takes :-)
 
-def loadFromUrl(astock, urlstr = "company/profile"):
-    decoded = None
-    try:
-        with urllib.request.urlopen(
-                "https://financialmodelingprep.com/api/{}/{}".format(urlstr, 
-                    astock)) as url:
-            decoded = url.read().decode()
-    except Exception as e:
-        print ("Not FIND :" + astock)
-        print ('Failed: '+ str(e))
-
-    if not decoded:
-        return None
-
-    return json.loads(decoded.replace("<pre>",""))
-
-
-def getJsonData(astock):
-    data = loadFromUrl(astock)
-    if not data:
-        return None, None
-    price = float(data[astock]["Price"])
-    lastDiv = round(float(data[astock]["LastDiv"])/float(price),4)
-    name = data[astock]["companyName"]
-    return lastDiv, name
-
-def saveJsonData(stocks, directory="all"):
-    print ("Saving Json Data")
-    print (stocks)
-
-    data = dict()
-    for astock in stocks:
-        dividend, name = getJsonData(astock)
-        if name:
-            data[astock] = [dividend, name]
-
-    import pandas
-    df = pandas.DataFrame.from_dict(data, orient = 'index', 
-            columns=["Dividend", "Name"])
-    path = getPath("analysis/json_{}.csv".format(directory))
-    df.to_csv(path)
-
-def getNumberOfDates(csvdir = "csv"):
+def getNumberOfDates():
     try : return getNumberOfDates.ret
     except : pass
-    path = getPath("{}/WMT.csv".format(csvdir))
+
+    path = getCsv("WMT", asPath = True)
     getNumberOfDates.ret = sum(1 for line in open(path)) - 1
     return getNumberOfDates.ret
 
-tday = datetime.date.today().isoformat()
 #expected_count = 1050
 removed = []
 def getRemovedStocks():
     return removed
 
-def saveProcessedFromYahoo(astock, csvdir = "csv", add=False):
-    saveStartDate = "2015-01-05" if csvdir == "csv" else "2000-01-05"
+def saveProcessedFromYahoo(astock, add=False):
+    tday = datetime.date.today().isoformat()
+    saveStartDate = "2015-01-05" if getCsv.csvdir == "csv" else "2000-01-05"
 
     global removed
-    path = getPath("{}/{}.csv".format(csvdir,astock))
+    path = getCsv(astock, asPath = True)
     if os.path.exists(path):
         return
 
@@ -528,9 +372,7 @@ def saveProcessedFromYahoo(astock, csvdir = "csv", add=False):
 
     return df
 
-
-#        avg.append(round(sub/4, 4))
-
+#    avg.append(round(sub/4, 4))
 #    df.insert(loc=4, column='Avg', value=avg)
 #    return df
 
@@ -588,17 +430,15 @@ def getStartDate():
     return startDate
 
 numberOfDates = 0
-def loadUSMV_dict(end = None, start=None, csvdir="csv"):
+def loadBaseline(end = None, start=None):
     global baseline, endDate, numberOfDates, startDate
-    df = getCsv("SPY", csvdir=csvdir)
-#    path = getPath("{}/SPY.csv".format(csvdir))
-#    df = pandas.read_csv(path)
+    df = getCsv(EtfBaselineTicker)
     df = df[start:end]
 
     endDate = df['Date'].iloc[-1]
     startDate = df['Date'].iloc[0]
 
-    values = df[csvColumn].tolist()
+    values = df[CsvColumn].tolist()
     numberOfDates = len(values)
     last = values[-1]
     ret = []
@@ -606,7 +446,7 @@ def loadUSMV_dict(end = None, start=None, csvdir="csv"):
         ret.append(round(last/b,3))
     baseline = ret
     return baseline
-#print (loadUSMV_dict())
+#print (loadBaseline())
 
 loadedDivs = dict()
 def getDividend(astock, lastvalue, json_dict):
@@ -630,12 +470,6 @@ def getDividend(astock, lastvalue, json_dict):
 
 #json_dict = getData("gg_json")
 #print (getDividend("BLK", 300, json_dict))
-
-def getWanted():
-    return {
-        "PAYX":65,
-        "EXAS":65,
-    }
 
 def listRightIndex(alist, value):
     return len(alist)- alist[-1::-1].index(value) -1
@@ -674,7 +508,6 @@ def setTargetPrice(astock, price):
     global targets
     targets[astock] = price, ""
 
-
 targets = dict()
 def getTargetPrice(astock, end = None, start = None):
     global targets
@@ -712,38 +545,6 @@ def writeDict(port, name):
 #d  = {"bar" : ["name", str(2)], "d" : 2}
 #writeDict(d, "test")
 
-def loadFromUrl(astock, urlstr = "company/profile"):
-    decoded = None
-    try:
-        with urllib.request.urlopen("https://financialmodelingprep.com/api/{}/{}".format(urlstr, astock)) as url:
-            decoded = url.read().decode()
-    except Exception as e:
-        print ("Not FIND :" + astock)
-        print ('Failed: '+ str(e))
-
-    if not decoded:
-        return None
-
-    return json.loads(decoded.replace("<pre>",""))
-
-def updateJsonCompany(astock):
-    data = getData("gg_json")
-#    data = loadFromUrl(astock)
-    if data is None:
-        return ""
-    try:
-        return data[astock][1]
-    except:
-        pass
-    return ""
-
-    price = float(data[astock]["Price"])
-    dividend = round(float(data[astock]["LastDiv"])/float(price),4)
-#    with open(path, "a") as f:
-#        f.write("{},{},{}\n".format(astock, dividend, name))
-    return name
-
-
 def updatePort():
     global port
     for astock in port:
@@ -755,124 +556,12 @@ def updatePort():
                 df = pandas.read_csv(path)
             except:
                 continue
-
-            name = updateJsonCompany(astock)
+            name = json_util.updateJsonCompany(astock)
             try:
                 last = df['Close'].iloc[-1]
                 port[astock] = [name, round(float(last) * float(count),2)]
             except:
                 continue
-
-def getVector(values, dividend, name, astock, last):
-    score, dipScore = getScore(values)
-    discount = getDiscount(values)
-    distrange, vari = getRangedDist(values)
-    dipScore = round(dipScore,3)
-
-    pointsabove = 0
-    pointsbelow = 0
-    if not astock == "IUSG":
-        pointsabove, pointsbelow = getPointsAbove(values)
-
-    changes = getChanges(values)
-    factor = "NotEnoughData"
-    fd = 1
-    if changes:
-        factor = round(np.prod(changes),3)
-        fd = round(float(factor)/float(discount), 3)
-
-#    discount = formatDecimal(discount)
-
-    new = round((((pointsabove-(pointsbelow/3.1415))* fd)/dipScore) + 
-            math.sqrt(score), 3)
-
-    wc, probup, wcb = getWC(values)
-#    for i,b in enumerate(changes):
-#        changes[i] = formatDecimal(b)
-
-    date = ""
-#    target, date = getTargetPrice(astock, end)
-    target = targetPrice(values)
-#    target = "{}({})".format(target, date)
-
-    if astock in getivvstocks():
-        name = "**" + name
-
-    return [name, new, discount, dipScore, target, last, dividend, 
-    distrange, vari, pointsabove, pointsbelow, wc, probup, wcb] + changes
-
-#def writeDropCsv(stocks, directory = "analysis", start = None, end = None):
-#    global port
-#
-#    name_idx = 1
-#    etfs = getFromHoldings()
-#
-#    #global percent_list, notinvested
-#    percent_list = {}
-#    json_dict = getData("gg_json")
-#    if json_dict is None:
-#        return
-#
-#    portkeys = []
-#    if not end:
-#        import portfolio
-#        port = portfolio.getPortfolio()
-#        portkeys = port.keys()
-#    start_str = "{}_".format(getStartDate())
-#    end_str = "_{}".format(getEndDate())
-#    for astock in stocks:
-#
-#        path = getPath("csv/{}.csv".format(astock))
-#        try:
-#            df = pandas.read_csv(path)
-#        except:
-#            try:
-#                df = saveProcessedFromYahoo(astock)
-#            except Exception as e:
-#                print (str(e))
-#                print ("problem with {}".format(astock))
-#                continue
-#        df = df[start:end]
-#        values = df[csvColumn].tolist()
-#        if len(values) < 200:
-##            print ("Can't do {} with {}".format(astock, str(end)))
-#            continue
-#
-#        last = 0
-#        if start == None and end == None: 
-#            last = df['Close'].iloc[-1]
-#            latestPrices[astock] = last
-#
-##        values = values[:-46]
-#        dividend = getDividend(astock, values[-1], json_dict)
-#
-#        try:
-#            name = json_dict[astock][name_idx]
-#        except:
-#            name = ""
-#            if astock in etfs:
-#                last = df['Close'].iloc[-1]
-#                name = "ETF"
-#
-#        if astock in portkeys:
-#            value = round(port[astock] * float(last),3)
-#            port[astock] = [name, value]
-#
-#        percent_list[astock] = getVector(values, dividend, name, astock, last)
-#
-#    headers = ["Name", "Score", "Discount", "Dip", 
-#               "Target", "Last", "Dividend", "DistRange", "Variance", 
-#               "PointsAbove", "PointsBelow", "WC", 
-#               "ProbUp", "WCBad", 
-#               "3", "6", "12", "24", "48", "96", "192", "384"]
-#
-#    r_name = "on_{}{}".format(on_type, end_str)
-#    if end == None and start == None:
-#        updatePort() 
-#        writeDict(port, "Portfolio")
-##        setp(latestPrices, "latestValues")
-#        r_name = "complete_report"
-#    writeFile(percent_list, headers, directory, name = r_name)
 
 def getVectorForStrategy(values, astock):
     score, dipScore = getScore(values)
@@ -881,7 +570,7 @@ def getVectorForStrategy(values, astock):
     dipScore = round(dipScore,3)
     pointsabove = 0
     pointsbelow = 0
-    if not astock == "IUSG":
+    if not astock == EtfBaselineTicker:
         pointsabove, pointsbelow = getPointsAbove(values)
     changes = getChanges(values)
     factor = 1
@@ -892,10 +581,12 @@ def getVectorForStrategy(values, astock):
     new = round((((pointsabove-(pointsbelow/3.1415))* fd)/dipScore) + math.sqrt(score), 3)
     wc, probup, wcb = getWC(values)
     return [new, discount, dipScore, vari, pointsabove, pointsbelow, wc]
-
 savedReads = dict()
 
-def getCsv(astock, idx = None, csvdir="csv"):
+def getCsv(astock, idx = None, asPath=False):
+    if asPath:
+        return getPath("{}/{}.csv".format(getCsv.csvdir, astock))
+
     global savedReads
     if idx == 0:
         idx = "Unnamed: 0"
@@ -910,7 +601,7 @@ def getCsv(astock, idx = None, csvdir="csv"):
         return None
 
     try:
-        path = getPath("{}/{}.csv".format(csvdir, astock))
+        path = getPath("{}/{}.csv".format(getCsv.csvdir, astock))
         df = pandas.read_csv(path)
     except:
         # allow getCsv to return from specified csv files
@@ -919,29 +610,28 @@ def getCsv(astock, idx = None, csvdir="csv"):
             df = pandas.read_csv(path)
         else:
             try:
-                df = saveProcessedFromYahoo(astock, csvdir)
+                df = saveProcessedFromYahoo(astock)
                 df.to_csv(path) 
                 df = pandas.read_csv(path)
             except Exception as e:
                 print (str(e))
                 print ("problem with {}".format(astock))
                 return None
-
     savedReads[astock] = df
     if idx:
         return df[idx].tolist()
-
     return df
+getCsv.csvdir = "csv"
 
 def writeStrategyReport(stocks, start = None, end = None, 
-        reportname="strategy_report_", csvdir="csv",
-        reportdir = "analysis"):
+        reportname="strategy_report_", reportdir = "analysis"):
+    loadBaseline(start=start, end=end)
     percent_list = {}
     ivv = getivvstocks()
     iusg = getiusgstocks()
     buyList = []
     for astock in stocks:
-        df = getCsv(astock, csvdir=csvdir)
+        df = getCsv(astock)
 
         if df is None:
             continue
@@ -956,7 +646,7 @@ def writeStrategyReport(stocks, start = None, end = None,
                 continue
             df = df[tstart:tstart+dist]
 
-        values = df[csvColumn].tolist()
+        values = df[CsvColumn].tolist()
 
 #        if df['Date'].iloc[0] != getStartDate():
 #            continue
@@ -1004,15 +694,14 @@ def writeStrategyReport(stocks, start = None, end = None,
 
     r_name = "{}{}".format(reportname, getEndDate())
     writeFile(percent_list, headers, reportdir, name = r_name)
-#updateJsonCompany("COST")
 
-def plot(astock, start = None, end = None):
-    df = getCsv(astock)
-    df = df[start:end]
-    values = df[csvColumn].tolist()
-    plt.plot(values)
-    plt.show()
-
+#def plot(astock, start = None, end = None):
+#    df = getCsv(astock)
+#    df = df[start:end]
+#    values = df[CsvColumn].tolist()
+#    plt.plot(values)
+#    plt.show()
+#
 def getTrimStock(astock):
     try : return getp("trims")[astock]
     except : return None
@@ -1067,13 +756,10 @@ def trimStock(astock, end):
 #print (getTrimStock("GOOG"))
 #trimStock("VST", 200)
 
-
 #plot("EXAS")
-
-#saveProcessedFromYahoo("VST")
 
 def getAverageStats(values, interval=3, last=30):
     values = values[-1*last:]
     return dipScore(items, interval=interval, avg=1, retAvg=True)
 
-#print (list(getCsv("KO", csvdir="historical")["Date"]).index("2001-12-28"))
+#print (list(getCsv("KO")["Date"]).index("2001-12-28"))

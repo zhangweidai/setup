@@ -1,3 +1,4 @@
+import json_util
 from sklearn.preprocessing import OneHotEncoder
 enc = OneHotEncoder(handle_unknown='ignore')
 #X = [['Male', 1], ['Female', 3], ['Female', 2]]
@@ -66,7 +67,7 @@ def translateTraining():
     for afile in files:
         path = util.getPath("training_data/{}".format(afile)
         print (path)
-        trend_dict = util.getData(path, asList = True)
+        trend_dict = json_util.getData(path, asList = True)
         ranked = rankEm(trend_dict, method = (True, False))
         encoded = encodeRanked(ranked)
         path = util.getPath("encoded/prep_{}.py".format(afile.split(".")[0]))
