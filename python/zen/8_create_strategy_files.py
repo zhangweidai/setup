@@ -33,6 +33,7 @@ def standard():
         util.writeStrategyReport(stocks, start=vals[0], end=vals[1])
 
 def historical():
+    util.getCsv.csvdir="historical"
     stocks = util.getStocks(ivv = True)
     ranges = getRanges(util.getNumberOfDates(), forHistory = True)
     grouping = 0
@@ -43,5 +44,4 @@ def historical():
         util.writeStrategyReport(stocks, start=vals[0], end=vals[1],
                                 reportname = "history_{}_".format(grouping),
                                 reportdir = "history")
-        break
 historical()

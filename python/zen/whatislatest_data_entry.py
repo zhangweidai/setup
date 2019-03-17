@@ -23,7 +23,6 @@ try:
 #    path = util.getPath("csv/{}.csv".format(lookup))
 #    data.to_csv(path)
 except Exception as e:
-    print (data.columns)
     print ('Deleting : '+ str(e))
 #    try:
 #        startdate = "2019-02-21"

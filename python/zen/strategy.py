@@ -4,6 +4,7 @@
 #print (pearsonr(a,b))
 #raise SystemExit
 
+import numpy as np
 from datetime import date, timedelta
 from pandas_datareader import data as pdr
 from collections import Counter
@@ -91,11 +92,15 @@ def tallyFrom(path, mode, ascending, isLast = False):
                 etfvs.setdefault(anetf, 0)
                 buycount = spend / etfn
                 etfvs[anetf] += buycount
+#                print("anetf: {}".format( anetf))
+#                print("buycount: {}".format( buycount))
 
                 etf_purchase_times.setdefault(anetf, 0)
                 etf_purchase_times[anetf] += 1
 
             except Exception as e:
+#                print ('Failed: '+ str(e))
+#                print ("Problem with {}".format(anetf))
                 continue
 
     per = spend / size
@@ -107,10 +112,15 @@ def tallyFrom(path, mode, ascending, isLast = False):
             symbol = loaded.at[idx, "Unnamed: 0"]
             last = loaded.at[idx, "Last"]
             latest_values[symbol] = last
+#            if symbol == "SPY":
+#                print("last: {}".format( last))
+#                print("symbol: {}".format( symbol))
     
     count = 0
     for idx,row in loaded.iterrows():
         symbol = loaded.at[idx, "Unnamed: 0"]
+        if symbol in dontBuy:
+            continue
 #        if count < 2:
 #            count += 1
 #            continue
@@ -189,6 +199,7 @@ def getTrainingTemps(mode, ascending):
             print("path : {}".format( path ))
             pass
 
+dontBuy = ["MNST"]
 changeDict = dict()
 #latest_values = util.getp("lastValues")
 mode_average = dict()
@@ -211,6 +222,9 @@ def calcIt(mode, ascending):
         asize += purchases[astock] * latest_values[astock]
         asizel += purchasesl[astock] * latest_values[astock]
         asizeh += purchasesh[astock] * latest_values[astock]
+#    except Exception as e:
+#        print ('3Failed: '+ str(e))
+#        return
 
     if size == 20:
         portf[mode, ascending] = purchases
@@ -228,10 +242,7 @@ def calcIt(mode, ascending):
         mode_hash += "A"
 
     mode_average.setdefault(mode_hash, [])
-    mode_average[mode_hash].append(low)
     mode_average[mode_hash].append(high)
-    mode_average[mode_hash].append(high)
-    mode_average[mode_hash].append(close)
     mode_average[mode_hash].append(close)
 
     one =   "C {0:12} {1:8}".format(mode_hash, change)
@@ -254,26 +265,32 @@ def etfData():
     for etf in etfvs:
         if etf == max_etf_name:
             etfvalue = round(etfvs[etf] * latest_values[etf], 3)
+#            print("etfvalue : {}".format( etfvalue ))
             count = etf_purchase_times[etf]
-            spent = count * spend
+            spent2 = count * spend
             change = etfvalue/spent
+#            print("spent: {}".format( spent))
 
             hisdict.setdefault(etf, [])
-            hisdict[etf].append(change/count)
+            hisdict[etf].append(change)
+#            print("change: {}".format( change))
 
             change = util.formatDecimal(change)
             ret.append("{0:4}({1:5})\n".format(etf, change))
 
     for i,etf in enumerate(etfvs):
         if not etf == max_etf_name:
+#            print("etf : {}".format( etf ))
             etfvalue = round(etfvs[etf] * latest_values[etf], 3)
+#            print("etfvalue : {}".format( etfvalue ))
 
             count = etf_purchase_times[etf]
-            spent = count * spend
+            spent2 = count * spend
             change = etfvalue/spent
 
             hisdict.setdefault(etf, [])
-            hisdict[etf].append(change/count)
+            hisdict[etf].append(change)
+#            print("change: {}".format( change))
 
             change = util.formatDecimal(change)
             ret.append("{0:4}({1:5})".format(etf, change))
@@ -295,8 +312,9 @@ def costToDict():
         astock = cost.symbol
         currentValue = round(amount * latest_values[astock])
         change = util.formatDecimal(currentValue/spent)
-        if not (cost.mode == "Dip" and not cost.mode2):
-            continue
+
+#        if not (cost.mode == "Variance" and not cost.mode2):
+#            continue
         hashable = "{}".format(str(cost))
         newdict[hashable] = [currentValue, round(spent), change, 
         round(currentValue-spent), ",".join(dates)]
@@ -327,7 +345,6 @@ def testCostToDict():
     newdict = costToDict()
 
 
-
 def writeCostDict(newdict):
     import pandas
     df = pandas.DataFrame.from_dict(newdict, orient = 'index', 
@@ -345,7 +362,7 @@ modes = ["Score", "Discount", "Dip", "Variance", "PointsAbove", "WC"]
 #modes = ["Score", "Discount"]
 def doit():
     global size, more_etf
-    testingModes = [3, 5, 9, 12, 15]
+    testingModes = [15]
 #    testingModes = [10, 15, 20]
     appended = []
     for csize in testingModes:
@@ -356,7 +373,6 @@ def doit():
             more_etf = False
             appended.append(calcIt(mode, False))
     
-    import numpy as np
     prevavg = 0
     prevvar = 0
     appended.append(["\n"])
@@ -366,7 +382,9 @@ def doit():
         vari = round(np.var(items),3)
     
         hisdict.setdefault(mode, [])
-        hisdict[mode].append(average)
+        hisdict[mode] += items
+#        print("mode: {}".format( mode))
+#        print("items : {}".format( items ))
 
         appended.append(["A {0:12} {1:8} {2}".format(mode, 
                         util.formatDecimal(average), vari)])
@@ -391,14 +409,15 @@ def doit():
 #"".join(bar)
 report_root = "final"
 for i in range(1, 10):
-#    if not i == 6:
-#        continue
-
     more_etf = True
     his_idx = i
     spent = 1
+
     doit()
+
+    etfvs = dict()
     latest_values = dict()
+    cost_basis = dict()
     etf_purchase_times = dict()
     rememberedFiles = []
 
@@ -407,8 +426,19 @@ path = util.getPath("final/historyreport.csv")
 with open(path, 'w') as f:
     for key in hisdict.keys():
         appended = []
-        for item in hisdict[key]:
+        current = hisdict[key]
+        negs = 0
+        mini = util.formatDecimal(min(current))
+        maxi = util.formatDecimal(max(current))
+        for item in current:
+            if item < 1:
+                negs += 1
             appended.append(util.formatDecimal(item))
-        avg = util.formatDecimal(sum(hisdict[key])/len(hisdict[key]))
+        avg = util.formatDecimal(sum(current)/len(current))
+        vari = round(np.var(current),3)
         percentages  = " ".join(appended)
-        f.write("{},{},{}\n".format(key, avg, percentages))
+        f.write("{},{},{},{},{},{},{}\n".format(key, avg, 
+                    vari, 
+                    maxi,mini,
+                    round(negs/len(current),3),
+                    percentages))

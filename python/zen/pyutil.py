@@ -4,6 +4,7 @@ from multiprocessing import Process
 from enum import IntFlag, Enum
 from util import getp, setp
 import logging
+import util
 
 class Modes(IntFlag):
     none = 0
@@ -16,6 +17,7 @@ class Modes(IntFlag):
     recent = 64
     multi = 128
     history = 256
+    sort = 512
 
 #bar = Modes.zoom 
 #bar |= Modes.average
@@ -150,18 +152,25 @@ def averageValues(values):
         lastavg = avg
     return ret
 
-def changeValues(values, by = 5):
+def changeValues(values, by = 5, negavg = False):
     ret = []
     last = 0
     leng = len(values)
+    negs = []
     for i,value in enumerate(values):
         end = i+by
         if end < leng:
             change = round(values[end]/float(values[i]), 4)
+            if negavg and change < 1:
+                negs.append(change)
         else:
             change = last
         ret.append(change)
         last = change
+
+    if negavg:
+        return util.formatDecimal(sum(negs)/len(negs))
+
     return ret
 #print changeValues([i for i in range(1,40)])
 #print [i for i in range(40)]

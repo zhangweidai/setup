@@ -1,6 +1,7 @@
 """
 Show how to connect to keypress events
 """
+from termcolor import colored
 import sys
 import matplotlib
 import numpy as np
@@ -10,14 +11,15 @@ from util import getCsv, getStocks, trimStock, getTrimStock
 import util
 from matplotlib.pyplot import figure
 from tkinter import simpledialog; 
-try:
-    from pyutil import Modes, Zen, settings
-    import pyutil
-except
-    pass
+from pyutil import Modes, Zen, settings
+import pyutil
 
 def getCurrentStock(force_idx = None):
-    return stocks[force_idx or idx]
+    global idx
+    try :return stocks[force_idx or idx]
+    except : 
+        idx = 0 
+        return stocks[0]
 
 def updateTitle(force_ax = None, force_idx = None):
     global ax
@@ -36,13 +38,41 @@ def rebuild(start = None, end = None,
         force_ax = None,
         force_idx = None):
 
-    global ax, values, df, dates, maxvalues, idx, stocks
+    modestr = str(currentMode.__str__).split("<")[2]
+    modestr = modestr.split(":")[0]
+
+    global ax, values, df, dates, idx, stocks
     local_ax = ax
     if not force_idx: force_idx = idx
     if force_ax is not None: local_ax = force_ax
 
+    if local_ax is None:
+        return
+
     local_ax.cla()
-    astock = stocks[force_idx]
+    try:
+        astock = stocks[force_idx]
+    except Exception as e:
+        force_idx = 0
+        try:
+            astock = stocks[force_idx]
+        except Exception as e:
+            print ('Rebuild : '+ str(e))
+            print( stocks)
+            return
+
+    if Modes.multi not in currentMode:
+        cname = util.getCompanyName(astock)
+        print("\n")
+        print("Stock : {}\t{}\t{}".format( 
+                    colored(astock,"yellow"), 
+                    cname, modestr ))
+
+    if Modes.sort in currentMode:
+        print("{} | {}".format(
+                handleSort.curr_sort_ascend,
+                util.getSortDisplay()))
+
     df = getCsv(astock)
     if df is None:
         return
@@ -51,17 +81,26 @@ def rebuild(start = None, end = None,
 
     if Modes.recent in currentMode:
         start = maxvalues-rebuild.recentIncrement
+    else:
+        if maxvalues > 500:
+            df = df[1::2]
+
+        if Modes.multi in currentMode:
+            if Modes.history in currentMode and maxvalues > 500:
+                df = df[1::2]
+                df = df[1::2]
+                df = df[1::2]
 
     df = df[start:end]
     values = df[csvColumn].tolist()
-    local_ax.plot(values)
 
     if Modes.more in currentMode:
         local_ax.plot(df["Low"].tolist(), linewidth = .5)
         local_ax.plot(df["High"].tolist(), linewidth = .5)
 
     if Modes.change in currentMode:
-        modified = pyutil.averageValues(pyutil.changeValues(values))
+        chaVals = pyutil.changeValues(values)
+        modified = pyutil.averageValues(chaVals)
         local_ax.plot(modified)
         local_ax.axhline(y=1)
     else:
@@ -74,9 +113,11 @@ def rebuild(start = None, end = None,
 
     startx = 0 
     endx = len(values)-1
-
-    try: local_ax.scatter(endx, util.getTargetPrice(astock)[0], s=80, color="red")
-    except Exception as e: pass
+    if Modes.change not in currentMode:
+        try: local_ax.scatter(endx, util.getTargetPrice(astock)[0], s=80, 
+                color="red")
+        except Exception as e: 
+            print ('Scatter : '+ str(e))
 
     byx = int((endx-startx)/xcount)
     try:
@@ -98,13 +139,26 @@ def rebuild(start = None, end = None,
     if Modes.multi in currentMode:
         xlabels[1] = ""
         xlabels[2] = ""
+    else:
+        avg = pyutil.changeValues(values, rebuild.chaBy, 
+                negavg = True)
+
+        dele, vari = util.getRangedDist(values)
+        print("\t{}  : Length:{}".format(dates[0], len(dates)))
+        print("\tAvg{}        : {}".format(rebuild.chaBy, avg))
+        changep = util.formatDecimal(values[-1]/values[0])
+        print("\tChange      : {}".format(changep))
+        print("\tVariance    : {}".format(vari))
 
     local_ax.set_xticklabels(xlabels)
     local_ax.set_xticks(xranges)
 
     fig.canvas.draw()
     fig.canvas.get_tk_widget().focus_set()
+
+rebuild.sort_desc = None
 rebuild.recentIncrement = 35
+rebuild.chaBy = 2
                 
 def nexti():
     global idx
@@ -127,14 +181,32 @@ def previ():
         updateDisplay()
 
 def interpret(answer):
-    global idx, stocks
+    global idx, stocks, previdx
     print("answer: {}".format( answer))
     if not answer:
         return
-    if answer == "reset":
-        util.resetStock(getCurrentStock())
-        rebuild()
+    if "reset" in answer:
+        stock = getCurrentStock()
+        if Modes.multi in currentMode:
+            stock = answer.split(" ")[1].upper()
+
+        util.resetStock(stock)
+        updateDisplay()
+
+    elif "/2" in answer:
+        rebuild.recentIncrement = int(len(values)/2)
+        setCurrentMode(Modes.recent)
+
+    elif "delete" in answer:
+        stock = getCurrentStock()
+        if Modes.multi in currentMode:
+            stock = answer.split(" ")[1].upper()
+            print("stock : {}".format( stock ))
+        util.delStock(stock)
+        stocks = getStocks(reset=True, ivv=ivvonly)
+        updateDisplay()
     else:
+        previdx = idx
         try:
             idx = stocks.index(answer.upper())
             print("idx : {}".format(idx))
@@ -159,20 +231,49 @@ def setCurrentMode(mode, build = True):
             updateMultiPlot(titlesOnly = True)
         else:
             updateTitle()
-    ivvonly = Modes.history in currentMode
+
+def handleModifier(key):
+    print("key: {}".format( key))
+    global previdx, idx
+    if key == "control":
+        previdx, idx = idx, previdx
+        updateDisplay()
+
+def handleSort(sort_col = None):
+    global idx, stocks
+    if not sort_col:
+        setCurrentMode(Modes.sort, build=False)
+
+    if sort_col:
+        handleSort.curr_sort_col = sort_col
+
+    sort_col = sort_col or handleSort.curr_sort_col 
+    idx = 0
+    if Modes.sort in currentMode:
+        util.setWhatToBuy(
+                sort_col, 
+                handleSort.curr_sort_ascend)
+    else:
+        util.setWhatToBuy(None)
+
+    stocks = getStocks(reset=True)
+    updateDisplay()
 
 def press(event):
     if event.key and len(event.key) == 1:
         try: press.last += event.key
         except: press.last = event.key
     else : 
+        handleModifier(event.key)
         return
     try: 
         if len(press.last) > 3 and len(event.key) == 1: 
             press.last = press.last[1:]
     except : pass
 
-    global idx, fig, currentMode, stocks
+#    print("last press :{}".format(press.last))
+
+    global idx, fig, currentMode, stocks, ivvonly
 
     if press.last == "aa" or press.last == "aaa":
         press.last = ""
@@ -191,17 +292,18 @@ def press(event):
     elif press.last == "tri":
         setCurrentMode(Modes.trim, build=False)
     elif press.last == "his":
-        setCurrentMode(Modes.history, build=False)
+        currentMode ^= Modes.history
+        ivvonly = Modes.history in currentMode
 
         if Modes.history in currentMode:
             getCsv.csvdir = "historical"
+            if Modes.recent in currentMode:
+                currentMode ^= Modes.recent
         else:
             getCsv.csvdir = "csv"
 
-        stocks = getStocks(ivv=ivvonly)
+        stocks = getStocks(ivv=ivvonly, reset=True)
         updateDisplay()
-
-    print("last press :{}".format(press.last))
 
     sys.stdout.flush()
 #        visible = xl.get_visible()
@@ -209,14 +311,20 @@ def press(event):
 #    if event.key == 'left':
     if event.key == 'q':
         saveSettings()
+        return
 
+    elif event.key == '`':
+        handleSort()
     # zz
     elif event.key == 'z':
         if not currentMode == Modes.zoom:
             currentMode = Modes.zoom
         else:
             updateDisplay()
+            rebuild.recentIncrement = 35
             currentMode = Modes.none
+        return
+
     elif event.key == 'x':
         from pyutil import restart_program
         saveSettings()
@@ -241,6 +349,17 @@ def press(event):
         fig.canvas.get_tk_widget().focus_set()
 
     handleIncrease(event.key)
+
+    if Modes.sort in currentMode:
+        if event.key == 'f' or event.key == 't':
+            handleSort.curr_sort_ascend = \
+                not handleSort.curr_sort_ascend
+            handleSort(handleSort.curr_sort_col)
+        if event.key in [str(i) for i in range(1, 7)]:
+            mode = int(event.key)
+            handleSort(mode)
+            
+
 press.last = ""
 
 def handle_close(evt):
@@ -250,14 +369,19 @@ def handleIncrease(key):
     if key == '=':
         if Modes.average in currentMode:
             pyutil.increaseAvg(True)
-        if Modes.recent in currentMode:
+        elif Modes.recent in currentMode:
             rebuild.recentIncrement += 5
+        else:
+            rebuild.chaBy += 1
         updateDisplay()
     elif key == '-':
         if Modes.average in currentMode:
             pyutil.increaseAvg(False)
-        if Modes.recent in currentMode and rebuild.recentIncrement > 6:
+        elif Modes.recent in currentMode and \
+                rebuild.recentIncrement > 6:
             rebuild.recentIncrement -= 5 
+        elif rebuild.chaBy > 1:
+            rebuild.chaBy -= 1
         updateDisplay()
 
 def handle_scroll(evt):
@@ -345,7 +469,7 @@ def configurePlots(fig):
     fig.subplots_adjust(left=adjust, bottom=adjust, 
                         right=1-adjust, top=1-adjust)
 
-    move_figure(fig, 1920, 0)
+#    move_figure(fig, 1920, 0)
 #    move_figure(fig, 0, 0)
     fig.canvas.mpl_connect('key_press_event', press)
     fig.canvas.mpl_connect('scroll_event', handle_scroll)
@@ -376,7 +500,6 @@ def toggleMulti(toggle = True):
     if toggle:
         currentMode ^= Modes.multi
     if Modes.multi in currentMode:
-        print ("getting here")
         multiPlot()
     else:
         plotIdx()
@@ -403,7 +526,7 @@ def plot(astock, start = None, end = None):
     plt.show()
 
 def saveSettings():
-    donotPersist = [Modes.target, Modes.trim]
+    donotPersist = [Modes.target, Modes.trim, Modes.history, Modes.sort]
     global currentMode, idx
     settings(Zen.lastStock, setValue = idx)
     for mode in donotPersist:
@@ -431,18 +554,28 @@ if __name__ == "__main__":
         xcount = 10
 
     idx = 0
-    stocks = getStocks(ivv = ivvonly)
-    stock_count = len(stocks)
+    try:
+        stocks = getStocks(ivv = ivvonly)
+        stock_count = len(stocks)
+    except Exception as e:
+        import traceback
+        print (traceback.format_exc())
+        print ('getStocks2: '+ str(e))
+        pass
+
     ax = None
     values = None
     df = None
     dates = None
     csvColumn = "Close"
     endx = 0
-    maxvalues = 0
     xl = None
     fig = None
     savedxdata = None
+    previdx = 0
+
+    handleSort.curr_sort_col = 1
+    handleSort.curr_sort_ascend = True
 
     plt.rcParams['toolbar'] = 'None'
 
@@ -453,6 +586,9 @@ if __name__ == "__main__":
         else:
             plotIdx()
     except Exception as e:
+        import traceback
+        print (traceback.format_exc())
+
         print ('Failed3: '+ str(e))
         pass
 

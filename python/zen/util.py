@@ -1,6 +1,5 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import stats
 import os
 import math
 import pandas
@@ -8,8 +7,11 @@ import datetime
 import pickle
 import fix_yahoo_finance as yf
 import fnmatch
-from pandas_datareader import data as pdr
 import urllib.request, json
+from scipy import stats
+from pandas_datareader import data as pdr
+from importlib import reload
+from termcolor import colored
 from collections import deque
 
 CsvColumn = "Close"
@@ -29,6 +31,7 @@ def getTestItems(needed = 30, simple = False, astock=None):
     return [round(sqrt(i), 2) for i in range(1,needed)]
 
 def getPath(path):
+
     path = "{}/../zen_dump/{}".format(os.getcwd(), path)
     parent = os.path.dirname(path)
     if not os.path.exists(parent):
@@ -148,9 +151,9 @@ def writeFile(dictionary, cols, directory="all", name = "training"):
                 df.to_csv(path)
             except Exception as e:
                 print ('FailedWrite: '+ str(e))
-                return
-
+                return None
     print ("File Written " + path)
+    return path
 
 
 def getWC(items):
@@ -226,6 +229,7 @@ def getFromHoldings():
     for entry in listOfFiles:  
         if fnmatch.fnmatch(entry, pattern):
             holds.append(entry.split("_")[0])
+    holds.append("SPY")
 
     getFromHoldings.etfs = holds
     return holds
@@ -244,9 +248,47 @@ def getivvstocks(etf = "IVV"):
     except : pass
 
     path = getPath("holdings/{}_holdings.csv".format(etf))
-    dataivv = pandas.read_csv(path)
-    getivvstocks.ret = set(dataivv['Ticker'].tolist())
+    getivvstocks.dataivv = pandas.read_csv(path)
+    getivvstocks.ret = set(getivvstocks.dataivv['Ticker'].tolist())
     return getivvstocks.ret
+
+#getivvstocks()
+#raise SystemExit
+
+def getCompanyNameFrom(astock, df):
+    try : 
+        ret = df.loc[df['Ticker'] == astock]
+        if ret.empty:
+            raise ValueError('NotFound.')
+        ret = df.loc[df['Ticker'] == astock]["Name"].to_string()
+        ret = " ".join(list(filter(None, ret.split(' ')))[1:])
+        return ret
+    except Exception as e:
+        raise ValueError('NotFound.')
+
+def getCompanyName(astock):
+    try : 
+        return getCompanyNameFrom(astock, getivvstocks.dataivv)
+    except:
+        getivvstocks()
+        try : return getCompanyNameFrom(astock, 
+                                        getivvstocks.dataivv)
+        except:
+            try : return getCompanyNameFrom(astock, 
+                                            getStocks.iwb)
+            except:
+                getStocks()
+                try : return getCompanyNameFrom(astock, 
+                                                getStocks.iwb)
+                except:
+                    try : return getCompanyNameFrom(astock, 
+                                                    getStocks.iusg)
+                    except : 
+                        print ("Couldnt find {}".format(astock))
+                        pass
+    if astock in getFromHoldings():
+        return "ETF"
+    return None
 
 def diff_IWB_and_IUSG():
     path1 = getPath("holdings/IWB_holdings.csv")
@@ -275,40 +317,77 @@ def getStocks(holding = "IVV", andEtfs = True,
     if dev:
         return ["BA", "BRO", "IFF", "MU", "SM", "WCC"]
 
-    subset = getivvstocks()
-    if ivv:
-        return list(subset) + getFromHoldings()
-
-    val = getStocks.fromCsv
-    if val and len(val) == 3:
-        path = getPath(val[0])
-        df = pandas.read_csv(path)
-        df.sort_values(by=[val[1]], inplace=True, ascending=val[2])
-        retCol = df.columns[0]
-        return df[retCol].tolist()
-
     if not reset:
         try: return getStocks.ret
         except: pass
 
+    subset = getivvstocks()
+    if ivv:
+        ret = list(subset) + getFromHoldings()
+        ret.sort()
+        return ret
+
+    val = getStocks.fromCsv
+    if val and len(val) == 3:
+        path = val[0]
+        if not os.path.exists(path):
+            path = getPath(path)
+        df = pandas.read_csv(path)
+        getStocks.cols = df.columns
+        try:
+            getStocks.colname = df.columns[val[1]]
+        except:
+            getStocks.colname = df.columns[0]
+        df.sort_values(by=getStocks.colname, 
+                inplace=True, ascending=val[2])
+        retCol = df.columns[0]
+        getStocks.ret = df[retCol].tolist()
+        return getStocks.ret
+
     path = getPath("holdings/IWB_holdings.csv")
-    dataiwb = pandas.read_csv(path)
-    data1 = set(pandas.read_csv(path)['Ticker'].tolist())
+    getStocks.iwb = pandas.read_csv(path)
+    data1 = set(getStocks.iwb['Ticker'].tolist())
+
+    path = getPath("holdings/IJH_holdings.csv")
+    getStocks.ijh = pandas.read_csv(path)
+    data3 = set(getStocks.ijh['Ticker'].tolist())
 
     path2 = getPath("holdings/IUSG_holdings.csv")
-    data2 = set(pandas.read_csv(path2)['Ticker'].tolist())
-    ret = list(data1 | data2 | subset) + getFromHoldings() + getAdded()
-
-#    removed = getp("removedstocks")
-#    print( removed )
-#    ret = list(subset | set(dataiwb['Ticker'].tolist()) ) + getFromHoldings()
-#    ret = list(set(ret) - (set(removed) | set(data)))
-#
+    getStocks.iusg = pandas.read_csv(path2)
+    data2 = set(getStocks.iusg['Ticker'].tolist())
+    ret = list(data1 | data2 | data3 | subset) + getFromHoldings() + \
+        getAdded()
     getStocks.ret = ret
     return ret
-#getStocks.fromCsv = None
+
+getStocks.fromCsv = None
+getStocks.colname = None
+
+def getSortDisplay():
+    ret = getStocks.cols.tolist()[1:7]
+    for i, b in enumerate(ret):
+        if getStocks.colname == b:
+            color = colored("<{}>".format(b),"green") 
+            ret[i] = color
+    return " ".join(ret)
+
+#getStocks.fromCsv = ("holdings/IVV_holdings.csv", 4, True)
 #getStocks.fromCsv = ("holdings/IVV_holdings.csv", "Weight (%)", True)
 #print (getStocks())
+#raise SystemExit
+
+def setWhatToBuy(column, ascending = True):
+    try: 
+        if not setWhatToBuy.fromfile:
+            setWhatToBuy.fromfile = getp("buyfile")
+    except Exception as e:
+        print ("setWhatToBuy")
+        print (str(e))
+    if not column:
+        getStocks.fromCsv = None
+        return
+    getStocks.fromCsv = (setWhatToBuy.fromfile, column, ascending)
+setWhatToBuy.fromfile = None
 
 yf.pdr_override() # <== that's all it takes :-)
 
@@ -641,8 +720,8 @@ def writeStrategyReport(stocks, start = None, end = None,
             try:
                 tstart = list(df["Date"]).index(getStartDate())
             except Exception as e:
-                print ('FailedGet: '+ str(e))
-                print (astock)
+#                print ('FailedGet: '+ str(e))
+#                print (astock)
                 continue
             df = df[tstart:tstart+dist]
 
@@ -683,7 +762,7 @@ def writeStrategyReport(stocks, start = None, end = None,
         except Exception as e:
             import traceback
             print (traceback.format_exc())
-            print ('FailedGet: '+ str(e))
+            print ('FailedVec: '+ str(e))
             
 
     headers = ["Score", "Discount", "Dip", "Variance", "PointsAbove", 
@@ -693,7 +772,7 @@ def writeStrategyReport(stocks, start = None, end = None,
         print ("Buy List : {}".format(", ".join(buyList)))
 
     r_name = "{}{}".format(reportname, getEndDate())
-    writeFile(percent_list, headers, reportdir, name = r_name)
+    return writeFile(percent_list, headers, reportdir, name = r_name)
 
 #def plot(astock, start = None, end = None):
 #    df = getCsv(astock)
@@ -709,16 +788,16 @@ def getTrimStock(astock):
 
 def delStock(astock):
     try: 
-        path = getPath("csv/{}.csv".format(astock))
+        path = getCsv(astock, asPath=True)
         os.remove(path)
-    except:
-        pass
+    except Exception as e:
+        print ('FailedDelete: '+ str(e))
     os.system("./scrub.sh {}".format(astock))
 
 def resetStock(astock):
     global savedReads
     try: 
-        path = getPath("csv/{}.csv".format(astock))
+        path = getCsv(astock, asPath=True)
         os.remove(path)
     except:
         pass
@@ -735,7 +814,7 @@ def trimStock(astock, end):
     if not end:
         return
     try:
-        path = getPath("csv/{}.csv".format(astock))
+        path = getCsv(astock, asPath=True)
         os.system("sed -i {},{}d {}".format(2,end, path))
     except:
         print ("Did not trim csv {}".format(path))
@@ -755,11 +834,12 @@ def trimStock(astock, end):
     setp(trimStock.trims, "trims")
 #print (getTrimStock("GOOG"))
 #trimStock("VST", 200)
-
 #plot("EXAS")
 
 def getAverageStats(values, interval=3, last=30):
     values = values[-1*last:]
     return dipScore(items, interval=interval, avg=1, retAvg=True)
+
+#print (getCompanyName("GOOG"))
 
 #print (list(getCsv("KO")["Date"]).index("2001-12-28"))

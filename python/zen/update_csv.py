@@ -24,6 +24,7 @@ def getDataFromYahoo(astock):
                                       end=str(date.today().isoformat()))
         except Exception as e:
             print (str(e))
+            raise SystemExit
             return None
     
     for idx,row in data.iterrows():
@@ -33,11 +34,11 @@ def getDataFromYahoo(astock):
     return data
 
 pulled = False
-latest = util.getp("lastValues")
-#latest = dict()
+#latest = util.getp("lastValues")
+latest = dict()
 problem = []
-def updateCsv(astock):
-    global pulled, latest
+def updateCsv(astock, yahoo_date):
+    global pulled, latest, problem
     loaded = None
 
     path = util.getPath("csv/{}.csv".format(astock))
@@ -48,7 +49,7 @@ def updateCsv(astock):
 
     loaded = pandas.read_csv(path)
     lastdate = loaded.tail(1)["Date"].item()
-    if lastdate == today:
+    if lastdate == yahoo_date:
         return
 
     data = getDataFromYahoo(astock)
@@ -56,7 +57,6 @@ def updateCsv(astock):
         problem.append(astock)
         print (astock)
         return
-
 
 #    latest[astock] = loaded.tail(1)["Close"].item()
 #    return
@@ -72,18 +72,21 @@ def updateCsv(astock):
                 closed = data.at[idx, "Close"]
                 adj = data.at[idx, "Adj Close"]
                 vol = data.at[idx, "Volume"]
-                f.write("{},{},{},{},{},{},{}\n".format(cdate, opend, high, low, 
+                f.write("{},{},{},{},{},{},{}\n".format(cdate, 
+                            opend, high, low, 
                             closed, adj, vol))
                 latest[astock] = closed
             
         if cdate == lastdate:
             appending = True
 
-stocks = util.getStocks()
-for astock in stocks:
-    updateCsv(astock)
-print("problem : {}".format( problem ))
-util.setp(latest, "lastValues")
+def updateStocks(yahoo_date):
+    stocks = util.getStocks()
+    for astock in stocks:
+        updateCsv(astock, yahoo_date)
+    util.setp(latest, "lastValues")
+    util.setp(problem, "problematicUpdateStocks")
+    print (problem)
 
 
 #if pulled:

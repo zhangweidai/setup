@@ -140,6 +140,7 @@ else
 fi
 
 alias goa="cds; cd python/zen_dump/analysis"
+alias gof="cds; cd python/zen_dump/final"
 alias ipy="ipython"
 alias ka="killall python3"
 #sudo -S true
