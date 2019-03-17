@@ -358,7 +358,7 @@ def writeCostDict(newdict):
 
 #writeCostDict(newdict)
 #
-modes = ["Score", "Discount", "Dip", "Variance", "PointsAbove", "WC"]
+modes = ["Score", "Discount", "Dip", "HighLow", "Vari", "Vari2", "PointsAbove", "WC"]
 #modes = ["Score", "Discount"]
 def doit():
     global size, more_etf
@@ -408,7 +408,7 @@ def doit():
 
 #"".join(bar)
 report_root = "final"
-for i in range(1, 10):
+for i in range(2, 10):
     more_etf = True
     his_idx = i
     spent = 1

@@ -64,14 +64,13 @@ def rebuild(start = None, end = None,
     if Modes.multi not in currentMode:
         cname = util.getCompanyName(astock)
         print("\n")
-        print("Stock : {}\t{}\t{}".format( 
+        print("Stock : {}\t{}\t\t{}".format( 
                     colored(astock,"yellow"), 
                     cname, modestr ))
 
     if Modes.sort in currentMode:
-        print("{} | {}".format(
-                handleSort.curr_sort_ascend,
-                util.getSortDisplay()))
+        ascend = "Ascend" if handleSort.curr_sort_ascend else "Descend"
+        print("{} | {}".format(ascend, util.getSortDisplay()))
 
     df = getCsv(astock)
     if df is None:
@@ -143,12 +142,17 @@ def rebuild(start = None, end = None,
         avg = pyutil.changeValues(values, rebuild.chaBy, 
                 negavg = True)
 
-        dele, vari = util.getRangedDist(values)
+        highlow, vari, var2 = util.getRangedDist(values)
         print("\t{}  : Length:{}".format(dates[0], len(dates)))
-        print("\tAvg{}        : {}".format(rebuild.chaBy, avg))
+        print("\tAvgDrop {}   : {}".format(rebuild.chaBy, avg))
         changep = util.formatDecimal(values[-1]/values[0])
         print("\tChange      : {}".format(changep))
+        print("\tHighLow     : {}".format(highlow))
         print("\tVariance    : {}".format(vari))
+        print("\tVariance2   : {}".format(var2))
+        score, dipScore = util.getScore(values)
+        print("\tScore       : {}".format(util.getScoreFromCsv(astock)))
+        print("\tDip         : {}".format(dipScore))
 
     local_ax.set_xticklabels(xlabels)
     local_ax.set_xticks(xranges)
@@ -158,7 +162,7 @@ def rebuild(start = None, end = None,
 
 rebuild.sort_desc = None
 rebuild.recentIncrement = 35
-rebuild.chaBy = 2
+rebuild.chaBy = 3
                 
 def nexti():
     global idx
@@ -195,7 +199,13 @@ def interpret(answer):
 
     elif "/2" in answer:
         rebuild.recentIncrement = int(len(values)/2)
-        setCurrentMode(Modes.recent)
+        toggleCurrentMode(Modes.recent)
+
+    elif "recent" in answer:
+        rebuild.recentIncrement = int(answer.split(" ")[1])
+        util.loadBaseline(start=rebuild.recentIncrement)
+        print (util.getStartDate())
+        toggleCurrentMode(Modes.recent)
 
     elif "delete" in answer:
         stock = getCurrentStock()
@@ -222,6 +232,10 @@ def interpret(answer):
         updateDisplay()
 
 def setCurrentMode(mode, build = True):
+    if mode not in currentMode:
+        toggleCurrentMode(mode, build)
+
+def toggleCurrentMode(mode, build = True):
     global currentMode, ivvonly
     currentMode ^= mode
     if build:
@@ -241,18 +255,23 @@ def handleModifier(key):
 
 def handleSort(sort_col = None):
     global idx, stocks
-    if not sort_col:
-        setCurrentMode(Modes.sort, build=False)
+
+    setCurrentMode(Modes.sort, build=False)
+    setCurrentMode(Modes.recent, build=False)
+    rebuild.recentIncrement = util.getBuyBackTrack()
 
     if sort_col:
         handleSort.curr_sort_col = sort_col
 
     sort_col = sort_col or handleSort.curr_sort_col 
+    print("sort_col : {}".format( sort_col ))
+    col_name = util.getSortVec()[sort_col-1]
+    print("col_name : {}".format( col_name ))
+
     idx = 0
     if Modes.sort in currentMode:
-        util.setWhatToBuy(
-                sort_col, 
-                handleSort.curr_sort_ascend)
+        util.setWhatToBuy(col_name, handleSort.curr_sort_ascend)
+        
     else:
         util.setWhatToBuy(None)
 
@@ -278,20 +297,25 @@ def press(event):
     if press.last == "aa" or press.last == "aaa":
         press.last = ""
     elif press.last == "avg":
-        setCurrentMode(Modes.average)
+        toggleCurrentMode(Modes.average)
     elif press.last == "cle" or press.last == "cls":
-        setCurrentMode(Modes.none)
+        toggleCurrentMode(Modes.none)
     elif press.last == "mor":
-        setCurrentMode(Modes.more)
+        toggleCurrentMode(Modes.more)
     elif press.last == "cha":
-        setCurrentMode(Modes.change)
+        toggleCurrentMode(Modes.change)
     elif press.last == "tar":
-        setCurrentMode(Modes.target, build=False)
+        toggleCurrentMode(Modes.target, build=False)
     elif press.last == "rec":
-        setCurrentMode(Modes.recent)
+        toggleCurrentMode(Modes.recent)
     elif press.last == "tri":
-        setCurrentMode(Modes.trim, build=False)
+        toggleCurrentMode(Modes.trim, build=False)
     elif press.last == "his":
+        if Modes.sort in currentMode:
+            rebuild.recentIncrement = rebuild.recentIncrement * 4
+            updateDisplay()
+            return
+
         currentMode ^= Modes.history
         ivvonly = Modes.history in currentMode
 
@@ -340,9 +364,15 @@ def press(event):
     elif event.key == 'k':
         previ()
     elif event.key == ' ':
-        answer = simpledialog.askstring("Advanced", "cmd:", parent = None)
+        prev = settings(Zen.prevAnswer, default="")
+
+        answer = simpledialog.askstring("Advanced", "cmd:", 
+                parent = None, initialvalue=prev)
+
+        settings(Zen.prevAnswer, answer)
         try:
             interpret(answer)
+            press.prevanswer = answer
         except Exception as e:
             print ('Failed2: '+ str(e))
             pass
@@ -355,11 +385,9 @@ def press(event):
             handleSort.curr_sort_ascend = \
                 not handleSort.curr_sort_ascend
             handleSort(handleSort.curr_sort_col)
-        if event.key in [str(i) for i in range(1, 7)]:
-            mode = int(event.key)
-            handleSort(mode)
-            
-
+    if event.key in [str(i) for i in range(1, 5)]:
+        mode = int(event.key)
+        handleSort(mode)
 press.last = ""
 
 def handle_close(evt):

@@ -30,6 +30,7 @@ class Modes(IntFlag):
 class Zen(Enum):
     lastStock = 0
     lastMode = 1
+    prevAnswer = 2
 
 #def setSettings():
 def settings(setting, setValue = None, default = None):

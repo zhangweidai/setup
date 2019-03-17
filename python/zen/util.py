@@ -16,6 +16,7 @@ from collections import deque
 
 CsvColumn = "Close"
 EtfBaselineTicker = "SPY"
+unnamed = "Unnamed: 0"
 
 def formatDecimal(factor):
     return "{:.2%}".format(factor-1)
@@ -28,7 +29,8 @@ def getTestItems(needed = 30, simple = False, astock=None):
     if simple:
         return [1,1,1,1,1,1,1,2,2,2,2,3,3,3,3,3,1,1,1,1,1,1,1,3,4,4,5,5,
         6,6,7,7,7,8,8,7,6,6,5,4,6,5,4,3,9,7,8,9]
-    return [round(sqrt(i), 2) for i in range(1,needed)]
+#    return [round(sqrt(i), 2) for i in range(1,needed)]
+    return [i for i in range(1,needed)]
 
 def getPath(path):
 
@@ -50,20 +52,34 @@ def setp(data, name):
     pickle.dump(data, open(path, "wb"))
 
 def getRangedDist(items):
-    if len(items) < 18:
+    maxr = 25
+    if len(items) < maxr:
         return None
-    newlist = items[-18:]
+    newlist = items[-1*maxr:]
+
+    newlist_2 = []
+    previtem = newlist[0]
+    for item in newlist[1:]:
+        newlist_2.append(round(previtem / item, 3))
+    vari3 = np.var(newlist_2)
+
     maxv = max(newlist)
     minv = min(newlist)
-    lastitems = items[-1]
+    lastitems = newlist[-1]
+
+    varlist = [newlist[0], lastitems, minv, maxv] + items[-5:]
     vari = np.var([newlist[0], lastitems, minv, maxv])
+
+    ret2 = round(vari,2)
+    ret3 = round(vari3,2)
+
     if lastitems == maxv:
-        return "{}".format(round(maxv/minv,3)), round(vari,2)
+        return round(maxv/minv,3), ret2, ret3
     else:
-        first = str(round((lastitems/minv)-1,3))
-        second = str(round((maxv/lastitems)-1,3))
-        return "{}/{}".format(first, second), round(vari,2)
+        ret = round((lastitems/minv)-1,3)
+        return ret, ret2, ret3
 #print(getRangedDist(getTestItems()))
+#raise SystemExit
 
 def regress(items):
     leng = len(items)
@@ -252,6 +268,21 @@ def getivvstocks(etf = "IVV"):
     getivvstocks.ret = set(getivvstocks.dataivv['Ticker'].tolist())
     return getivvstocks.ret
 
+def getScoreFromCsv(astock):
+    try:
+        df = getStocks.dataf
+    except:
+        try:
+            path = getp("buyfile")
+            df = pandas.read_csv(path)
+        except Exception as e:
+            print ("getScoreFromCsv")
+            print (str(e))
+            return None
+    ret = df.loc[df[unnamed] == astock]["Score"].to_string()
+    ret = " ".join(list(filter(None, ret.split(' ')))[1:])
+    return ret
+
 #getivvstocks()
 #raise SystemExit
 
@@ -337,9 +368,10 @@ def getStocks(holding = "IVV", andEtfs = True,
         try:
             getStocks.colname = df.columns[val[1]]
         except:
-            getStocks.colname = df.columns[0]
+            getStocks.colname = val[1]
         df.sort_values(by=getStocks.colname, 
                 inplace=True, ascending=val[2])
+        getStocks.dataf = df
         retCol = df.columns[0]
         getStocks.ret = df[retCol].tolist()
         return getStocks.ret
@@ -348,23 +380,28 @@ def getStocks(holding = "IVV", andEtfs = True,
     getStocks.iwb = pandas.read_csv(path)
     data1 = set(getStocks.iwb['Ticker'].tolist())
 
-    path = getPath("holdings/IJH_holdings.csv")
-    getStocks.ijh = pandas.read_csv(path)
-    data3 = set(getStocks.ijh['Ticker'].tolist())
+#    path = getPath("holdings/IJH_holdings.csv")
+#    getStocks.ijh = pandas.read_csv(path)
+#    getStocks.ijh_tickers = set(getStocks.ijh['Ticker'].tolist())
 
     path2 = getPath("holdings/IUSG_holdings.csv")
     getStocks.iusg = pandas.read_csv(path2)
     data2 = set(getStocks.iusg['Ticker'].tolist())
-    ret = list(data1 | data2 | data3 | subset) + getFromHoldings() + \
-        getAdded()
+    ret = list(data1 | data2 | subset) + getFromHoldings() + getAdded()
+#    ret = list(data1 | data2 | getStocks.ijh_tickers | subset) + getFromHoldings() + \
     getStocks.ret = ret
     return ret
 
 getStocks.fromCsv = None
 getStocks.colname = None
 
+def getSortVec():
+    return ["Vari", "Score", "Vari2", "Dip"]
+
 def getSortDisplay():
-    ret = getStocks.cols.tolist()[1:7]
+#    ret = getStocks.cols.tolist()[1:5]
+    ret = getSortVec()
+#    del ret["Discount"]
     for i, b in enumerate(ret):
         if getStocks.colname == b:
             color = colored("<{}>".format(b),"green") 
@@ -645,7 +682,7 @@ def updatePort():
 def getVectorForStrategy(values, astock):
     score, dipScore = getScore(values)
     discount = getDiscount(values)
-    distrange, vari = getRangedDist(values)
+    highlow, vari, vari2 = getRangedDist(values)
     dipScore = round(dipScore,3)
     pointsabove = 0
     pointsbelow = 0
@@ -659,8 +696,11 @@ def getVectorForStrategy(values, astock):
         fd = round(float(factor)/float(discount), 3)
     new = round((((pointsabove-(pointsbelow/3.1415))* fd)/dipScore) + math.sqrt(score), 3)
     wc, probup, wcb = getWC(values)
-    return [new, discount, dipScore, vari, pointsabove, pointsbelow, wc]
+    return [new, discount, dipScore, highlow, vari, vari2, pointsabove, pointsbelow, wc]
 savedReads = dict()
+
+def getBuyBackTrack():
+    return 201
 
 def getCsv(astock, idx = None, asPath=False):
     if asPath:
@@ -668,7 +708,7 @@ def getCsv(astock, idx = None, asPath=False):
 
     global savedReads
     if idx == 0:
-        idx = "Unnamed: 0"
+        idx = unnamed
 
     df = None
     try:
@@ -708,6 +748,7 @@ def writeStrategyReport(stocks, start = None, end = None,
     percent_list = {}
     ivv = getivvstocks()
     iusg = getiusgstocks()
+#    ijh = getStocks.ijh_tickers
     buyList = []
     for astock in stocks:
         df = getCsv(astock)
@@ -741,6 +782,8 @@ def writeStrategyReport(stocks, start = None, end = None,
                 name = "ivv"
             if astock in iusg:
                 name += "iusg"
+#            elif astock in ijh:
+#                name += "ijh"
 
         lasth = max(df['High'].iloc[-8:])
         lastl = min(df['Low'].iloc[-4:])
@@ -765,8 +808,8 @@ def writeStrategyReport(stocks, start = None, end = None,
             print ('FailedVec: '+ str(e))
             
 
-    headers = ["Score", "Discount", "Dip", "Variance", "PointsAbove", 
-    "PointsBelow", "WC", "ETF", "Last", "LastL", "LastH"]
+    headers = ["Score", "Discount", "Dip", "HighLow","Vari", "Vari2", 
+    "PointsAbove", "PointsBelow", "WC", "ETF", "Last", "LastL", "LastH"]
 
     if buyList and "main" in reportname:
         print ("Buy List : {}".format(", ".join(buyList)))
