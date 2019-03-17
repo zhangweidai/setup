@@ -352,6 +352,12 @@ def getStocks(holding = "IVV", andEtfs = True,
         try: return getStocks.ret
         except: pass
 
+    if getStocks.totalOverride:
+        path = getPath("holdings/{}_holdings.csv".format(etf))
+        tmp = pandas.read_csv(path)
+        getStocks.ret = tmp['Ticker'].tolist()
+        return getivvstocks.ret
+
     subset = getivvstocks()
     if ivv:
         ret = list(subset) + getFromHoldings()
@@ -394,6 +400,7 @@ def getStocks(holding = "IVV", andEtfs = True,
 
 getStocks.fromCsv = None
 getStocks.colname = None
+getStocks.totalOverride = False
 
 def getSortVec():
     return ["Vari", "Score", "Vari2", "Dip"]
