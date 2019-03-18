@@ -1,7 +1,11 @@
 import util
 
-#stocks = util.getStocks(ivv=True)
-for astock in ["SPY"]:
+util.getStocks.totalOverride = True
+util.getCsv.csvdir = "historical"
+
+stocks = util.getStocks()
+stocks.reverse()
+for astock in stocks:
     try:
         util.saveProcessedFromYahoo(astock)
     except Exception as e:

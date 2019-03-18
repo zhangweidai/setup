@@ -48,8 +48,11 @@ def shouldUpdate():
     lastdate = loaded.tail(1)["Date"].item()
     yahoo_date = str(data.index[-1]).split(" ")[0]
 
+    print("lastdate : {}".format( lastdate ))
+    print("yahoo_date: {}".format( yahoo_date))
     if lastdate == yahoo_date:
         return False, yahoo_date
+    raise SystemExit
 
     return True, yahoo_date
 
@@ -70,8 +73,56 @@ def doit():
     util.setp(csvfile, "buyfile")
 #    print (util.getWhatToBuy(1, True))
 
+
+util.getStocks.totalOverride = True
+util.saveProcessedFromYahoo.download = False
+util.getCsv.csvdir="historical"
 #print (util.getp("buyfile"))
 doit()
+
+def probability():
+    util.getStocks.totalOverride = True
+    util.saveProcessedFromYahoo.download = False
+    util.getCsv.csvdir="historical"
+    stocks = util.getStocks()
+    ups = []
+    downs = []
+    minv = 6000 
+    for stock in stocks:
+        if not stock.isalpha():
+            continue
+        df = util.getCsv(stock)
+        if df is None:
+#            util.delStock(stock, report=False)
+            continue
+        values = df["Close"].tolist()
+        numv = len(values)
+
+        if numv < minv:
+            minv = numv
+
+        half = int(len(values)/2)
+        try:
+            values = values[-1204:]
+        except:
+            continue
+
+        answer =  round(values[-1] / values[0],3)
+        if answer > 1:
+            ups.append(answer)
+        else:
+            downs.append(answer)
+    down = len(downs)
+    up = len(ups)
+    print("minv : {}".format( minv ))
+    print("up : {}".format( up ))
+    print("downs : {}".format( down ))
+    count = len(stocks)
+    print("count : {}".format( count ))
+    print (round(up/count, 3))
+#probability()
+#    stocks = util.getStocks()
+
 
 #print (util.getWhatToBuy(1, False))
 #    updateCsvs()

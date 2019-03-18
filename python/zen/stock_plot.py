@@ -14,6 +14,15 @@ from tkinter import simpledialog;
 from pyutil import Modes, Zen, settings
 import pyutil
 
+def deleteStock(astock):
+    global idx, stocks
+    print ("Deleting : {}".format(astock))
+    util.delStock(astock)
+    stocks = getStocks(reset=True, ivv=ivvonly)
+    idx += 1
+    updateDisplay()
+
+
 def getCurrentStock(force_idx = None):
     global idx
     try :return stocks[force_idx or idx]
@@ -77,6 +86,7 @@ def rebuild(start = None, end = None,
         return
 
     maxvalues = len(df)
+    print("maxvalues : {}".format( maxvalues ))
 
     if Modes.recent in currentMode:
         start = maxvalues-rebuild.recentIncrement
@@ -122,12 +132,7 @@ def rebuild(start = None, end = None,
     try:
         dates = df['Date'].tolist()
     except Exception as e:
-        print ('Deleting : '+ str(e))
-        print (astock)
-        util.delStock(astock)
-        stocks = getStocks(reset=True, ivv=ivvonly)
-        idx += 1
-        rebuild()
+        deleteStock(astock)
         return
 
     if not byx:
@@ -135,14 +140,18 @@ def rebuild(start = None, end = None,
     xranges = [i for i in range(startx, endx+1, byx)]
     xlabels = ["{}\n({})".format(i,dates[i]) for i in xranges]
 #    plt.xticks( xranges, xlabels)
-    if Modes.multi in currentMode:
+    if Modes.multi in currentMode and len(xlabels) > 1:
         xlabels[1] = ""
         xlabels[2] = ""
     else:
         avg = pyutil.changeValues(values, rebuild.chaBy, 
                 negavg = True)
 
-        highlow, vari, var2 = util.getRangedDist(values)
+        try:
+            highlow, vari, var2 = util.getRangedDist(values)
+        except:
+            deleteStock(astock)
+            return
         print("\t{}  : Length:{}".format(dates[0], len(dates)))
         print("\tAvgDrop {}   : {}".format(rebuild.chaBy, avg))
         changep = util.formatDecimal(values[-1]/values[0])
@@ -173,6 +182,8 @@ def nexti():
     if idx + increment < stock_count:
         idx += increment
         updateDisplay()
+    else:
+        print ("out of bounds")
 
 def previ():
     global idx
@@ -201,6 +212,12 @@ def interpret(answer):
         rebuild.recentIncrement = int(len(values)/2)
         toggleCurrentMode(Modes.recent)
 
+    elif "all" in answer:
+
+        util.saveProcessedFromYahoo.download = False
+        getStocks.totalOverride = True
+        setHistory()
+
     elif "recent" in answer:
         rebuild.recentIncrement = int(answer.split(" ")[1])
         util.loadBaseline(start=rebuild.recentIncrement)
@@ -212,19 +229,21 @@ def interpret(answer):
         if Modes.multi in currentMode:
             stock = answer.split(" ")[1].upper()
             print("stock : {}".format( stock ))
-        util.delStock(stock)
-        stocks = getStocks(reset=True, ivv=ivvonly)
-        updateDisplay()
+        deleteStock(stock)
     else:
         previdx = idx
         try:
             idx = stocks.index(answer.upper())
             print("idx : {}".format(idx))
-        except:
+        except Exception as e:
+            print ('Not Find: '+ str(e))
             try:
                 answer = answer.upper()
-                util.saveProcessedFromYahoo(answer, add=True)
-                stocks = getStocks(ivv=ivvonly)
+                ret = util.saveProcessedFromYahoo(answer, add=True)
+                if ret: 
+                    stocks = getStocks(ivv=ivvonly)
+                else:
+                    deleteStock(answer)
             except Exception as e:
                 print ('Failed2: '+ str(e))
                 pass
@@ -278,6 +297,27 @@ def handleSort(sort_col = None):
     stocks = getStocks(reset=True)
     updateDisplay()
 
+def setHistory():
+    global currentMode, ivvonly, stocks
+    if Modes.sort in currentMode:
+        rebuild.recentIncrement = rebuild.recentIncrement * 4
+        updateDisplay()
+        return
+ 
+    currentMode ^= Modes.history
+    ivvonly = Modes.history in currentMode
+ 
+    if Modes.history in currentMode:
+        getCsv.csvdir = "historical"
+        if Modes.recent in currentMode:
+            currentMode ^= Modes.recent
+    else:
+        getCsv.csvdir = "csv"
+ 
+    stocks = getStocks(ivv=ivvonly, reset=True)
+    updateDisplay()
+
+
 def press(event):
     if event.key and len(event.key) == 1:
         try: press.last += event.key
@@ -311,23 +351,7 @@ def press(event):
     elif press.last == "tri":
         toggleCurrentMode(Modes.trim, build=False)
     elif press.last == "his":
-        if Modes.sort in currentMode:
-            rebuild.recentIncrement = rebuild.recentIncrement * 4
-            updateDisplay()
-            return
-
-        currentMode ^= Modes.history
-        ivvonly = Modes.history in currentMode
-
-        if Modes.history in currentMode:
-            getCsv.csvdir = "historical"
-            if Modes.recent in currentMode:
-                currentMode ^= Modes.recent
-        else:
-            getCsv.csvdir = "csv"
-
-        stocks = getStocks(ivv=ivvonly, reset=True)
-        updateDisplay()
+        setHistory()
 
     sys.stdout.flush()
 #        visible = xl.get_visible()
@@ -437,8 +461,11 @@ def onrelease(event):
 #    print("event: {}".format(event.xdata))
 #    print("savedxdata: {}".format( savedxdata))
     leng = len(values)
-    if event.xdata > leng or savedxdata > leng:
-        currentMode = Modes.none
+    try:
+        if event.xdata > leng or savedxdata > leng:
+            currentMode = Modes.none
+            return
+    except:
         return
 
     x1 = int(event.xdata) 
@@ -497,7 +524,7 @@ def configurePlots(fig):
     fig.subplots_adjust(left=adjust, bottom=adjust, 
                         right=1-adjust, top=1-adjust)
 
-#    move_figure(fig, 1920, 0)
+    move_figure(fig, 1920, 0)
 #    move_figure(fig, 0, 0)
     fig.canvas.mpl_connect('key_press_event', press)
     fig.canvas.mpl_connect('scroll_event', handle_scroll)
@@ -567,6 +594,8 @@ def plotIdx():
     global idx, xcount
     xcount = 10
     idx = settings(Zen.lastStock, default=0)
+    if idx > len(stocks):
+        idx = 0
     plot(stocks[idx])
 
 if __name__ == "__main__":
@@ -578,7 +607,8 @@ if __name__ == "__main__":
         plt.rcParams["figure.figsize"] = [11,6]
         xcount = 7
     else:
-        plt.rcParams["figure.figsize"] = [16,10]
+        plt.rcParams["figure.figsize"] = [11,8]
+#        plt.rcParams["figure.figsize"] = [16,10]
         xcount = 10
 
     idx = 0

@@ -33,15 +33,21 @@ def standard():
         util.writeStrategyReport(stocks, start=vals[0], end=vals[1])
 
 def historical():
+    util.getStocks.totalOverride = True
+    util.saveProcessedFromYahoo.download = False
     util.getCsv.csvdir="historical"
-    stocks = util.getStocks(ivv = True)
+    stocks = util.getStocks()
     ranges = getRanges(util.getNumberOfDates(), forHistory = True)
     grouping = 0
     for i,vals in enumerate(ranges):
         if i % 15 == 0:
             grouping += 1
 
+        if grouping == 1 or grouping == 9:
+            continue
+
         util.writeStrategyReport(stocks, start=vals[0], end=vals[1],
                                 reportname = "history_{}_".format(grouping),
                                 reportdir = "history")
+
 historical()

@@ -5,10 +5,7 @@
 #raise SystemExit
 
 import numpy as np
-from datetime import date, timedelta
-from pandas_datareader import data as pdr
 from collections import Counter
-import fix_yahoo_finance as yf
 import os
 import pandas
 import util
@@ -55,7 +52,8 @@ size = 10
 spent = 1
 tranfees = 0
 ivv = util.getivvstocks()
-etfs = util.getFromHoldings()
+etfs = []
+#etfs = util.getFromHoldings()
 etfvs = dict()
 
 saved_portfolio = dict()
@@ -199,13 +197,14 @@ def getTrainingTemps(mode, ascending):
             print("path : {}".format( path ))
             pass
 
-dontBuy = ["MNST"]
+dontBuy = util.getp("dont")
+#dontBuy = ["MNST", "PYX", "RRR", "ARAV", "BOOT", "PTI", "AINC", "CRC"]
 changeDict = dict()
 #latest_values = util.getp("lastValues")
 mode_average = dict()
 def calcIt(mode, ascending):
     global purchases, purchasesl, purchasesh,  spent, tranfees, mode_average
-    global saved_portfolio
+    global saved_portfolio, dontBuy
     spent = 1
     tranfees = 0
     asize = 0
@@ -218,10 +217,15 @@ def calcIt(mode, ascending):
 
     getTrainingTemps(mode, ascending)
 
-    for astock in purchases:
-        asize += purchases[astock] * latest_values[astock]
-        asizel += purchasesl[astock] * latest_values[astock]
-        asizeh += purchasesh[astock] * latest_values[astock]
+    try:
+        for astock in purchases:
+            asize += purchases[astock] * latest_values[astock]
+            asizel += purchasesl[astock] * latest_values[astock]
+            asizeh += purchasesh[astock] * latest_values[astock]
+    except:
+        dontBuy.append(astock)
+        return
+        
 #    except Exception as e:
 #        print ('3Failed: '+ str(e))
 #        return
@@ -310,7 +314,11 @@ def costToDict():
         amount = values[amountidx]
         dates = values[datesidx]
         astock = cost.symbol
-        currentValue = round(amount * latest_values[astock])
+        try:
+            currentValue = round(amount * latest_values[astock])
+        except:
+            dontBuy.append(astock)
+            continue
         change = util.formatDecimal(currentValue/spent)
 
 #        if not (cost.mode == "Variance" and not cost.mode2):
@@ -395,9 +403,12 @@ def doit():
         prevavg = average
         prevvar = vari
 
-    appended += etfData()
-    appended = [item for sublist in appended for item in sublist]
-
+    try:
+        appended += etfData()
+        appended = [item for sublist in appended for item in sublist]
+    except:
+        appended = []
+    
     path = util.getPath("{}/report_{}_{}.txt".format(report_root, title, his_idx))
     with open(path, "w") as f:
         f.write("\n".join(appended))
@@ -442,3 +453,6 @@ with open(path, 'w') as f:
                     maxi,mini,
                     round(negs/len(current),3),
                     percentages))
+
+util.setp(dontBuy, "dont")
+#print(dontBuy)

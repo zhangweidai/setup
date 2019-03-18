@@ -52,7 +52,7 @@ def setp(data, name):
     pickle.dump(data, open(path, "wb"))
 
 def getRangedDist(items):
-    maxr = 25
+    maxr = 100
     if len(items) < maxr:
         return None
     newlist = items[-1*maxr:]
@@ -60,18 +60,18 @@ def getRangedDist(items):
     newlist_2 = []
     previtem = newlist[0]
     for item in newlist[1:]:
-        newlist_2.append(round(previtem / item, 3))
+        newlist_2.append(round(previtem / item, 6))
     vari3 = np.var(newlist_2)
 
     maxv = max(newlist)
     minv = min(newlist)
     lastitems = newlist[-1]
 
-    varlist = [newlist[0], lastitems, minv, maxv] + items[-5:]
+    varlist = [newlist[0], lastitems, minv, maxv] + items[-50:]
     vari = np.var([newlist[0], lastitems, minv, maxv])
 
-    ret2 = round(vari,2)
-    ret3 = round(vari3,2)
+    ret2 = round(vari,5)
+    ret3 = round(vari3,5)
 
     if lastitems == maxv:
         return round(maxv/minv,3), ret2, ret3
@@ -353,10 +353,10 @@ def getStocks(holding = "IVV", andEtfs = True,
         except: pass
 
     if getStocks.totalOverride:
-        path = getPath("holdings/{}_holdings.csv".format(etf))
+        path = getPath("holdings/ITOT_holdings.csv")
         tmp = pandas.read_csv(path)
         getStocks.ret = tmp['Ticker'].tolist()
-        return getivvstocks.ret
+        return getStocks.ret
 
     subset = getivvstocks()
     if ivv:
@@ -401,6 +401,8 @@ def getStocks(holding = "IVV", andEtfs = True,
 getStocks.fromCsv = None
 getStocks.colname = None
 getStocks.totalOverride = False
+#print (len(getStocks()))
+#raise SystemExit
 
 def getSortVec():
     return ["Vari", "Score", "Vari2", "Dip"]
@@ -449,8 +451,10 @@ def getRemovedStocks():
     return removed
 
 def saveProcessedFromYahoo(astock, add=False):
+    if not saveProcessedFromYahoo.download:
+        return
     tday = datetime.date.today().isoformat()
-    saveStartDate = "2015-01-05" if getCsv.csvdir == "csv" else "2000-01-05"
+    saveStartDate = "2015-01-05" if getCsv.csvdir == "csv" else "2002-01-05"
 
     global removed
     path = getCsv(astock, asPath = True)
@@ -487,13 +491,14 @@ def saveProcessedFromYahoo(astock, add=False):
             df.at[idx, label] = round(df.at[idx, label], 4)
 
     df.to_csv(path)
-    try : trimStock(astock, getTrimStock(astock))
-    except: pass
+saveProcessedFromYahoo.download = True
+#    try : trimStock(astock, getTrimStock(astock))
+#    except: pass
 
-    if add:
-        saveAdded(astock)
+#    if add:
+#        saveAdded(astock)
 
-    return df
+#    return df
 
 #    avg.append(round(sub/4, 4))
 #    df.insert(loc=4, column='Avg', value=avg)
@@ -737,6 +742,8 @@ def getCsv(astock, idx = None, asPath=False):
         else:
             try:
                 df = saveProcessedFromYahoo(astock)
+                if df is None:
+                    return
                 df.to_csv(path) 
                 df = pandas.read_csv(path)
             except Exception as e:
@@ -749,8 +756,10 @@ def getCsv(astock, idx = None, asPath=False):
     return df
 getCsv.csvdir = "csv"
 
+skipstock = []
 def writeStrategyReport(stocks, start = None, end = None, 
         reportname="strategy_report_", reportdir = "analysis"):
+    global skipstock
     loadBaseline(start=start, end=end)
     percent_list = {}
     ivv = getivvstocks()
@@ -758,6 +767,10 @@ def writeStrategyReport(stocks, start = None, end = None,
 #    ijh = getStocks.ijh_tickers
     buyList = []
     for astock in stocks:
+
+        if astock in skipstock:
+            continue
+
         df = getCsv(astock)
 
         if df is None:
@@ -775,20 +788,21 @@ def writeStrategyReport(stocks, start = None, end = None,
 
         values = df[CsvColumn].tolist()
 
-#        if df['Date'].iloc[0] != getStartDate():
-#            continue
+        if df['Date'].iloc[0] != getStartDate():
+            print ("date problem {}".format(astock))
+            continue
 
         last = 0
         lasth = 0
         lastl = 0
         name = ""
-        if astock in getFromHoldings():
-            name = "ETF"
-        else:
-            if astock in ivv:
-                name = "ivv"
-            if astock in iusg:
-                name += "iusg"
+#        if astock in getFromHoldings():
+#            name = "ETF"
+#        else:
+#            if astock in ivv:
+#                name = "ivv"
+#            if astock in iusg:
+#                name += "iusg"
 #            elif astock in ijh:
 #                name += "ijh"
 
@@ -810,9 +824,12 @@ def writeStrategyReport(stocks, start = None, end = None,
         try:
             percent_list[astock] = getVectorForStrategy(values, astock) + [name, last, lastl, lasth]
         except Exception as e:
-            import traceback
-            print (traceback.format_exc())
+            skipstock.append(astock)
+#            import traceback
+#            print (traceback.format_exc())
             print ('FailedVec: '+ str(e))
+            print (astock)
+#            raise SystemExit
             
 
     headers = ["Score", "Discount", "Dip", "HighLow","Vari", "Vari2", 
@@ -836,12 +853,13 @@ def getTrimStock(astock):
     except : return None
 #print (getTrimStock("VST"))
 
-def delStock(astock):
+def delStock(astock, report = True):
     try: 
         path = getCsv(astock, asPath=True)
         os.remove(path)
     except Exception as e:
-        print ('FailedDelete: '+ str(e))
+        if report:
+            print ('FailedDelete: '+ str(e))
     os.system("./scrub.sh {}".format(astock))
 
 def resetStock(astock):
