@@ -5,7 +5,7 @@
 #raise SystemExit
 
 import numpy as np
-from collections import Counter
+from collections import Counter, defaultdict
 import os
 import pandas
 import util
@@ -59,6 +59,10 @@ etfvs = dict()
 saved_portfolio = dict()
 cost_basis = dict()
 portf = dict()
+
+#purchases = defaultdict(float)
+#purchasesl = defaultdict(float)
+#purchasesh = defaultdict(float)
 purchases = dict()
 purchasesl = dict()
 purchasesh = dict()
@@ -365,9 +369,8 @@ def writeCostDict(newdict):
         
 
 #writeCostDict(newdict)
-#
-modes = ["Score", "Discount", "Dip", "HighLow", "Vari", "Vari2", "PointsAbove", "WC"]
-#modes = ["Score", "Discount"]
+modes = util.writeStrategyReport.headers[:-4]
+
 def doit():
     global size, more_etf
     testingModes = [15]
@@ -419,40 +422,42 @@ def doit():
 
 #"".join(bar)
 report_root = "final"
-for i in range(2, 10):
-    more_etf = True
-    his_idx = i
-    spent = 1
-
-    doit()
-
-    etfvs = dict()
-    latest_values = dict()
-    cost_basis = dict()
-    etf_purchase_times = dict()
-    rememberedFiles = []
-
-import csv
-path = util.getPath("final/historyreport.csv")
-with open(path, 'w') as f:
-    for key in hisdict.keys():
-        appended = []
-        current = hisdict[key]
-        negs = 0
-        mini = util.formatDecimal(min(current))
-        maxi = util.formatDecimal(max(current))
-        for item in current:
-            if item < 1:
-                negs += 1
-            appended.append(util.formatDecimal(item))
-        avg = util.formatDecimal(sum(current)/len(current))
-        vari = round(np.var(current),3)
-        percentages  = " ".join(appended)
-        f.write("{},{},{},{},{},{},{}\n".format(key, avg, 
-                    vari, 
-                    maxi,mini,
-                    round(negs/len(current),3),
-                    percentages))
-
-util.setp(dontBuy, "dont")
+def multi():
+    for i in range(2, 10):
+        more_etf = True
+        his_idx = i
+        spent = 1
+    
+        doit()
+    
+        etfvs = dict()
+        latest_values = dict()
+        cost_basis = dict()
+        etf_purchase_times = dict()
+        rememberedFiles = []
+    
+    import csv
+    path = util.getPath("final/historyreport.csv")
+    with open(path, 'w') as f:
+        for key in hisdict.keys():
+            appended = []
+            current = hisdict[key]
+            negs = 0
+            mini = util.formatDecimal(min(current))
+            maxi = util.formatDecimal(max(current))
+            for item in current:
+                if item < 1:
+                    negs += 1
+                appended.append(util.formatDecimal(item))
+            avg = util.formatDecimal(sum(current)/len(current))
+            vari = round(np.var(current),3)
+            percentages  = " ".join(appended)
+            f.write("{},{},{},{},{},{},{}\n".format(key, avg, 
+                        vari, 
+                        maxi,mini,
+                        round(negs/len(current),3),
+                        percentages))
+    
+#doit()
+#util.setp(dontBuy, "dont")
 #print(dontBuy)

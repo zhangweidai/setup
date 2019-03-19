@@ -81,6 +81,12 @@ nmap <leader>f    :echo expand('%:p')<Esc>
 
 " debug extension
 nmap <space>      :call DebugExtension()<cr>
+nmap <leader><Space>  :call DebugExtension2()<cr>
+nmap <s-l>          0i<tab><esc>
+nmap <s-l>          0i<tab><esc>
+nmap <s-h>          0xxxx<tab><esc>
+nmap <leader>ex     oiraise SystemExit<esc>
+
 
 " split tabbing
 nmap <tab>        <c-w>w
@@ -193,6 +199,13 @@ fu! CommentStr()
    elseif exten =~ "ahk"
       let g:comment_str = "; "
    endif
+endf
+
+fu! DebugExtension2()
+   if expand('%:p') =~ ".py"
+      norm bywoprint(
+      :norm pA)
+   endif 
 endf
 
 

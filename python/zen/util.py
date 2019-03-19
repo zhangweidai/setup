@@ -12,9 +12,10 @@ from scipy import stats
 from pandas_datareader import data as pdr
 from importlib import reload
 from termcolor import colored
-from collections import deque
+from collections import deque, defaultdict
 
 CsvColumn = "Close"
+#EtfBaselineTicker = "BA"
 EtfBaselineTicker = "SPY"
 unnamed = "Unnamed: 0"
 
@@ -255,8 +256,11 @@ def getiusgstocks(etf = "IUSG"):
     except : pass
 
     path = getPath("holdings/{}_holdings.csv".format(etf))
-    dataivv = pandas.read_csv(path)
-    getiusgstocks.ret = set(dataivv['Ticker'].tolist())
+    try:
+        dataivv = pandas.read_csv(path)
+        getiusgstocks.ret = set(dataivv['Ticker'].tolist())
+    except:
+        return None
     return getiusgstocks.ret
 
 def getivvstocks(etf = "IVV"):
@@ -264,8 +268,11 @@ def getivvstocks(etf = "IVV"):
     except : pass
 
     path = getPath("holdings/{}_holdings.csv".format(etf))
-    getivvstocks.dataivv = pandas.read_csv(path)
-    getivvstocks.ret = set(getivvstocks.dataivv['Ticker'].tolist())
+    try:
+        getivvstocks.dataivv = pandas.read_csv(path)
+        getivvstocks.ret = set(getivvstocks.dataivv['Ticker'].tolist())
+    except:
+        return None
     return getivvstocks.ret
 
 def getScoreFromCsv(astock):
@@ -441,7 +448,7 @@ def getNumberOfDates():
     try : return getNumberOfDates.ret
     except : pass
 
-    path = getCsv("WMT", asPath = True)
+    path = getCsv("BA", asPath = True)
     getNumberOfDates.ret = sum(1 for line in open(path)) - 1
     return getNumberOfDates.ret
 
@@ -708,7 +715,7 @@ def getVectorForStrategy(values, astock):
         fd = round(float(factor)/float(discount), 3)
     new = round((((pointsabove-(pointsbelow/3.1415))* fd)/dipScore) + math.sqrt(score), 3)
     wc, probup, wcb = getWC(values)
-    return [new, discount, dipScore, highlow, vari, vari2, pointsabove, pointsbelow, wc]
+    return [new, discount, dipScore, highlow, vari, vari2, pointsabove, wc]
 savedReads = dict()
 
 def getBuyBackTrack():
@@ -821,25 +828,28 @@ def writeStrategyReport(stocks, start = None, end = None,
             except:
                 pass
 
+        rangescore = getRangeScore(values)
+
         try:
-            percent_list[astock] = getVectorForStrategy(values, astock) + [name, last, lastl, lasth]
+            percent_list[astock] = getVectorForStrategy(values, astock) + \
+            [rangescore] + [name, last, lastl, lasth]
         except Exception as e:
             skipstock.append(astock)
 #            import traceback
 #            print (traceback.format_exc())
             print ('FailedVec: '+ str(e))
             print (astock)
-#            raise SystemExit
-            
-
-    headers = ["Score", "Discount", "Dip", "HighLow","Vari", "Vari2", 
-    "PointsAbove", "PointsBelow", "WC", "ETF", "Last", "LastL", "LastH"]
 
     if buyList and "main" in reportname:
         print ("Buy List : {}".format(", ".join(buyList)))
 
     r_name = "{}{}".format(reportname, getEndDate())
-    return writeFile(percent_list, headers, reportdir, name = r_name)
+    return writeFile(percent_list, writeStrategyReport.headers, 
+            reportdir, name = r_name)
+
+writeStrategyReport.headers = ["Score", "Discount", "Dip", 
+    "HighLow","Vari", "Vari2", "PointsAbove", "WC", 
+    "Range", "ETF", "Last", "LastL", "LastH"]
 
 #def plot(astock, start = None, end = None):
 #    df = getCsv(astock)
@@ -908,6 +918,78 @@ def getAverageStats(values, interval=3, last=30):
     values = values[-1*last:]
     return dipScore(items, interval=interval, avg=1, retAvg=True)
 
-#print (getCompanyName("GOOG"))
 
+def getRangeScore(values):
+    ups = []
+    downs = []
+    minv = 6000 
+    maxl = len(values)
+    normalized = 1800
+    num = 0
+
+    if maxl > normalized:
+        num = int((maxl-normalized)/1.618)
+
+    values = values[num:maxl]
+    maxl = len(values)
+    span = 30
+    maxr = int(maxl/(span*3.1415))
+    intervals = [i for i in range(1, maxr)]
+
+    mapping = dict()
+    mapall = dict()
+    for interval in intervals:
+        ups = []
+        alls = []
+        idxspan = 0
+        idxspan = interval*span
+        for i,end in enumerate(values):
+            try:
+                start = values[int(i-idxspan)]
+            except :
+                print ("problem")
+                print (values)
+                continue
+            val = end/start
+            if val > 1:
+                ups.append(val)
+            alls.append(val)
+
+        mapping[idxspan] = round(len(ups)/maxl,3)
+        mapall[idxspan] = round(sum(alls)/maxl,3)
+
+    probupsum  = sum(mapping.values())
+    percsum  = sum(mapall.values())
+    return round(probupsum * percsum,2)
+
+def getConsider():
+    return ["FF", "ACB"]
+
+def getConsider2():
+    return {"Janus": ["PAGS","ZTS", "CSGP"]}
+
+#####
+# Cleanse code of items() and use iteritems()
+#for  k, v in d.iteritems():
+# d = dict(izip(list1, list2))
+
+# d = defaultdict(int)
+# for k in ks:
+#    d[color] += 1
+
+# d = defaultdict(list)
+# for name in ks:
+#   k = len(name)
+#   d[k].append(name)
+
+# d = ChainMap(dics,)
+# namedtuple
+
+#x,y,z= (calc(x) , calc(y), calc(z)
+
+#d = {}
+#for k in ks:
+#    d[k] = d.get(k, 0) + 1
+
+#print (getCompanyName("GOOG"))
 #print (list(getCsv("KO")["Date"]).index("2001-12-28"))

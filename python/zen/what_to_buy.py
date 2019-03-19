@@ -75,9 +75,9 @@ def what_to_buy():
 #    print (util.getWhatToBuy(1, True))
 
 
-util.getStocks.totalOverride = True
+#util.getStocks.totalOverride = True
 util.saveProcessedFromYahoo.download = False
-util.getCsv.csvdir="historical"
+#util.getCsv.csvdir="historical"
 #print (util.getp("buyfile"))
 #what_to_buy()
 
@@ -125,63 +125,6 @@ def probability(stocks):
 #stocks = util.getStocks()
 #probability(stocks)
 
-def prob_per_stock(stocks):
-    util.getStocks.totalOverride = True
-    util.saveProcessedFromYahoo.download = False
-    util.getCsv.csvdir="historical"
-    ups = []
-    downs = []
-    minv = 6000 
-    for stock in stocks:
-        print("stock : {}".format( stock ))
-        if not stock.isalpha():
-            continue
 
-        df = util.getCsv(stock)
-        if df is None:
-            continue
-
-        dates = df["Date"].tolist()
-        values = df["Close"].tolist()
-
-        maxl = len(values)
-        normalized = 2000
-        num = 0
-        if maxl > normalized:
-            num = int((maxl-normalized)/1.618)
-
-        values = values[num:maxl]
-        dates = dates[num:maxl]
-        print("dates : {}".format( dates[0]))
-
-        maxl = len(values)
-
-        span = 45
-        maxr = int(num/(span*3.1415))
-        intervals = [i for i in range(1, maxr)]
-
-
-        mapping = dict()
-        mappingd = dict()
-        for interval in intervals:
-            ups = []
-            alls = []
-            idxspan = 0
-            idxspan = interval*span
-            for i,end in enumerate(values):
-                try:
-                    start = values[int(i-idxspan)]
-                except :
-                    continue
-                val = end/start
-                if val > 1:
-                    ups.append(val)
-                alls.append(val)
-            mapping[idxspan] = round(len(ups)/maxl,3)
-            mappingd[idxspan] = round(sum(alls)/maxl,3)
-
-        print (mapping)
-        print (mappingd)
-
-stocks = util.getStocks(dev=True)
-prob_per_stock(stocks)
+#stocks = util.getStocks(dev=True)
+#print (util.prob_per_stock(stocks))

@@ -135,11 +135,13 @@ alias vgitrc='vim ~/.gitconfig'
 
 if [ `whoami` ==  "zoe" ]; then
     alias pl="cds; b; cd setup2; cd python/zen; py ~/setup2/python/zen/stock_plot.py"
+    alias cds="cd /home/zoe/setup2"
 else
     alias pl="cds; cd python/zen; py ~/setup/python/zen/stock_plot.py"
 fi
 
 alias goa="cds; cd python/zen_dump/analysis"
+alias go1="cds; cd python/zen"
 alias gof="cds; cd python/zen_dump/final"
 alias ipy="ipython"
 alias ka="killall python3"
