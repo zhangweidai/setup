@@ -50,8 +50,13 @@ def updateCsv(astock, yahoo_date):
     loaded = pandas.read_csv(path)
     lastdate = loaded.tail(1)["Date"].item()
     if lastdate == yahoo_date:
+        if astock == "IVV":
+            print("aock: {}".format( astock))
         return
+    else:
+        print("astock: {}".format( astock))
 
+    print("astock: {}".format( astock))
     data = getDataFromYahoo(astock)
     if data is None:
         problem.append(astock)
@@ -83,7 +88,10 @@ def updateCsv(astock, yahoo_date):
 def updateStocks(yahoo_date):
     stocks = util.getStocks()
     for astock in stocks:
-        updateCsv(astock, yahoo_date)
+        try:
+            updateCsv(astock, yahoo_date)
+        except:
+            continue
     util.setp(latest, "lastValues")
     util.setp(problem, "problematicUpdateStocks")
     print (problem)

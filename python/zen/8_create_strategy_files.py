@@ -21,8 +21,8 @@ def getRanges(count, forHistory = False):
     return ret
 
 import util
+import os
 def standard():
-    import os
     path = util.getPath("analysis")
     cmd = "find {} | grep strategy_files_ | xargs rm -rf".format(path)
     os.system(cmd)
@@ -33,9 +33,12 @@ def standard():
         util.writeStrategyReport(stocks, start=vals[0], end=vals[1])
 
 def historical():
+    path = util.getPath("history")
+    cmd = "find {} | grep history_ | xargs rm -rf".format(path)
+    os.system(cmd)
+
     util.getStocks.totalOverride = True
     util.saveProcessedFromYahoo.download = False
-    util.getCsv.csvdir="historical"
     stocks = util.getStocks()
     ranges = getRanges(util.getNumberOfDates(), forHistory = True)
     grouping = 0
@@ -43,7 +46,7 @@ def historical():
         if i % 15 == 0:
             grouping += 1
 
-        if grouping == 1 or grouping == 9:
+        if grouping == 1:
             continue
 
         util.writeStrategyReport(stocks, start=vals[0], end=vals[1],

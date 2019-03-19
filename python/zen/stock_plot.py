@@ -15,6 +15,7 @@ from pyutil import Modes, Zen, settings
 import pyutil
 
 def deleteStock(astock):
+    return
     global idx, stocks
     print ("Deleting : {}".format(astock))
     util.delStock(astock)
@@ -162,6 +163,9 @@ def rebuild(start = None, end = None,
         score, dipScore = util.getScore(values)
         print("\tScore       : {}".format(util.getScoreFromCsv(astock)))
         print("\tDip         : {}".format(dipScore))
+        r1,r2 = util.getRangeScore(values, sub=True)
+        print("\tRange1      : {}".format(r1))
+        print("\tRange2      : {}".format(r2))
 
     local_ax.set_xticklabels(xlabels)
     local_ax.set_xticks(xranges)

@@ -3,7 +3,6 @@
 #b = [20,20,3]   
 #print (pearsonr(a,b))
 #raise SystemExit
-
 import numpy as np
 from collections import Counter, defaultdict
 import os
@@ -36,7 +35,7 @@ class Cost():
     def __hash__(self):
         return hash(tuple(self.__dict__[k] 
                           for k in sorted(self.__dict__)))
-hisdict = dict()
+hisdict = defaultdict(list)
 topdict = dict()
 latest_values = dict()
 def isTop(hashable, symbol):
@@ -51,24 +50,17 @@ reportname = "strategy_report_"
 size = 10
 spent = 1
 tranfees = 0
-ivv = util.getivvstocks()
-etfs = []
-#etfs = util.getFromHoldings()
-etfvs = dict()
+#ivv = util.getETF()
+#etfs = []
+etfs = util.getFromHoldings()
+etfvs = defaultdict(int)
 
-saved_portfolio = dict()
 cost_basis = dict()
 portf = dict()
 
-#purchases = defaultdict(float)
-#purchasesl = defaultdict(float)
-#purchasesh = defaultdict(float)
-purchases = dict()
-purchasesl = dict()
-purchasesh = dict()
 more_etf = True
 path_dict = {}
-etf_purchase_times = dict()
+etf_purchase_times = defaultdict(int)
 def tallyFrom(path, mode, ascending, isLast = False):
     global spent, tranfees, cost_basis, latest_values, etf_purchase_times
     loaded = None
@@ -91,18 +83,18 @@ def tallyFrom(path, mode, ascending, isLast = False):
         for anetf in etfs:
             try:
                 etfn = float(loaded[loaded['Unnamed: 0'] == anetf]['Last'])
-                etfvs.setdefault(anetf, 0)
                 buycount = spend / etfn
                 etfvs[anetf] += buycount
 #                print("anetf: {}".format( anetf))
 #                print("buycount: {}".format( buycount))
 
-                etf_purchase_times.setdefault(anetf, 0)
                 etf_purchase_times[anetf] += 1
 
             except Exception as e:
 #                print ('Failed: '+ str(e))
 #                print ("Problem with {}".format(anetf))
+#                print("path: {}".format( path))
+#                raise SystemExit
                 continue
 
     per = spend / size
@@ -151,13 +143,9 @@ def tallyFrom(path, mode, ascending, isLast = False):
             cost_basis[custom][amountidx] += amount
             cost_basis[custom][datesidx].append(date)
 
-        purchases.setdefault(symbol, 0)
-        purchasesl.setdefault(symbol, 0)
-        purchasesh.setdefault(symbol, 0)
-
-        purchases[symbol] += round(amount,5)
-        purchasesh[symbol] += round(amounth,5)
-        purchasesl[symbol] += round(amountl,5)
+        purchases[symbol] += round(amount,3)
+        purchasesh[symbol] += round(amounth,3)
+        purchasesl[symbol] += round(amountl,3)
 
         purchased += 1
         if purchased == size:
@@ -165,7 +153,6 @@ def tallyFrom(path, mode, ascending, isLast = False):
 
 #path = util.getPath("analysis/strategy_report_2015-11-23.csv")
 #tallyFrom(path, ["Score", True])
-#print (etfvs)
 #raise SystemExit
 rememberedFiles = []
 def getFiles():
@@ -197,37 +184,40 @@ def getTrainingTemps(mode, ascending):
         try:
             tallyFrom(path, mode, ascending, isLast=(i==leng-1))
         except Exception as e:
-            print ('Failed: '+ str(e))
-            print("path : {}".format( path ))
+#            print ('Failed: '+ str(e))
+#            print("path : {}".format( path ))
             pass
 
+purchases = defaultdict(float)
+purchasesl = defaultdict(float)
+purchasesh = defaultdict(float)
 dontBuy = util.getp("dont")
-#dontBuy = ["MNST", "PYX", "RRR", "ARAV", "BOOT", "PTI", "AINC", "CRC"]
-changeDict = dict()
 #latest_values = util.getp("lastValues")
-mode_average = dict()
+mode_average = defaultdict(list)
 def calcIt(mode, ascending):
     global purchases, purchasesl, purchasesh,  spent, tranfees, mode_average
-    global saved_portfolio, dontBuy
+    global dontBuy
     spent = 1
     tranfees = 0
     asize = 0
     asizel= 0
     asizeh= 0
 
-    purchases = dict()
-    purchasesl = dict()
-    purchasesh = dict()
+    purchases = defaultdict(float)
+    purchasesl = defaultdict(float)
+    purchasesh = defaultdict(float)
 
     getTrainingTemps(mode, ascending)
 
     try:
         for astock in purchases:
-            asize += purchases[astock] * latest_values[astock]
-            asizel += purchasesl[astock] * latest_values[astock]
-            asizeh += purchasesh[astock] * latest_values[astock]
+            lvalue = latest_values[astock]
+            asize += purchases[astock] * lvalue
+            asizel += purchasesl[astock] * lvalue
+            asizeh += purchasesh[astock] * lvalue
     except:
         dontBuy.append(astock)
+        print("dont astock: {}".format( astock))
         return
         
 #    except Exception as e:
@@ -249,7 +239,6 @@ def calcIt(mode, ascending):
     if ascending:
         mode_hash += "A"
 
-    mode_average.setdefault(mode_hash, [])
     mode_average[mode_hash].append(high)
     mode_average[mode_hash].append(close)
 
@@ -279,7 +268,6 @@ def etfData():
             change = etfvalue/spent
 #            print("spent: {}".format( spent))
 
-            hisdict.setdefault(etf, [])
             hisdict[etf].append(change)
 #            print("change: {}".format( change))
 
@@ -296,7 +284,6 @@ def etfData():
             spent2 = count * spend
             change = etfvalue/spent
 
-            hisdict.setdefault(etf, [])
             hisdict[etf].append(change)
 #            print("change: {}".format( change))
 
@@ -392,7 +379,6 @@ def doit():
         average = sum(items)/len(items)
         vari = round(np.var(items),3)
     
-        hisdict.setdefault(mode, [])
         hisdict[mode] += items
 #        print("mode: {}".format( mode))
 #        print("items : {}".format( items ))
@@ -423,6 +409,8 @@ def doit():
 #"".join(bar)
 report_root = "final"
 def multi():
+    global his_idx, spent, more_etf, etfvs, latest_values, cost_basis
+    global etf_purchase_times, rememberedFiles
     for i in range(2, 10):
         more_etf = True
         his_idx = i
@@ -430,10 +418,10 @@ def multi():
     
         doit()
     
-        etfvs = dict()
+        etfvs = defaultdict(int)
         latest_values = dict()
         cost_basis = dict()
-        etf_purchase_times = dict()
+        etf_purchase_times = defaultdict(int)
         rememberedFiles = []
     
     import csv
@@ -457,6 +445,7 @@ def multi():
                         maxi,mini,
                         round(negs/len(current),3),
                         percentages))
+multi()
     
 #doit()
 #util.setp(dontBuy, "dont")

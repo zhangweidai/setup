@@ -49,12 +49,8 @@ def shouldUpdate():
     lastdate = loaded.tail(1)["Date"].item()
     yahoo_date = str(data.index[-1]).split(" ")[0]
 
-    print("lastdate : {}".format( lastdate ))
-    print("yahoo_date: {}".format( yahoo_date))
     if lastdate == yahoo_date:
         return False, yahoo_date
-    raise SystemExit
-
     return True, yahoo_date
 
 def what_to_buy():
@@ -74,12 +70,11 @@ def what_to_buy():
     util.setp(csvfile, "buyfile")
 #    print (util.getWhatToBuy(1, True))
 
-
 #util.getStocks.totalOverride = True
-util.saveProcessedFromYahoo.download = False
+#util.saveProcessedFromYahoo.download = False
 #util.getCsv.csvdir="historical"
 #print (util.getp("buyfile"))
-#what_to_buy()
+what_to_buy()
 
 def probability(stocks):
     util.getStocks.totalOverride = True

@@ -143,8 +143,12 @@ fi
 alias goa="cds; cd python/zen_dump/analysis"
 alias go1="cds; cd python/zen"
 alias gof="cds; cd python/zen_dump/final"
+alias goh="cds; cd python/zen_dump/holdings"
+alias goc="cds; cd python/zen_dump/csv"
 alias ipy="ipython"
 alias ka="killall python3"
+alias checkout="git checkout --"
+alias st2="git status -uno"
 #sudo -S true
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!

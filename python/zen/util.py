@@ -13,6 +13,7 @@ from pandas_datareader import data as pdr
 from importlib import reload
 from termcolor import colored
 from collections import deque, defaultdict
+from functools import lru_cache
 
 CsvColumn = "Close"
 #EtfBaselineTicker = "BA"
@@ -251,29 +252,19 @@ def getFromHoldings():
     getFromHoldings.etfs = holds
     return holds
 
-def getiusgstocks(etf = "IUSG"):
-    try : return getiusgstocks.ret
-    except : pass
 
+@lru_cache(maxsize=5)
+def getETF(etf = "IVV"):
     path = getPath("holdings/{}_holdings.csv".format(etf))
     try:
-        dataivv = pandas.read_csv(path)
-        getiusgstocks.ret = set(dataivv['Ticker'].tolist())
-    except:
+        temp = pandas.read_csv(path)
+        getETF.ret_df[etf] = temp
+        retlist = temp['Ticker'].tolist()
+    except Exception as e:
+        print ('FailedWrite: '+ str(e))
         return None
-    return getiusgstocks.ret
-
-def getivvstocks(etf = "IVV"):
-    try : return getivvstocks.ret
-    except : pass
-
-    path = getPath("holdings/{}_holdings.csv".format(etf))
-    try:
-        getivvstocks.dataivv = pandas.read_csv(path)
-        getivvstocks.ret = set(getivvstocks.dataivv['Ticker'].tolist())
-    except:
-        return None
-    return getivvstocks.ret
+    return retlist
+getETF.ret_df = dict()
 
 def getScoreFromCsv(astock):
     try:
@@ -290,9 +281,6 @@ def getScoreFromCsv(astock):
     ret = " ".join(list(filter(None, ret.split(' ')))[1:])
     return ret
 
-#getivvstocks()
-#raise SystemExit
-
 def getCompanyNameFrom(astock, df):
     try : 
         ret = df.loc[df['Ticker'] == astock]
@@ -305,35 +293,19 @@ def getCompanyNameFrom(astock, df):
         raise ValueError('NotFound.')
 
 def getCompanyName(astock):
-    try : 
-        return getCompanyNameFrom(astock, getivvstocks.dataivv)
-    except:
-        getivvstocks()
-        try : return getCompanyNameFrom(astock, 
-                                        getivvstocks.dataivv)
+    etfs = ["IVV", "IWB", "IUSG"]
+    for etf in etfs:
+        try : 
+            return getCompanyNameFrom(astock, getETF.ret_df[etf])
         except:
-            try : return getCompanyNameFrom(astock, 
-                                            getStocks.iwb)
+            try:
+                getETF(etf)
+                return getCompanyNameFrom(astock, getETF.ret_df[etf])
             except:
-                getStocks()
-                try : return getCompanyNameFrom(astock, 
-                                                getStocks.iwb)
-                except:
-                    try : return getCompanyNameFrom(astock, 
-                                                    getStocks.iusg)
-                    except : 
-                        print ("Couldnt find {}".format(astock))
-                        pass
+                pass
     if astock in getFromHoldings():
         return "ETF"
     return None
-
-def diff_IWB_and_IUSG():
-    path1 = getPath("holdings/IWB_holdings.csv")
-    path2 = getPath("holdings/IUSG_holdings.csv")
-    dataiwb = set(pandas.read_csv(path1)['Ticker'].tolist())
-    data = set(pandas.read_csv(path2)['Ticker'].tolist())
-    return (data-dataiwb)
 
 def saveAdded(astock):
     getAdded.added = getp("addedStocks")
@@ -362,10 +334,10 @@ def getStocks(holding = "IVV", andEtfs = True,
     if getStocks.totalOverride:
         path = getPath("holdings/ITOT_holdings.csv")
         tmp = pandas.read_csv(path)
-        getStocks.ret = tmp['Ticker'].tolist()
+        getStocks.ret = tmp['Ticker'].tolist() + getFromHoldings()
         return getStocks.ret
 
-    subset = getivvstocks()
+    subset = getETF()
     if ivv:
         ret = list(subset) + getFromHoldings()
         ret.sort()
@@ -389,25 +361,19 @@ def getStocks(holding = "IVV", andEtfs = True,
         getStocks.ret = df[retCol].tolist()
         return getStocks.ret
 
-    path = getPath("holdings/IWB_holdings.csv")
-    getStocks.iwb = pandas.read_csv(path)
-    data1 = set(getStocks.iwb['Ticker'].tolist())
+    etfs = ["IWB", "IUSG"]
+    ret = subset
+    for etf in etfs:
+        ret += getETF(etf)
+    ret += getFromHoldings()
 
-#    path = getPath("holdings/IJH_holdings.csv")
-#    getStocks.ijh = pandas.read_csv(path)
-#    getStocks.ijh_tickers = set(getStocks.ijh['Ticker'].tolist())
-
-    path2 = getPath("holdings/IUSG_holdings.csv")
-    getStocks.iusg = pandas.read_csv(path2)
-    data2 = set(getStocks.iusg['Ticker'].tolist())
-    ret = list(data1 | data2 | subset) + getFromHoldings() + getAdded()
-#    ret = list(data1 | data2 | getStocks.ijh_tickers | subset) + getFromHoldings() + \
-    getStocks.ret = ret
+    getStocks.ret = list(dict.fromkeys(ret))
     return ret
 
 getStocks.fromCsv = None
 getStocks.colname = None
 getStocks.totalOverride = False
+
 #print (len(getStocks()))
 #raise SystemExit
 
@@ -448,7 +414,7 @@ def getNumberOfDates():
     try : return getNumberOfDates.ret
     except : pass
 
-    path = getCsv("BA", asPath = True)
+    path = getCsv("SPY", asPath = True)
     getNumberOfDates.ret = sum(1 for line in open(path)) - 1
     return getNumberOfDates.ret
 
@@ -484,6 +450,7 @@ def saveProcessedFromYahoo(astock, add=False):
             print (str(e))
 
     if df is None:
+#        delStock(astock)
         print ("problem with {}; did not save".format(astock))
         removed.append(astock)
         return
@@ -713,7 +680,8 @@ def getVectorForStrategy(values, astock):
     if changes:
         factor = round(np.prod(changes),3)
         fd = round(float(factor)/float(discount), 3)
-    new = round((((pointsabove-(pointsbelow/3.1415))* fd)/dipScore) + math.sqrt(score), 3)
+    new = round((((pointsabove-(pointsbelow/3.1415))* fd)/dipScore) + \
+            math.sqrt(score), 3)
     wc, probup, wcb = getWC(values)
     return [new, discount, dipScore, highlow, vari, vari2, pointsabove, wc]
 savedReads = dict()
@@ -722,6 +690,10 @@ def getBuyBackTrack():
     return 201
 
 def getCsv(astock, idx = None, asPath=False):
+
+    if getStocks.totalOverride:
+        getCsv.csvdir = "historical"
+
     if asPath:
         return getPath("{}/{}.csv".format(getCsv.csvdir, astock))
 
@@ -769,9 +741,8 @@ def writeStrategyReport(stocks, start = None, end = None,
     global skipstock
     loadBaseline(start=start, end=end)
     percent_list = {}
-    ivv = getivvstocks()
-    iusg = getiusgstocks()
-#    ijh = getStocks.ijh_tickers
+    ivv = getETF()
+    iusg = getETF("IUSG")
     buyList = []
     for astock in stocks:
 
@@ -790,6 +761,7 @@ def writeStrategyReport(stocks, start = None, end = None,
             except Exception as e:
 #                print ('FailedGet: '+ str(e))
 #                print (astock)
+#                delStock(astock)
                 continue
             df = df[tstart:tstart+dist]
 
@@ -803,15 +775,14 @@ def writeStrategyReport(stocks, start = None, end = None,
         lasth = 0
         lastl = 0
         name = ""
-#        if astock in getFromHoldings():
-#            name = "ETF"
-#        else:
-#            if astock in ivv:
-#                name = "ivv"
-#            if astock in iusg:
-#                name += "iusg"
-#            elif astock in ijh:
-#                name += "ijh"
+
+        if astock in getFromHoldings():
+            name = "ETF"
+        else:
+            if astock in ivv:
+                name = "ivv"
+            if astock in iusg:
+                name += "iusg"
 
         lasth = max(df['High'].iloc[-8:])
         lastl = min(df['Low'].iloc[-4:])
@@ -840,7 +811,7 @@ def writeStrategyReport(stocks, start = None, end = None,
             print ('FailedVec: '+ str(e))
             print (astock)
 
-    if buyList and "main" in reportname:
+    if buyList and "main" in reportname and len(buyList) < 30:
         print ("Buy List : {}".format(", ".join(buyList)))
 
     r_name = "{}{}".format(reportname, getEndDate())
@@ -919,7 +890,7 @@ def getAverageStats(values, interval=3, last=30):
     return dipScore(items, interval=interval, avg=1, retAvg=True)
 
 
-def getRangeScore(values):
+def getRangeScore(values, sub=False):
     ups = []
     downs = []
     minv = 6000 
@@ -958,9 +929,12 @@ def getRangeScore(values):
         mapping[idxspan] = round(len(ups)/maxl,3)
         mapall[idxspan] = round(sum(alls)/maxl,3)
 
+
     probupsum  = sum(mapping.values())
     percsum  = sum(mapall.values())
-    return round(probupsum * percsum,2)
+    if sub:
+        return round(probupsum,3), round(percsum,3)
+    return round(probupsum * percsum, 3)
 
 def getConsider():
     return ["FF", "ACB"]
