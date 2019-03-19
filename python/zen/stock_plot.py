@@ -217,7 +217,6 @@ def interpret(answer):
         toggleCurrentMode(Modes.recent)
 
     elif "all" in answer:
-
         util.saveProcessedFromYahoo.download = False
         getStocks.totalOverride = True
         setHistory()
@@ -413,8 +412,19 @@ def press(event):
             handleSort.curr_sort_ascend = \
                 not handleSort.curr_sort_ascend
             handleSort(handleSort.curr_sort_col)
-    if event.key in [str(i) for i in range(1, 5)]:
+    if event.key in [str(i) for i in range(1, 6)]:
         mode = int(event.key)
+        if mode == 1:
+            handleSort.curr_sort_ascend = True
+        elif mode == 2:
+            handleSort.curr_sort_ascend = True
+        elif mode == 3:
+            handleSort.curr_sort_ascend = False
+        elif mode == 4:
+            handleSort.curr_sort_ascend = False
+        elif mode == 5:
+            handleSort.curr_sort_ascend = True
+            
         handleSort(mode)
 press.last = ""
 

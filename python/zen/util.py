@@ -378,7 +378,7 @@ getStocks.totalOverride = False
 #raise SystemExit
 
 def getSortVec():
-    return ["Vari", "Score", "Vari2", "Dip"]
+    return ["Vari", "Score", "Vari2", "Dip", "WC"]
 
 def getSortDisplay():
 #    ret = getStocks.cols.tolist()[1:5]
