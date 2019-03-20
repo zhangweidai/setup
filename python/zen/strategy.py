@@ -10,7 +10,6 @@ import pandas
 import util
 import time
 
-report_root = "report"
 title = "standard"
 his_idx = 0
 spentidx = 0
@@ -47,7 +46,6 @@ def isTop(hashable, symbol):
 #print (isTop(hashable, "IVV"))
 
 spend = 2000
-reportname = "strategy_report_"
 size = 10
 spent = 1
 tranfees = 0
@@ -156,15 +154,15 @@ def tallyFrom(path, mode, ascending, isLast = False):
 #tallyFrom(path, ["Score", True])
 #raise SystemExit
 rememberedFiles = []
-def getFiles():
+def getFiles(where):
     global rememberedFiles
     import fnmatch
     if rememberedFiles:
         return rememberedFiles
     holds = []
-    reportname = "history_{}".format(his_idx)
+    reportname = "_{}".format(where, his_idx)
     pattern = "{}*.csv".format(reportname)
-    parentdir = util.getPath("history")
+    parentdir = util.getPath(where)
     listOfFiles = os.listdir(parentdir)
     for entry in listOfFiles:  
         date = entry.split("_")
@@ -178,8 +176,8 @@ def getFiles():
 #print (getFiles())
 #raise SystemExit
 
-def getTrainingTemps(mode, ascending):
-    paths = getFiles()
+def getTrainingTemps(mode, ascending, where):
+    paths = getFiles(where)
     leng = len(paths)
     for i,path in enumerate(paths):
         try:
@@ -195,7 +193,7 @@ purchasesh = defaultdict(float)
 dontBuy = util.getp("dont")
 #latest_values = util.getp("lastValues")
 mode_average = defaultdict(list)
-def calcIt(mode, ascending):
+def calcIt(mode, ascending, where):
     global purchases, purchasesl, purchasesh,  spent, tranfees, mode_average
     global dontBuy
     spent = 1
@@ -208,7 +206,7 @@ def calcIt(mode, ascending):
     purchasesl = defaultdict(float)
     purchasesh = defaultdict(float)
 
-    getTrainingTemps(mode, ascending)
+    getTrainingTemps(mode, ascending, where)
 
     try:
         for astock in purchases:
@@ -345,13 +343,12 @@ def testCostToDict():
     newdict = costToDict()
 
 
-def writeCostDict(newdict):
+def writeCostDict(newdict, where):
     import pandas
     df = pandas.DataFrame.from_dict(newdict, orient = 'index', 
             columns=["Value", "Cost", "Change", 
             "DollarChange", "PurchaseDates"])
-    path = util.getPath("{}/selection_{}_{}.csv".format(report_root, 
-                                                        title, his_idx))
+    path = util.getPath("{}/selection_{}_{}.csv".format(where, title, his_idx))
     df.to_csv(path)
     print ("written {}".format(path))
         
@@ -359,7 +356,7 @@ def writeCostDict(newdict):
 #writeCostDict(newdict)
 modes = util.report.headers[:-4]
 
-def doit():
+def doit(where):
     global size, more_etf
     testingModes = [15]
 #    testingModes = [10, 15, 20]
@@ -368,9 +365,9 @@ def doit():
         size = csize
         appended.append(["stocks {}".format(size)])
         for mode in modes:
-            appended.append(calcIt(mode, True))
+            appended.append(calcIt(mode, True, where))
             more_etf = False
-            appended.append(calcIt(mode, False))
+            appended.append(calcIt(mode, False, where))
     
     prevavg = 0
     prevvar = 0
@@ -399,7 +396,7 @@ def doit():
     except:
         appended = []
     
-    path = util.getPath("{}/report_{}_{}.txt".format(report_root, title, his_idx))
+    path = util.getPath("{}/report_{}_{}.txt".format(where, title, his_idx))
     with open(path, "w") as f:
         f.write("\n".join(appended))
     print ("written {}".format(path))
@@ -408,27 +405,28 @@ def doit():
     writeCostDict(newdict)
 
 #"".join(bar)
-report_root = "final"
-def multi():
+def multi(where):
     global his_idx, spent, more_etf, etfvs, latest_values, cost_basis
     global etf_purchase_times, rememberedFiles
+
     for i in range(2, 10):
         more_etf = True
         his_idx = i
         spent = 1
     
-        doit()
+        doit(where)
     
         etfvs = defaultdict(int)
         latest_values = dict()
         cost_basis = dict()
         etf_purchase_times = defaultdict(int)
         rememberedFiles = []
-    writeReport()
 
-def writeReport():    
+    writeReport(where)
+
+def writeReport(where):
     import csv
-    path = util.getPath("final/historyreport.csv")
+    path = util.getPath("{}/Final_{}report.csv".format(where, where))
     with open(path, 'w') as f:
         for key in hisdict.keys():
             appended = []

@@ -1,2 +1,5 @@
+import gen_strat
 import strategy
-strategy.doit()
+
+where = gen_strat.historical()
+strategy.multi(where)

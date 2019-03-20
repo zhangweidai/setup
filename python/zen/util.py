@@ -16,7 +16,7 @@ from collections import deque, defaultdict
 from functools import lru_cache
 
 CsvColumn = "Close"
-EtfBaselineTicker = "BA"
+EtfBaselineTicker = "IUSG"
 unnamed = "Unnamed: 0"
 
 def formatDecimal(factor):
@@ -32,10 +32,10 @@ def getTestItems(needed = 30, simple = False, astock=None):
         6,6,7,7,7,8,8,7,6,6,5,4,6,5,4,3,9,7,8,9]
     return [i for i in range(1,needed)]
 
-def getPath(path):
+def getPath(path, allowmake = True):
     path = "{}/../zen_dump/{}".format(os.getcwd(), path)
     parent = os.path.dirname(path)
-    if not os.path.exists(parent):
+    if allowmake and not os.path.exists(parent):
         os.makedirs(parent)
     return path
 
@@ -289,7 +289,7 @@ def getCompanyNameFrom(astock, df):
         raise ValueError('NotFound.')
 
 def getCompanyName(astock):
-    for etf in etfs:
+    for etf in getCompanyName.etfs:
         try : 
             return getCompanyNameFrom(astock, getETF.ret_df[etf])
         except:
@@ -463,6 +463,7 @@ def saveProcessedFromYahoo(astock, add=False):
             df.at[idx, label] = round(df.at[idx, label], 4)
 
     df.to_csv(path)
+    return path
 saveProcessedFromYahoo.download = True
 #    try : trimStock(astock, getTrimStock(astock))
 #    except: pass
@@ -711,16 +712,16 @@ def getCsv(astock, idx = None, asPath=False):
         df = pandas.read_csv(path)
     except:
         # allow getCsv to return from specified csv files
-        path = getPath(astock)
+        path = getPath(astock, allowmake = False)
         if os.path.exists(path):
             df = pandas.read_csv(path)
         else:
             try:
-                df = saveProcessedFromYahoo(astock)
-                if df is None:
-                    return
-                df.to_csv(path) 
-                df = pandas.read_csv(path)
+                path = saveProcessedFromYahoo(astock)
+                if path:
+                    df = pandas.read_csv(path)
+                else:
+                    return None
             except Exception as e:
                 print (str(e))
                 print ("problem with {}".format(astock))

@@ -181,7 +181,7 @@ def displayStats(values, astock, date):
 
 def nexti():
     global idx
-    increment = 8 if Modes.multi in currentMod else 1
+    increment = 8 if Modes.multi in currentMode else 1
 
     if idx + increment < stock_count:
         idx += increment

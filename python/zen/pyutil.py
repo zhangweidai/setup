@@ -1,27 +1,23 @@
 import os
 import sys
 from multiprocessing import Process
-try:
-    from enum import IntFlag, Enum
-except:
-    pass
+from enum import IntFlag, Enum
 from util import getp, setp
 import logging
 import util
 
-try:
-    class Modes(IntFlag):
-        none = 0
-        trim = 1
-        zoom = 2
-        average = 4
-        more = 8
-        change = 16
-        target = 32
-        recent = 64
-        multi = 128
-        history = 256
-        sort = 512
+class Modes(IntFlag):
+    none = 0
+    trim = 1
+    zoom = 2
+    average = 4
+    more = 8
+    change = 16
+    target = 32
+    recent = 64
+    multi = 128
+    history = 256
+    sort = 512
 
 #bar = Modes.zoom 
 #bar |= Modes.average
@@ -31,12 +27,10 @@ try:
 #if Modes.zoom in bar:
 #    print ("so far so good")
 
-    class Zen(Enum):
-        lastStock = 0
-        lastMode = 1
-        prevAnswer = 2
-except:
-    pass
+class Zen(Enum):
+    lastStock = 0
+    lastMode = 1
+    prevAnswer = 2
 
 #def setSettings():
 def settings(setting, setValue = None, default = None):

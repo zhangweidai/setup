@@ -15,7 +15,7 @@ yf.pdr_override() # <== that's all it takes :-)
 print (tday)
 try:
     startdate = "2019-03-05"
-    data = pdr.get_data_yahoo(["GOOG", "IVV"], start=startdate, 
+    data = pdr.get_data_yahoo([lookup], start=startdate, 
                               end=str(tday))
 #    data.rename( columns={'Unnamed: 0':'Date'}, inplace=True )
     dates = data.tail()

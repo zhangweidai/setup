@@ -1,3 +1,6 @@
+import util
+import pyutil
+
 def getRanges(count, forHistory = False):
     ret = []
     minimum = 35
@@ -20,8 +23,6 @@ def getRanges(count, forHistory = False):
         ret[-1][-1] = count
     return ret
 
-import util
-import pyutil
 def standard():
     savedir = "foobar"
     fname = "filename_"
@@ -34,13 +35,13 @@ def standard():
         util.report(stocks, start=vals[0], end=vals[1],
             reportname = fname,
             reportdir = savedir)
-standard()
 
 def historical():
-    pyutil.clearDir("history", "history_")
+    where = "history"
+    pyutil.clearDir(where, "{}_".format(where))
 
     util.getStocks.totalOverride = True
-    util.saveProcessedFromYahoo.download = False
+    util.saveProcessedFromYahoo.download = True
     stocks = util.getStocks()
     ranges = getRanges(util.getNumberOfDates(), forHistory = True)
     grouping = 0
@@ -48,10 +49,11 @@ def historical():
         if i % 15 == 0:
             grouping += 1
 
-        if grouping == 1:
+        if grouping <= 2:
             continue
 
         util.report(stocks, start=vals[0], end=vals[1],
-                                reportname = "history_{}_".format(grouping),
-                                reportdir = "history")
+                                reportname = "{}_{}_".format(where, grouping),
+                                reportdir = where)
+    return where
 #historical()

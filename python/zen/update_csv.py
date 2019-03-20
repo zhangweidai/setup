@@ -37,26 +37,21 @@ pulled = False
 #latest = util.getp("lastValues")
 latest = dict()
 problem = []
-def updateCsv(astock, yahoo_date):
+def updateCsv(astock, yahoo_date = None):
     global pulled, latest, problem
     loaded = None
 
-    path = util.getPath("csv/{}.csv".format(astock))
+    path = util.getCsv(astock, asPath=True)
     if not os.path.exists(path):
         util.saveProcessedFromYahoo(astock)
         pulled = True
         return
 
-    loaded = pandas.read_csv(path)
+    loaded = util.getCsv(astock)
     lastdate = loaded.tail(1)["Date"].item()
-    if lastdate == yahoo_date:
-        if astock == "IVV":
-            print("aock: {}".format( astock))
+    if yahoo_date and lastdate == yahoo_date:
         return
-    else:
-        print("astock: {}".format( astock))
 
-    print("astock: {}".format( astock))
     data = getDataFromYahoo(astock)
     if data is None:
         problem.append(astock)

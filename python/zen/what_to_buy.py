@@ -76,47 +76,6 @@ def what_to_buy():
 #print (util.getp("buyfile"))
 what_to_buy()
 
-def probability(stocks):
-    util.getStocks.totalOverride = True
-    util.saveProcessedFromYahoo.download = False
-    util.getCsv.csvdir="historical"
-    ups = []
-    downs = []
-    minv = 6000 
-    for stock in stocks:
-        if not stock.isalpha():
-            continue
-
-        df = util.getCsv(stock)
-        if df is None:
-            continue
-
-        values = df["Close"].tolist()
-        numv = len(values)
-
-        if numv < minv:
-            minv = numv
-
-        half = int(len(values)/2)
-        try:
-            values = values[-1204:]
-        except:
-            continue
-
-        answer =  round(values[-1] / values[0],3)
-        if answer > 1:
-            ups.append(answer)
-        else:
-            downs.append(answer)
-    down = len(downs)
-    up = len(ups)
-    print("minv : {}".format( minv ))
-    print("up : {}".format( up ))
-    print("downs : {}".format( down ))
-    count = len(stocks)
-    print("count : {}".format( count ))
-    print (round(up/count, 3))
-
 #stocks = util.getStocks()
 #probability(stocks)
 
