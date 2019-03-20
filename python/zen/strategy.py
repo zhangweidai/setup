@@ -16,6 +16,7 @@ his_idx = 0
 spentidx = 0
 amountidx = 1
 datesidx = 2
+
 class Cost():
     def __init__(self, mode, mode2, symbol):
         self.mode = mode
@@ -356,7 +357,7 @@ def writeCostDict(newdict):
         
 
 #writeCostDict(newdict)
-modes = util.writeStrategyReport.headers[:-4]
+modes = util.report.headers[:-4]
 
 def doit():
     global size, more_etf
@@ -423,7 +424,9 @@ def multi():
         cost_basis = dict()
         etf_purchase_times = defaultdict(int)
         rememberedFiles = []
-    
+    writeReport()
+
+def writeReport():    
     import csv
     path = util.getPath("final/historyreport.csv")
     with open(path, 'w') as f:
@@ -445,8 +448,6 @@ def multi():
                         maxi,mini,
                         round(negs/len(current),3),
                         percentages))
-multi()
-    
 #doit()
 #util.setp(dontBuy, "dont")
 #print(dontBuy)

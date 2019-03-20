@@ -10,11 +10,12 @@ from tkinter import *
 from util import getCsv, getStocks, trimStock, getTrimStock
 import util
 from matplotlib.pyplot import figure
-from tkinter import simpledialog; 
+from tkinter import simpledialog
 from pyutil import Modes, Zen, settings
 import pyutil
 
 def deleteStock(astock):
+    print ("Not Deleting : {}".format(astock))
     return
     global idx, stocks
     print ("Deleting : {}".format(astock))
@@ -22,7 +23,6 @@ def deleteStock(astock):
     stocks = getStocks(reset=True, ivv=ivvonly)
     idx += 1
     updateDisplay()
-
 
 def getCurrentStock(force_idx = None):
     global idx
@@ -145,43 +145,43 @@ def rebuild(start = None, end = None,
         xlabels[1] = ""
         xlabels[2] = ""
     else:
-        avg = pyutil.changeValues(values, rebuild.chaBy, 
-                negavg = True)
-
-        try:
-            highlow, vari, var2 = util.getRangedDist(values)
-        except:
-            deleteStock(astock)
-            return
-        print("\t{}  : Length:{}".format(dates[0], len(dates)))
-        print("\tAvgDrop {}   : {}".format(rebuild.chaBy, avg))
-        changep = util.formatDecimal(values[-1]/values[0])
-        print("\tChange      : {}".format(changep))
-        print("\tHighLow     : {}".format(highlow))
-        print("\tVariance    : {}".format(vari))
-        print("\tVariance2   : {}".format(var2))
-        score, dipScore = util.getScore(values)
-        print("\tScore       : {}".format(util.getScoreFromCsv(astock)))
-        print("\tDip         : {}".format(dipScore))
-        r1,r2 = util.getRangeScore(values, sub=True)
-        print("\tRange1      : {}".format(r1))
-        print("\tRange2      : {}".format(r2))
+        displayStats(values, astock, dates[0])
 
     local_ax.set_xticklabels(xlabels)
     local_ax.set_xticks(xranges)
-
     fig.canvas.draw()
     fig.canvas.get_tk_widget().focus_set()
-
 rebuild.sort_desc = None
 rebuild.recentIncrement = 35
 rebuild.chaBy = 3
-                
+
+def displayStats(values, astock, date):
+    avg = pyutil.changeValues(values, rebuild.chaBy, 
+            negavg = True)
+    try:
+        highlow, vari, var2 = util.getRangedDist(values)
+    except:
+        deleteStock(astock)
+        return
+
+    print("\t{}  : Length:{}".format(date, len(values)))
+    print("\tAvgDrop {}   : {}".format(rebuild.chaBy, avg))
+    changep = util.formatDecimal(values[-1]/values[0])
+    print("\tChange      : {}".format(changep))
+    print("\tHighLow     : {}".format(highlow))
+    print("\tVariance    : {}".format(vari))
+    print("\tVariance2   : {}".format(var2))
+    score, dipScore = util.getScore(values)
+    print("\tScore       : {}".format(util.getScoreFromCsv(astock)))
+    print("\tDip         : {}".format(dipScore))
+    r1,r2 = util.getRangeScore(values, sub=True)
+    print("\tRange1      : {}".format(r1))
+    print("\tRange2      : {}".format(r2))
+
+
 def nexti():
     global idx
-    increment = 1
-    if Modes.multi in currentMode:
-        increment = 8
+    increment = 8 if Modes.multi in currentMod else 1
 
     if idx + increment < stock_count:
         idx += increment
@@ -287,14 +287,11 @@ def handleSort(sort_col = None):
         handleSort.curr_sort_col = sort_col
 
     sort_col = sort_col or handleSort.curr_sort_col 
-    print("sort_col : {}".format( sort_col ))
     col_name = util.getSortVec()[sort_col-1]
-    print("col_name : {}".format( col_name ))
 
     idx = 0
     if Modes.sort in currentMode:
         util.setWhatToBuy(col_name, handleSort.curr_sort_ascend)
-        
     else:
         util.setWhatToBuy(None)
 

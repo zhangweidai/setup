@@ -1,23 +1,27 @@
 import os
 import sys
 from multiprocessing import Process
-from enum import IntFlag, Enum
+try:
+    from enum import IntFlag, Enum
+except:
+    pass
 from util import getp, setp
 import logging
 import util
 
-class Modes(IntFlag):
-    none = 0
-    trim = 1
-    zoom = 2
-    average = 4
-    more = 8
-    change = 16
-    target = 32
-    recent = 64
-    multi = 128
-    history = 256
-    sort = 512
+try:
+    class Modes(IntFlag):
+        none = 0
+        trim = 1
+        zoom = 2
+        average = 4
+        more = 8
+        change = 16
+        target = 32
+        recent = 64
+        multi = 128
+        history = 256
+        sort = 512
 
 #bar = Modes.zoom 
 #bar |= Modes.average
@@ -27,10 +31,12 @@ class Modes(IntFlag):
 #if Modes.zoom in bar:
 #    print ("so far so good")
 
-class Zen(Enum):
-    lastStock = 0
-    lastMode = 1
-    prevAnswer = 2
+    class Zen(Enum):
+        lastStock = 0
+        lastMode = 1
+        prevAnswer = 2
+except:
+    pass
 
 #def setSettings():
 def settings(setting, setValue = None, default = None):
@@ -175,3 +181,11 @@ def changeValues(values, by = 5, negavg = False):
     return ret
 #print changeValues([i for i in range(1,40)])
 #print [i for i in range(40)]
+
+def clearDir(dirname, search):
+    path = util.getPath(dirname)
+    try:
+        cmd = "find {} | grep {} | xargs rm -rf".format(path, search)
+        os.system(cmd)
+    except:
+        pass

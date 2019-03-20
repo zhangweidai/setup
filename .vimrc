@@ -88,6 +88,7 @@ nmap <s-h>          0xxxx<tab><esc>
 nmap <leader>ex     0iraise SystemExit<esc>
 
 
+
 " split tabbing
 nmap <tab>        <c-w>w
 

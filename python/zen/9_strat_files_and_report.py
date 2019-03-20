@@ -1,0 +1,2 @@
+import strategy
+strategy.doit()
