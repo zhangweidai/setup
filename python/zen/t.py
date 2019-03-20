@@ -3,32 +3,50 @@ import pandas as pd
 import timeit
 import pickle
 
-import debug
-debug.dipScore.mode = 2
-print(debug.dipScore())
-debug.dipScore.mode = 2
-print(debug.dipScore())
-raise SystemExit
+#import debug
+#debug.dipScore.mode = 2
+#print(debug.dipScore())
+#debug.dipScore.mode = 2
+#print(debug.dipScore())
+#raise SystemExit
 
 en_de = {"red" : "rot", "green" : "grun", "blue" : "blau", "yellow": "gelb"}
 
 def Test_pan1():
-    b = [i for i in range(100000)]
+    for x in range(0,3000):
+        b = [i for i in range(100)]
+        helper(b)
 
+car = None
 def Test_pan2():
-    b = [i for i in range(100000)]
+    global car
+    for x in range(0,3000):
+        car = [i for i in range(100)]
+        helper2()
 
-def Test_pan4():
-    try:
-        b = [i for i in range(100000)]
-    except:
-        pass
+def helper(bar):
+    accum = 0
+    for b in bar:
+        accum += b
 
-def Test_pan5():
-    try:
-        b = [i for i in range(100000)]
-    except:
-        pass
+def helper2():
+    accum = 0
+    for b in car:
+        accum += b
+
+
+
+
+#    try:
+#        b = [i for i in range(100000)]
+#    except:
+#        pass
+#
+#def Test_pan5():
+#    try:
+#        b = [i for i in range(100000)]
+#    except:
+#        pass
 
 
 #def Test_pan1():
@@ -60,6 +78,6 @@ if __name__ == '__main__':
         print (method)
         answer = timeit.timeit("{}()".format(method), 
                     setup="from __main__ import {}".format(method),
-                    number=1000)
+                    number=500)
         print (round(answer,4))
 

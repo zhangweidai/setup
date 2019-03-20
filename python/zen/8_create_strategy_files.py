@@ -21,21 +21,23 @@ def getRanges(count, forHistory = False):
     return ret
 
 import util
-import os
+import pyutil
 def standard():
-    path = util.getPath("analysis")
-    cmd = "find {} | grep strategy_files_ | xargs rm -rf".format(path)
-    os.system(cmd)
-    #        )
-    stocks = util.getStocks()
+    savedir = "foobar"
+    fname = "filename_"
+    pyutil.clearDir(savedir, fname)
+    util.saveProcessedFromYahoo.download = False
+
+    stocks = util.getStocks(dev=True)
     ranges = getRanges(util.getNumberOfDates())
     for vals in ranges:
-        util.writeStrategyReport(stocks, start=vals[0], end=vals[1])
+        util.report(stocks, start=vals[0], end=vals[1],
+            reportname = fname,
+            reportdir = savedir)
+standard()
 
 def historical():
-    path = util.getPath("history")
-    cmd = "find {} | grep history_ | xargs rm -rf".format(path)
-    os.system(cmd)
+    pyutil.clearDir("history", "history_")
 
     util.getStocks.totalOverride = True
     util.saveProcessedFromYahoo.download = False
@@ -49,8 +51,7 @@ def historical():
         if grouping == 1:
             continue
 
-        util.writeStrategyReport(stocks, start=vals[0], end=vals[1],
+        util.report(stocks, start=vals[0], end=vals[1],
                                 reportname = "history_{}_".format(grouping),
                                 reportdir = "history")
-
-historical()
+#historical()

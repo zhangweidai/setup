@@ -64,7 +64,7 @@ def what_to_buy():
     vals = [start, end]
     stocks = util.getStocks()
 
-    csvfile = util.writeStrategyReport(stocks, 
+    csvfile = util.report(stocks, 
             start=vals[0], end=vals[1], reportname = "main_")
 
     util.setp(csvfile, "buyfile")

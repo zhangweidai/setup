@@ -16,8 +16,7 @@ from collections import deque, defaultdict
 from functools import lru_cache
 
 CsvColumn = "Close"
-#EtfBaselineTicker = "BA"
-EtfBaselineTicker = "SPY"
+EtfBaselineTicker = "BA"
 unnamed = "Unnamed: 0"
 
 def formatDecimal(factor):
@@ -31,11 +30,9 @@ def getTestItems(needed = 30, simple = False, astock=None):
     if simple:
         return [1,1,1,1,1,1,1,2,2,2,2,3,3,3,3,3,1,1,1,1,1,1,1,3,4,4,5,5,
         6,6,7,7,7,8,8,7,6,6,5,4,6,5,4,3,9,7,8,9]
-#    return [round(sqrt(i), 2) for i in range(1,needed)]
     return [i for i in range(1,needed)]
 
 def getPath(path):
-
     path = "{}/../zen_dump/{}".format(os.getcwd(), path)
     parent = os.path.dirname(path)
     if not os.path.exists(parent):
@@ -252,7 +249,6 @@ def getFromHoldings():
     getFromHoldings.etfs = holds
     return holds
 
-
 @lru_cache(maxsize=5)
 def getETF(etf = "IVV"):
     path = getPath("holdings/{}_holdings.csv".format(etf))
@@ -293,7 +289,6 @@ def getCompanyNameFrom(astock, df):
         raise ValueError('NotFound.')
 
 def getCompanyName(astock):
-    etfs = ["IVV", "IWB", "IUSG"]
     for etf in etfs:
         try : 
             return getCompanyNameFrom(astock, getETF.ret_df[etf])
@@ -306,6 +301,7 @@ def getCompanyName(astock):
     if astock in getFromHoldings():
         return "ETF"
     return None
+getCompanyName.etfs = ["IVV", "IWB", "IUSG"]
 
 def saveAdded(astock):
     getAdded.added = getp("addedStocks")
@@ -369,7 +365,6 @@ def getStocks(holding = "IVV", andEtfs = True,
 
     getStocks.ret = list(dict.fromkeys(ret))
     return ret
-
 getStocks.fromCsv = None
 getStocks.colname = None
 getStocks.totalOverride = False
@@ -409,13 +404,16 @@ def setWhatToBuy(column, ascending = True):
 setWhatToBuy.fromfile = None
 
 yf.pdr_override() # <== that's all it takes :-)
-
 def getNumberOfDates():
     try : return getNumberOfDates.ret
     except : pass
 
-    path = getCsv("SPY", asPath = True)
-    getNumberOfDates.ret = sum(1 for line in open(path)) - 1
+    try:
+        path = getCsv("SPY", asPath = True)
+        getNumberOfDates.ret = sum(1 for line in open(path)) - 1
+    except:
+        path = getCsv("BA", asPath = True)
+        getNumberOfDates.ret = sum(1 for line in open(path)) - 1
     return getNumberOfDates.ret
 
 #expected_count = 1050
@@ -684,7 +682,6 @@ def getVectorForStrategy(values, astock):
             math.sqrt(score), 3)
     wc, probup, wcb = getWC(values)
     return [new, discount, dipScore, highlow, vari, vari2, pointsabove, wc]
-savedReads = dict()
 
 def getBuyBackTrack():
     return 201
@@ -697,16 +694,15 @@ def getCsv(astock, idx = None, asPath=False):
     if asPath:
         return getPath("{}/{}.csv".format(getCsv.csvdir, astock))
 
-    global savedReads
     if idx == 0:
         idx = unnamed
 
     df = None
     try:
-        if savedReads and (astock in savedReads):
+        if getCsv.savedReads and (astock in getCsv.savedReads):
             if idx:
                 return df[idx].tolist()
-            return savedReads[astock]
+            return getCsv.savedReads[astock]
     except Exception as e:
         return None
 
@@ -729,15 +725,29 @@ def getCsv(astock, idx = None, asPath=False):
                 print (str(e))
                 print ("problem with {}".format(astock))
                 return None
-    savedReads[astock] = df
+    getCsv.savedReads[astock] = df
     if idx:
         return df[idx].tolist()
     return df
 getCsv.csvdir = "csv"
+getCsv.savedReads = dict()
 
 skipstock = []
-def writeStrategyReport(stocks, start = None, end = None, 
-        reportname="strategy_report_", reportdir = "analysis"):
+
+def getEtfQualifications(astock):
+    ret = []
+    for etf in getCompanyName.etfs:
+        if astock in getETF(etf):
+            ret.append(etf)
+    return ",".join(ret)
+
+def report(stocks, 
+        start = None, 
+        end = None, 
+        reportname="strategy_report_", 
+        reportdir = "analysis",
+        delete_fail = False):
+
     global skipstock
     loadBaseline(start=start, end=end)
     percent_list = {}
@@ -748,9 +758,7 @@ def writeStrategyReport(stocks, start = None, end = None,
 
         if astock in skipstock:
             continue
-
         df = getCsv(astock)
-
         if df is None:
             continue
 
@@ -759,9 +767,8 @@ def writeStrategyReport(stocks, start = None, end = None,
             try:
                 tstart = list(df["Date"]).index(getStartDate())
             except Exception as e:
-#                print ('FailedGet: '+ str(e))
-#                print (astock)
-#                delStock(astock)
+                if delete_fail:
+                    delStock(astock)
                 continue
             df = df[tstart:tstart+dist]
 
@@ -779,10 +786,7 @@ def writeStrategyReport(stocks, start = None, end = None,
         if astock in getFromHoldings():
             name = "ETF"
         else:
-            if astock in ivv:
-                name = "ivv"
-            if astock in iusg:
-                name += "iusg"
+            name = getEtfQualifications(name)
 
         lasth = max(df['High'].iloc[-8:])
         lastl = min(df['Low'].iloc[-4:])
@@ -805,7 +809,7 @@ def writeStrategyReport(stocks, start = None, end = None,
             percent_list[astock] = getVectorForStrategy(values, astock) + \
             [rangescore] + [name, last, lastl, lasth]
         except Exception as e:
-            skipstock.append(astock)
+#            skipstock.append(astock)
 #            import traceback
 #            print (traceback.format_exc())
             print ('FailedVec: '+ str(e))
@@ -815,26 +819,20 @@ def writeStrategyReport(stocks, start = None, end = None,
         print ("Buy List : {}".format(", ".join(buyList)))
 
     r_name = "{}{}".format(reportname, getEndDate())
-    return writeFile(percent_list, writeStrategyReport.headers, 
+    return writeFile(percent_list, report.headers, 
             reportdir, name = r_name)
 
-writeStrategyReport.headers = ["Score", "Discount", "Dip", 
+report.headers = ["Score", "Discount", "Dip", 
     "HighLow","Vari", "Vari2", "PointsAbove", "WC", 
     "Range", "ETF", "Last", "LastL", "LastH"]
 
-#def plot(astock, start = None, end = None):
-#    df = getCsv(astock)
-#    df = df[start:end]
-#    values = df[CsvColumn].tolist()
-#    plt.plot(values)
-#    plt.show()
-#
 def getTrimStock(astock):
     try : return getp("trims")[astock]
     except : return None
 #print (getTrimStock("VST"))
 
 def delStock(astock, report = True):
+    print("Deleting astock: {}".format(astock))
     try: 
         path = getCsv(astock, asPath=True)
         os.remove(path)
@@ -844,7 +842,6 @@ def delStock(astock, report = True):
     os.system("./scrub.sh {}".format(astock))
 
 def resetStock(astock):
-    global savedReads
     try: 
         path = getCsv(astock, asPath=True)
         os.remove(path)
@@ -856,10 +853,9 @@ def resetStock(astock):
     setp(trims, "trims")
 
     saveProcessedFromYahoo(astock)
-    del savedReads[astock]
+    del getCsv.savedReads[astock]
 
 def trimStock(astock, end):
-    global savedReads
     if not end:
         return
     try:
@@ -879,7 +875,7 @@ def trimStock(astock, end):
             trimStock.trims = dict()
             trimStock.trims[astock] = end
 
-    del savedReads[astock]
+    del getCsv.savedReads[astock]
     setp(trimStock.trims, "trims")
 #print (getTrimStock("GOOG"))
 #trimStock("VST", 200)
