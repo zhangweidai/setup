@@ -810,7 +810,7 @@ def report(stocks,
             percent_list[astock] = getVectorForStrategy(values, astock) + \
             [rangescore] + [name, last, lastl, lasth]
         except Exception as e:
-#            skipstock.append(astock)
+            skipstock.append(astock)
 #            import traceback
 #            print (traceback.format_exc())
             print ('FailedVec: '+ str(e))

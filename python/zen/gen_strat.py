@@ -41,7 +41,6 @@ def historical():
     pyutil.clearDir(where, "{}_".format(where))
 
     util.getStocks.totalOverride = True
-    util.saveProcessedFromYahoo.download = True
     stocks = util.getStocks()
     ranges = getRanges(util.getNumberOfDates(), forHistory = True)
     grouping = 0

@@ -402,7 +402,7 @@ def doit(where):
     print ("written {}".format(path))
 
     newdict = costToDict()
-    writeCostDict(newdict)
+    writeCostDict(newdict, where)
 
 #"".join(bar)
 def multi(where):
