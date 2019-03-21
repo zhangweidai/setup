@@ -270,13 +270,19 @@ def getScoreFromCsv(astock):
             path = getp("buyfile")
             df = pandas.read_csv(path)
         except Exception as e:
-            print ("getScoreFromCsv")
-            print (str(e))
-            return None
+            try:
+                path = getPath("analysis/main_2019-03-12.csv")
+                df = pandas.read_csv(path)
+            except:
+                print ("getScoreFromCsv")
+                print (str(e))
+                return None
     ret = df.loc[df[unnamed] == astock]["Score"].to_string()
     ret = " ".join(list(filter(None, ret.split(' ')))[1:])
     return ret
-
+#path = getp("buyfile")
+#print("path : {}".format( path ))
+#raise SystemExit
 def getCompanyNameFrom(astock, df):
     try : 
         ret = df.loc[df['Ticker'] == astock]
@@ -401,14 +407,12 @@ def getStocks(holding = "IVV", andEtfs = True,
     return getStocks.ret
 
 def cleanUpRet():
-    dels = getp("deletes")
-    for item in dels:
-        try:
+    try:
+        dels = getp("deletes")
+        for item in dels:
             getStocks.ret.remove(item)
-        except:
-            pass
-
-
+    except:
+        pass
 
 getStocks.fromCsv = None
 getStocks.colname = None
