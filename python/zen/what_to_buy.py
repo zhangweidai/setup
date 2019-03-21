@@ -4,6 +4,20 @@ import datetime
 from pandas_datareader import data as pdr
 import fix_yahoo_finance as yf
 import math
+#3/20
+#PointsAbove 25.22%  0.02    39.40%  2.00%   0   1.949
+#Score   24.50%  0.021   38.40%  1.20%   0   1.937
+#VariA   23.95%  0.021   36.40%  1.50%   0   1.922
+#WCA 34.38%  0.042   56.20%  -0.20%  0.167   1.9
+#Dip 32.25%  0.066   57.30%  -8.60%  0.167   1.888
+#HighLow 30.20%  0.043   48.30%  -0.90%  0.167   1.826
+#Vari2   27.62%  0.031   46.00%  -2.10%  0.167   1.793
+#Range   13.65%  0.005   21.50%  1.60%   0   1.744
+#Discount    38.27%  0.088   62.30%  -6.80%  0.333   1.734
+#IUSG    12.28%  0.009   21.74%  2.82%   0   1.732
+#WC  23.23%  0.031   39.50%  -4.10%  0.167   1.724
+
+
 #3/17
 #VariA   24.67%  0.03    55.10%  -1.50%  0.014
 #ScoreA  14.94%  0.017   29.80%  -8.10%  0.097
@@ -54,14 +68,18 @@ def shouldUpdate():
     return True, yahoo_date
 
 def what_to_buy():
-    should, latestInfo = shouldUpdate()
-    if should:
-        import update_csv
-        update_csv.updateStocks(latestInfo)
+    util.getStocks.totalOverride = True
+#    should, latestInfo = shouldUpdate()
+#    if should:
+#        import update_csv
+#        update_csv.updateStocks(latestInfo)
 
     end = util.getNumberOfDates()
+    print("end : {}".format( end ))
     start = end - util.getBuyBackTrack()
+    print("start : {}".format( start ))
     vals = [start, end]
+    print("vals : {}".format( vals ))
     stocks = util.getStocks()
 
     csvfile = util.report(stocks, 

@@ -74,7 +74,7 @@ def tallyFrom(path, mode, ascending, isLast = False):
         if loaded is None:
             return
     except Exception as e:
-        print ('2Failed: '+ str(e))
+        print ('2Filed: '+ str(e))
         return
     
     loaded.sort_values(by=[mode], inplace=True, ascending=ascending)
@@ -128,6 +128,10 @@ def tallyFrom(path, mode, ascending, isLast = False):
 #            continue
 
         last = loaded.at[idx, "Last"]
+
+        if last < 3:
+            continue
+
         lasth = loaded.at[idx, "LastH"]
         lastl = loaded.at[idx, "LastL"]
 
@@ -187,14 +191,17 @@ def getTrainingTemps(mode, ascending, where):
         try:
             tallyFrom(path, mode, ascending, isLast=(i==leng-1))
         except Exception as e:
-#            print ('Failed: '+ str(e))
-#            print("path : {}".format( path ))
+            print ('Failed: '+ str(e))
+            print("path : {}".format( path ))
             pass
 
 purchases = defaultdict(float)
 purchasesl = defaultdict(float)
 purchasesh = defaultdict(float)
 dontBuy = util.getp("dont")
+#print(dontBuy)
+#raise SystemExit
+#dontBuy = list()
 #latest_values = util.getp("lastValues")
 mode_average = defaultdict(list)
 def calcIt(mode, ascending, where):
@@ -220,11 +227,9 @@ def calcIt(mode, ascending, where):
             asizeh += purchasesh[astock] * lvalue
     except:
         dontBuy.append(astock)
-        print("dont astock: {}".format( astock))
-        return
-        
-#    except Exception as e:
-#        print ('3Failed: '+ str(e))
+#        import traceback
+#        print (traceback.format_exc())
+#        print("dont astock: {}".format( astock))
 #        return
 
     if size == 20:
@@ -312,7 +317,9 @@ def costToDict():
             currentValue = round(amount * latest_values[astock])
         except:
             dontBuy.append(astock)
+            print("astock: {}".format( astock))
             continue
+
         change = util.formatDecimal(currentValue/spent)
 
 #        if not (cost.mode == "Variance" and not cost.mode2):
@@ -369,9 +376,13 @@ def doit(where):
         size = csize
         appended.append(["stocks {}".format(size)])
         for mode in modes:
-            appended.append(calcIt(mode, True, where))
+            ret = calcIt(mode, True, where)
+            if ret:
+                appended.append(ret)
             more_etf = False
-            appended.append(calcIt(mode, False, where))
+            ret = calcIt(mode, False, where)
+            if ret:
+                appended.append(ret)
     
     prevavg = 0
     prevvar = 0
@@ -382,8 +393,6 @@ def doit(where):
         vari = round(np.var(items),3)
     
         hisdict[mode] += items
-#        print("mode: {}".format( mode))
-#        print("items : {}".format( items ))
 
         appended.append(["A {0:12} {1:8} {2}".format(mode, 
                         util.formatDecimal(average), vari)])
@@ -397,7 +406,10 @@ def doit(where):
     try:
         appended += etfData()
         appended = [item for sublist in appended for item in sublist]
-    except:
+    except Exception as e:
+        print ('2Failed: '+ str(e))
+        import traceback
+        print (traceback.format_exc())
         appended = []
     
     path = util.getPath("{}/report_{}_{}.txt".format(where, title, his_idx))
@@ -413,11 +425,12 @@ def multi(where):
     global his_idx, spent, more_etf, etfvs, latest_values, cost_basis
     global etf_purchase_times
 
-    for i in range(3, 10):
+#    for i in range(3, 10):
+    for i in range(8, 10):
         more_etf = True
         his_idx = i
         spent = 1
-    
+
         doit(where)
     
         etfvs = defaultdict(int)
@@ -427,6 +440,7 @@ def multi(where):
         pyutil.getFiles.rememberedFiles = []
 
     writeReport(where)
+    util.setp(dontBuy, "dont")
 
 def writeReport(where):
     import csv
@@ -437,18 +451,22 @@ def writeReport(where):
             current = hisdict[key]
             negs = 0
             mini = util.formatDecimal(min(current))
-            maxi = util.formatDecimal(max(current))
+            rawmax = max(current)
+            maxi = util.formatDecimal(rawmax)
             for item in current:
                 if item < 1:
                     negs += 1
                 appended.append(util.formatDecimal(item))
-            avg = util.formatDecimal(sum(current)/len(current))
+            ravg = sum(current)/len(current)
+            avg = util.formatDecimal(ravg)
             vari = round(np.var(current),3)
             percentages  = " ".join(appended)
-            f.write("{},{},{},{},{},{},{}\n".format(key, avg, 
+            rawnegs = round(negs/len(current),3)
+            score = round((ravg*(1-rawnegs))+rawmax/2,3)
+            f.write("{},{},{},{},{},{},{},{}\n".format(key, avg, 
                         vari, 
                         maxi,mini,
-                        round(negs/len(current),3),
+                        rawnegs,score,
                         percentages))
 #doit()
 #util.setp(dontBuy, "dont")

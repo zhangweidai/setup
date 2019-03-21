@@ -82,6 +82,7 @@ def updateCsv(astock, yahoo_date = None):
 
 def updateStocks(yahoo_date):
     stocks = util.getStocks()
+    print("stocks : {}".format(len(stocks)))
     for astock in stocks:
         try:
             updateCsv(astock, yahoo_date)

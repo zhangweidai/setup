@@ -189,10 +189,17 @@ def changeValues(values, by = 5, negavg = False):
 #print changeValues([i for i in range(1,40)])
 #print [i for i in range(40)]
 
-def clearDir(dirname, search):
+def clearDir(dirname, search = None):
     path = util.getPath(dirname)
+    if "zen_dump" not in path:
+        return
+
     try:
-        cmd = "find {} | grep {} | xargs rm -rf".format(path, search)
+        cmd = ""
+        if search:
+            cmd = "find {} | grep {} | xargs rm -rf".format(path, search)
+        else:
+            cmd = "find {} -type f | xargs rm -rf".format(path)
         os.system(cmd)
     except:
         pass
@@ -207,8 +214,9 @@ def getFiles(where, his_idx = None):
     for entry in listOfFiles:  
         date = entry.split("_")
         try:
-            if len(date) < 3 or date[0] != where :
-                if his_idx and int(date[1]) != his_idx or "csv" not in date[2]:
+            if len(date) < 3 or date[0] != where or \
+                (his_idx and int(date[1]) != his_idx) or \
+                "csv" not in date[2]:
                     continue
         except:
             continue

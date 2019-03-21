@@ -38,8 +38,7 @@ def standard():
 
 def historical():
     where = "history"
-    pyutil.clearDir(where, "*".format(where))
-    raise SystemExit
+    pyutil.clearDir(where)
     util.getStocks.totalOverride = True
     stocks = util.getStocks()
     ranges = getRanges(util.getNumberOfDates(), forHistory = True)
@@ -48,7 +47,7 @@ def historical():
         if i % 15 == 0:
             grouping += 1
 
-        if grouping <= 2:
+        if grouping < 3:
             continue
 
         util.report(stocks, start=vals[0], end=vals[1],

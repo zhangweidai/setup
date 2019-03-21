@@ -87,6 +87,8 @@ def rebuild(start = None, end = None,
                     colored(astock,"yellow"), 
                     cname, modestr,outof))
 
+        print(util.getEtfQualifications(astock))
+
     if Modes.sort in currentMode:
         ascend = "Ascend" if handleSort.curr_sort_ascend else "Descend"
         print("{} | {}".format(ascend, util.getSortDisplay()))

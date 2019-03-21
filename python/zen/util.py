@@ -16,7 +16,7 @@ from collections import deque, defaultdict
 from functools import lru_cache
 
 CsvColumn = "Close"
-EtfBaselineTicker = "IUSG"
+EtfBaselineTicker = "SPY"
 unnamed = "Unnamed: 0"
 
 def formatDecimal(factor):
@@ -249,7 +249,7 @@ def getFromHoldings():
     getFromHoldings.etfs = holds
     return holds
 
-@lru_cache(maxsize=5)
+@lru_cache(maxsize=6)
 def getETF(etf = "IVV"):
     path = getPath("holdings/{}_holdings.csv".format(etf))
     try:
@@ -319,7 +319,7 @@ def getCompanyName(astock):
 #    if astock in getFromHoldings():
 #        return "ETF"
 #    return None
-getCompanyName.etfs = ["IVV", "IWB", "IUSG"]
+getCompanyName.etfs = ["IVV", "IWB", "IUSG", "USMV"]
 
 def saveAdded(astock):
     print("astock: {}".format( astock))
@@ -379,7 +379,8 @@ def getStocks(holding = "IVV", andEtfs = True,
     if getStocks.totalOverride:
         path = getPath("holdings/ITOT_holdings.csv")
         tmp = pandas.read_csv(path)
-        getStocks.ret = tmp['Ticker'].tolist() + getFromHoldings() + getAdded()
+        getStocks.ret = tmp['Ticker'].tolist() + getFromHoldings() + \
+                list(getAdded())
         cleanUpRet()
         return getStocks.ret
 
@@ -563,7 +564,11 @@ def getPointsAbove(items):
     higherPoints = 0
     for i,item in enumerate(items):
         s = last/item
-        b = baseline[i]
+        try:
+            b = baseline[i]
+        except:
+            continue
+
         if s > b:
             if i > lastpart:
                 bonus = 1.07
@@ -736,7 +741,7 @@ def getVectorForStrategy(values, astock):
     return [new, discount, dipScore, highlow, vari, vari2, pointsabove, wc]
 
 def getBuyBackTrack():
-    return 201
+    return 180
 
 def getCsv(astock, idx = None, asPath=False):
 
@@ -790,6 +795,8 @@ skipstock = []
 def getEtfQualifications(astock):
     ret = []
     for etf in getCompanyName.etfs:
+        subset = getETF(etf)
+        if astock in subset: 
             ret.append(etf)
     return ",".join(ret)
 
@@ -802,6 +809,7 @@ def report(stocks,
 
     global skipstock
     loadBaseline(start=start, end=end)
+    print ("loaded")
     percent_list = {}
     ivv = getETF()
     iusg = getETF("IUSG")
@@ -814,17 +822,24 @@ def report(stocks,
         if df is None:
             continue
 
+        bar = getStartDate()
         if start and end:
             dist = end - start
             try:
                 tstart = list(df["Date"]).index(getStartDate())
             except Exception as e:
-                if delete_fail:
-                    delStock(astock)
+                print ('DateVec: '+ str(e))
+                print("df : {}".format( len(df)))
+#                if delete_fail:
+#                    delStock(astock)
+                print("astock: {}".format( astock))
                 continue
             df = df[tstart:tstart+dist]
 
         values = df[CsvColumn].tolist()
+
+        bar = df['Date'].iloc[0]
+        foo = getStartDate()
 
         if df['Date'].iloc[0] != getStartDate():
             print ("date problem {}".format(astock))
@@ -838,7 +853,7 @@ def report(stocks,
         if astock in getFromHoldings():
             name = "ETF"
         else:
-            name = getEtfQualifications(name)
+            name = getEtfQualifications(astock)
 
         lasth = max(df['High'].iloc[-8:])
         lastl = min(df['Low'].iloc[-4:])
@@ -861,11 +876,16 @@ def report(stocks,
             percent_list[astock] = getVectorForStrategy(values, astock) + \
             [rangescore] + [name, last, lastl, lasth]
         except Exception as e:
+            print("values : {}".format( len(values)))
+            print("bar")
+            print(bar )
+            print(foo )
             skipstock.append(astock)
-#            import traceback
-#            print (traceback.format_exc())
+            import traceback
+            print (traceback.format_exc())
             print ('FailedVec: '+ str(e))
             print (astock)
+            raise SystemExit
 
     if buyList and "main" in reportname and len(buyList) < 30:
         print ("Buy List : {}".format(", ".join(buyList)))
