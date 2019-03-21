@@ -872,8 +872,13 @@ def report(stocks,
 
         rangescore = getRangeScore(values)
 
+        mains = []
+        if "main" in reportname:
+            mains = [1]
+            report.headers.insert(7, "New")
+
         try:
-            percent_list[astock] = getVectorForStrategy(values, astock) + \
+            percent_list[astock] = getVectorForStrategy(values, astock) + mains +\
             [rangescore] + [name, last, lastl, lasth]
         except Exception as e:
             print("values : {}".format( len(values)))
