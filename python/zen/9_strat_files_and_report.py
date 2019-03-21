@@ -4,4 +4,4 @@ import util
 
 util.saveProcessedFromYahoo.download = False
 where = gen_strat.historical()
-strategy.multi(where)
+strategy.multi("history")

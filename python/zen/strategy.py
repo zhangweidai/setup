@@ -8,6 +8,7 @@ from collections import Counter, defaultdict
 import os
 import pandas
 import util
+import pyutil
 import time
 
 title = "standard"
@@ -153,31 +154,34 @@ def tallyFrom(path, mode, ascending, isLast = False):
 #path = util.getPath("analysis/strategy_report_2015-11-23.csv")
 #tallyFrom(path, ["Score", True])
 #raise SystemExit
-rememberedFiles = []
-def getFiles(where):
-    global rememberedFiles
-    import fnmatch
-    if rememberedFiles:
-        return rememberedFiles
-    holds = []
-    reportname = "_{}".format(where, his_idx)
-    pattern = "{}*.csv".format(reportname)
-    parentdir = util.getPath(where)
-    listOfFiles = os.listdir(parentdir)
-    for entry in listOfFiles:  
-        date = entry.split("_")
-        if his_idx == 0 and len(date) < 3 or "-" not in date[2]:
-            continue
-        if fnmatch.fnmatch(entry, pattern):
-            rememberedFiles.append("{}/{}".format(parentdir, entry))
-    rememberedFiles.sort()
-    return rememberedFiles
+#rememberedFiles = []
+#def getFiles(where):
+#    global rememberedFiles
+#    import fnmatch
+#    if rememberedFiles:
+#        return rememberedFiles
+#    holds = []
+#    reportname = "{}_{}".format(where, his_idx)
+#    pattern = "{}*.csv".format(reportname)
+#    parentdir = util.getPath(where)
+#    listOfFiles = os.listdir(parentdir)
+#    for entry in listOfFiles:  
+#        date = entry.split("_")
+#        try:
+#            if his_idx == 0 and len(date) < 3 or "-" not in date[2]:
+#                continue
+#        except:
+#            continue
+#        if fnmatch.fnmatch(entry, pattern):
+#            rememberedFiles.append("{}/{}".format(parentdir, entry))
+#    rememberedFiles.sort()
+#    return rememberedFiles
 #his_idx = 7
 #print (getFiles())
 #raise SystemExit
 
 def getTrainingTemps(mode, ascending, where):
-    paths = getFiles(where)
+    paths = pyutil.getFiles(where, his_idx)
     leng = len(paths)
     for i,path in enumerate(paths):
         try:
@@ -315,7 +319,7 @@ def costToDict():
 #            continue
         hashable = "{}".format(str(cost))
         newdict[hashable] = [currentValue, round(spent), change, 
-        round(currentValue-spent), ",".join(dates)]
+        round(currentValue-spent), astock, " ".join(dates)]
 
         hashable = "{}{}".format(cost.mode, cost.mode2)
         if not topdict.get(hashable):
@@ -347,7 +351,7 @@ def writeCostDict(newdict, where):
     import pandas
     df = pandas.DataFrame.from_dict(newdict, orient = 'index', 
             columns=["Value", "Cost", "Change", 
-            "DollarChange", "PurchaseDates"])
+            "DollarChange", "Ticker","PurchaseDates"])
     path = util.getPath("{}/selection_{}_{}.csv".format(where, title, his_idx))
     df.to_csv(path)
     print ("written {}".format(path))
@@ -407,9 +411,9 @@ def doit(where):
 #"".join(bar)
 def multi(where):
     global his_idx, spent, more_etf, etfvs, latest_values, cost_basis
-    global etf_purchase_times, rememberedFiles
+    global etf_purchase_times
 
-    for i in range(2, 10):
+    for i in range(3, 10):
         more_etf = True
         his_idx = i
         spent = 1
@@ -420,7 +424,7 @@ def multi(where):
         latest_values = dict()
         cost_basis = dict()
         etf_purchase_times = defaultdict(int)
-        rememberedFiles = []
+        pyutil.getFiles.rememberedFiles = []
 
     writeReport(where)
 

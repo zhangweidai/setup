@@ -153,6 +153,19 @@ def averageValues(values):
         lastavg = avg
     return ret
 
+def dailyAverage(opens, closes):
+    negs = []
+    for i,closed in enumerate(closes):
+        temp = closed/opens[i]
+        if temp < 1:
+            negs.append(temp)
+    try:
+        return util.formatDecimal(sum(negs)/len(negs))
+    except:
+        pass
+    return None
+
+
 def changeValues(values, by = 5, negavg = False):
     ret = []
     last = 0
@@ -183,3 +196,43 @@ def clearDir(dirname, search):
         os.system(cmd)
     except:
         pass
+
+def getFiles(where, his_idx = None):
+    import fnmatch
+    if getFiles.rememberedFiles:
+        return getFiles.rememberedFiles
+    holds = []
+    parentdir = util.getPath(where)
+    listOfFiles = os.listdir(parentdir)
+    for entry in listOfFiles:  
+        date = entry.split("_")
+        try:
+            if len(date) < 3 or date[0] != where :
+                if his_idx and int(date[1]) != his_idx or "csv" not in date[2]:
+                    continue
+        except:
+            continue
+        pattern =  "{}*".format(where)
+        if fnmatch.fnmatch(entry, pattern):
+            getFiles.rememberedFiles.append("{}/{}".format(parentdir, entry))
+    getFiles.rememberedFiles.sort()
+    return getFiles.rememberedFiles
+getFiles.rememberedFiles = []
+
+def getNextHis(increment = True):
+    try :
+        if increment:
+            getNextHis.idx += 1
+        elif getNextHis.idx > 0:
+            getNextHis.idx -= 1
+        ret = getFiles(where = "history")[getNextHis.idx]
+        if ret:
+            return ret
+        getNextHis.idx = 0
+        return getFiles(where = "history")[getNextHis.idx]
+    except:
+        getNextHis.idx = 0
+        return getFiles(where = "history")[getNextHis.idx]
+    return None
+getNextHis.idx = 0
+

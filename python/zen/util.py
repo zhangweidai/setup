@@ -289,31 +289,50 @@ def getCompanyNameFrom(astock, df):
         raise ValueError('NotFound.')
 
 def getCompanyName(astock):
-    for etf in getCompanyName.etfs:
-        try : 
-            return getCompanyNameFrom(astock, getETF.ret_df[etf])
-        except:
-            try:
-                getETF(etf)
-                return getCompanyNameFrom(astock, getETF.ret_df[etf])
-            except:
-                pass
-    if astock in getFromHoldings():
-        return "ETF"
-    return None
+
+    if astock not in getETF("ITOT"):
+        if astock in getFromHoldings():
+            return "ETF"
+        return None
+
+    df = getETF.ret_df["ITOT"]
+    try:
+        ret = df.loc[df['Ticker'] == astock]["Name"].to_string()
+        ret = " ".join(list(filter(None, ret.split(' ')))[1:])
+    except Exception as e:
+        print ("cname")
+        print (str(e))
+        if astock in getFromHoldings():
+            return "ETF"
+        return None
+    return ret
+
+#    for etf in getCompanyName.etfs:
+#        try : 
+#            return getCompanyNameFrom(astock, getETF.ret_df[etf])
+#        except:
+#            try:
+#                getETF(etf)
+#                return getCompanyNameFrom(astock, getETF.ret_df[etf])
+#            except:
+#                pass
+#    if astock in getFromHoldings():
+#        return "ETF"
+#    return None
 getCompanyName.etfs = ["IVV", "IWB", "IUSG"]
 
 def saveAdded(astock):
+    print("astock: {}".format( astock))
     getAdded.added = getp("addedStocks")
     if getAdded.added == None:
-        getAdded.added = list()
-    getAdded.added.append(astock)
+        getAdded.added = set()
+    getAdded.added.insert(astock)
     setp(getAdded.added, "addedStocks")
 
 def getAdded():
     getAdded.added = getp("addedStocks")
     if getAdded.added == None:
-        getAdded.added = list()
+        getAdded.added = set()
     return getAdded.added
 getAdded.added = list()
 
@@ -327,21 +346,10 @@ def getStocks(holding = "IVV", andEtfs = True,
         try: return getStocks.ret
         except: pass
 
-    if getStocks.totalOverride:
-        path = getPath("holdings/ITOT_holdings.csv")
-        tmp = pandas.read_csv(path)
-        getStocks.ret = tmp['Ticker'].tolist() + getFromHoldings()
-        return getStocks.ret
-
-    subset = getETF()
-    if ivv:
-        ret = list(subset) + getFromHoldings()
-        ret.sort()
-        return ret
-
     val = getStocks.fromCsv
     if val and len(val) == 3:
         path = val[0]
+        print("path : {}".format( path ))
         if not os.path.exists(path):
             path = getPath(path)
         df = pandas.read_csv(path)
@@ -355,7 +363,31 @@ def getStocks(holding = "IVV", andEtfs = True,
         getStocks.dataf = df
         retCol = df.columns[0]
         getStocks.ret = df[retCol].tolist()
+
+        ret = df[retCol].tolist()
+        ret2 = set()
+        if "/" in ret[0]:
+            for item in ret:
+                ret2.add(item.split("/")[2])
+            getStocks.ret = list(ret2)
+        else:
+            getStocks.ret = df[retCol].tolist()
+
+        cleanUpRet()
         return getStocks.ret
+
+    if getStocks.totalOverride:
+        path = getPath("holdings/ITOT_holdings.csv")
+        tmp = pandas.read_csv(path)
+        getStocks.ret = tmp['Ticker'].tolist() + getFromHoldings() + getAdded()
+        cleanUpRet()
+        return getStocks.ret
+
+    subset = getETF()
+    if ivv:
+        ret = list(subset) + getFromHoldings()
+        ret.sort()
+        return ret
 
     etfs = ["IWB", "IUSG"]
     ret = subset
@@ -364,7 +396,19 @@ def getStocks(holding = "IVV", andEtfs = True,
     ret += getFromHoldings()
 
     getStocks.ret = list(dict.fromkeys(ret))
-    return ret
+    cleanUpRet()
+    return getStocks.ret
+
+def cleanUpRet():
+    dels = getp("deletes")
+    for item in dels:
+        try:
+            getStocks.ret.remove(item)
+        except:
+            pass
+
+
+
 getStocks.fromCsv = None
 getStocks.colname = None
 getStocks.totalOverride = False
@@ -424,6 +468,13 @@ def getRemovedStocks():
 def saveProcessedFromYahoo(astock, add=False):
     if not saveProcessedFromYahoo.download:
         return
+
+    try:
+        if astock in getp("deletes"):
+            return
+    except:
+        pass
+
     tday = datetime.date.today().isoformat()
     saveStartDate = "2015-01-05" if getCsv.csvdir == "csv" else "2002-01-05"
 
@@ -689,7 +740,8 @@ def getBuyBackTrack():
 
 def getCsv(astock, idx = None, asPath=False):
 
-    if getStocks.totalOverride:
+    val = getStocks.fromCsv
+    if getStocks.totalOverride or val:
         getCsv.csvdir = "historical"
 
     if asPath:
@@ -738,7 +790,6 @@ skipstock = []
 def getEtfQualifications(astock):
     ret = []
     for etf in getCompanyName.etfs:
-        if astock in getETF(etf):
             ret.append(etf)
     return ",".join(ret)
 
@@ -841,6 +892,18 @@ def delStock(astock, report = True):
         if report:
             print ('FailedDelete: '+ str(e))
     os.system("./scrub.sh {}".format(astock))
+    try :
+        getStocks.ret.remove(astock)
+    except Exception as e:
+        print ('Failed Removal from getStocks: '+ str(e))
+
+    dels = getp("deletes") or set()
+    dels.add(astock)
+    print("astock: {}".format( astock))
+    setp(dels, "deletes")
+
+    dels = getp("deletes")
+    print(dels )
 
 def resetStock(astock):
     try: 
@@ -961,6 +1024,5 @@ def getConsider2():
 #d = {}
 #for k in ks:
 #    d[k] = d.get(k, 0) + 1
-
 #print (getCompanyName("GOOG"))
 #print (list(getCsv("KO")["Date"]).index("2001-12-28"))

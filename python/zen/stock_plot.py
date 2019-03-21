@@ -13,16 +13,24 @@ from matplotlib.pyplot import figure
 from tkinter import simpledialog
 from pyutil import Modes, Zen, settings
 import pyutil
+import os
 
-def deleteStock(astock):
-    print ("Not Deleting : {}".format(astock))
-    return
-    global idx, stocks
+def deleteStock(astock, force=False):
+    global idx, stocks, stock_count
+    if not force:
+        print ("Not Deleting : {}".format(astock))
+        return
     print ("Deleting : {}".format(astock))
     util.delStock(astock)
-    stocks = getStocks(reset=True, ivv=ivvonly)
     idx += 1
-    updateDisplay()
+    resetStocks()
+
+def resetStocks(update=True):
+    global stocks, stock_count
+    stocks = getStocks(reset=True)
+    stock_count = len(stocks)
+    if update:
+        updateDisplay()
 
 def getCurrentStock(force_idx = None):
     global idx
@@ -72,22 +80,25 @@ def rebuild(start = None, end = None,
             return
 
     if Modes.multi not in currentMode:
+        outof = "{}/{}".format(idx, stock_count)
         cname = util.getCompanyName(astock)
         print("\n")
-        print("Stock : {}\t{}\t\t{}".format( 
+        print("Stock : {}\t{}\t\t{}\t{}".format( 
                     colored(astock,"yellow"), 
-                    cname, modestr ))
+                    cname, modestr,outof))
 
     if Modes.sort in currentMode:
         ascend = "Ascend" if handleSort.curr_sort_ascend else "Descend"
         print("{} | {}".format(ascend, util.getSortDisplay()))
+
+    if util.getStocks.fromCsv:
+        print(os.path.basename(util.getStocks.fromCsv[0]))
 
     df = getCsv(astock)
     if df is None:
         return
 
     maxvalues = len(df)
-    print("maxvalues : {}".format( maxvalues ))
 
     if Modes.recent in currentMode:
         start = maxvalues-rebuild.recentIncrement
@@ -123,11 +134,12 @@ def rebuild(start = None, end = None,
 
     startx = 0 
     endx = len(values)-1
-    if Modes.change not in currentMode:
+    if Modes.change not in currentMode or Modes.target in currentMode:
         try: local_ax.scatter(endx, util.getTargetPrice(astock)[0], s=80, 
                 color="red")
         except Exception as e: 
-            print ('Scatter : '+ str(e))
+            pass
+#            print ('Scatter : '+ str(e))
 
     byx = int((endx-startx)/xcount)
     try:
@@ -161,22 +173,37 @@ def displayStats(values, astock, date):
     try:
         highlow, vari, var2 = util.getRangedDist(values)
     except:
-        deleteStock(astock)
-        return
+        highlow, vari, var2 = 0,0,0
+        pass
+#        deleteStock(astock)
 
     print("\t{}  : Length:{}".format(date, len(values)))
+    opens = df["Open"].tolist()
+    print("\tDailyAvgDrop: {}".format(pyutil.dailyAverage(opens, values)))
     print("\tAvgDrop {}   : {}".format(rebuild.chaBy, avg))
     changep = util.formatDecimal(values[-1]/values[0])
+    if not changep[0] == "-":
+        changep = colored(changep,"green")  
     print("\tChange      : {}".format(changep))
-    print("\tHighLow     : {}".format(highlow))
-    print("\tVariance    : {}".format(vari))
-    print("\tVariance2   : {}".format(var2))
-    score, dipScore = util.getScore(values)
-    print("\tScore       : {}".format(util.getScoreFromCsv(astock)))
-    print("\tDip         : {}".format(dipScore))
+
+    if highlow:
+        print("\tHighLow     : {}".format(highlow))
+        print("\tVariance    : {}".format(vari))
+        print("\tVariance2   : {}".format(var2))
+
+    try:
+        score, dipScore = util.getScore(values)
+        print("\tScore       : {}".format(util.getScoreFromCsv(astock)))
+        print("\tDip         : {}".format(dipScore))
+    except:
+        pass
+
     r1,r2 = util.getRangeScore(values, sub=True)
-    print("\tRange1      : {}".format(r1))
-    print("\tRange2      : {}".format(r2))
+    if r1:
+        print("\tRange1      : {}".format(r1))
+    if r2:
+        print("\tRange2      : {}".format(r2))
+        pass
 
 
 def nexti():
@@ -200,7 +227,7 @@ def previ():
         updateDisplay()
 
 def interpret(answer):
-    global idx, stocks, previdx
+    global idx, stocks, previdx, stock_count
     print("answer: {}".format( answer))
     if not answer:
         return
@@ -216,11 +243,6 @@ def interpret(answer):
         rebuild.recentIncrement = int(len(values)/2)
         toggleCurrentMode(Modes.recent)
 
-    elif "all" in answer:
-        util.saveProcessedFromYahoo.download = False
-        getStocks.totalOverride = True
-        setHistory()
-
     elif "recent" in answer:
         rebuild.recentIncrement = int(answer.split(" ")[1])
         util.loadBaseline(start=rebuild.recentIncrement)
@@ -232,26 +254,32 @@ def interpret(answer):
         if Modes.multi in currentMode:
             stock = answer.split(" ")[1].upper()
             print("stock : {}".format( stock ))
-        deleteStock(stock)
+        deleteStock(stock, force = True)
     else:
         previdx = idx
+        answer = answer.upper()
         try:
-            idx = stocks.index(answer.upper())
+            idx = stocks.index(answer)
             print("idx : {}".format(idx))
         except Exception as e:
-            print ('Not Find: '+ str(e))
             try:
-                answer = answer.upper()
-                ret = util.saveProcessedFromYahoo(answer, add=True)
-                if ret: 
-                    stocks = getStocks(ivv=ivvonly)
+                setHistory(toggle=False)
+                idx = stocks.index(answer)
+            except:
+                if util.getCsv(answer, asPath=True):
+                    util.saveAdded(answer)
+                    resetStocks()
                 else:
-                    deleteStock(answer)
-            except Exception as e:
-                print ('Failed2: '+ str(e))
-                pass
-
-        updateDisplay()
+                    try:
+                        ret = util.saveProcessedFromYahoo(answer, add=True)
+                        if ret: 
+                            resetStocks()
+                        else:
+                            util.saveAdded(answer)
+    #                        deleteStock(answer)
+                    except Exception as e:
+                        print ('xFailed2: '+ str(e))
+                        pass
 
 def setCurrentMode(mode, build = True):
     if mode not in currentMode:
@@ -271,15 +299,18 @@ def toggleCurrentMode(mode, build = True):
 def handleModifier(key):
     print("key: {}".format( key))
     global previdx, idx
-    if key == "control":
+    if key == "control" and previdx != idx:
         previdx, idx = idx, previdx
         updateDisplay()
 
-def handleSort(sort_col = None):
-    global idx, stocks
+def handleSort(sort_col = None, overrideSrc = None):
+    global idx, stocks, currentMode
 
     setCurrentMode(Modes.sort, build=False)
-    setCurrentMode(Modes.recent, build=False)
+    getStocks.totalOverride = True
+    if Modes.history not in currentMode:
+        currentMode ^= Modes.history
+    
     rebuild.recentIncrement = util.getBuyBackTrack()
 
     if sort_col:
@@ -288,17 +319,32 @@ def handleSort(sort_col = None):
     sort_col = sort_col or handleSort.curr_sort_col 
     col_name = util.getSortVec()[sort_col-1]
 
+    util.setWhatToBuy.fromfile = overrideSrc
+    if overrideSrc:
+        if Modes.recent in currentMode:
+            currentMode ^= Modes.recent
+
     idx = 0
     if Modes.sort in currentMode:
         util.setWhatToBuy(col_name, handleSort.curr_sort_ascend)
     else:
         util.setWhatToBuy(None)
 
-    stocks = getStocks(reset=True)
-    updateDisplay()
+    try:
+        resetStocks()
+    except:
+        print(overrideSrc)
+        util.setWhatToBuy.fromfile = None
+        resetStocks()
 
-def setHistory():
-    global currentMode, ivvonly, stocks
+def setHistory(toggle=True):
+    global currentMode, ivvonly, stocks, stock_count
+
+    if toggle and Modes.history in currentMode:
+        return
+
+    getStocks.totalOverride = True
+
     if Modes.sort in currentMode:
         rebuild.recentIncrement = rebuild.recentIncrement * 4
         updateDisplay()
@@ -313,10 +359,7 @@ def setHistory():
             currentMode ^= Modes.recent
     else:
         getCsv.csvdir = "csv"
- 
-    stocks = getStocks(ivv=ivvonly, reset=True)
-    updateDisplay()
-
+    resetStocks()
 
 def press(event):
     if event.key and len(event.key) == 1:
@@ -352,6 +395,9 @@ def press(event):
         toggleCurrentMode(Modes.trim, build=False)
     elif press.last == "his":
         setHistory()
+    elif press.last == "all":
+        setHistory()
+        return
 
     sys.stdout.flush()
 #        visible = xl.get_visible()
@@ -363,6 +409,11 @@ def press(event):
 
     elif event.key == '`':
         handleSort()
+
+    elif event.key == ']':
+        handleSort(overrideSrc=pyutil.getNextHis())
+    elif event.key == '[':
+        handleSort(overrideSrc=pyutil.getNextHis(increment=False))
     # zz
     elif event.key == 'z':
         if not currentMode == Modes.zoom:
@@ -398,6 +449,8 @@ def press(event):
             interpret(answer)
             press.prevanswer = answer
         except Exception as e:
+            import traceback
+            print (traceback.format_exc())
             print ('Failed2: '+ str(e))
             pass
         fig.canvas.get_tk_widget().focus_set()
@@ -405,7 +458,7 @@ def press(event):
     handleIncrease(event.key)
 
     if Modes.sort in currentMode:
-        if event.key == 'f' or event.key == 't':
+        if event.key == 'f':
             handleSort.curr_sort_ascend = \
                 not handleSort.curr_sort_ascend
             handleSort(handleSort.curr_sort_col)
@@ -524,11 +577,12 @@ def onclick(event):
 #    print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
 #          ('double' if event.dblclick else 'single', event.button,
 #           event.x, event.y, event.xdata, event.ydata))
-    if currentMode == Modes.trim:
+    if Modes.trim in currentMode:
         if Modes.multi not in currentMode:
             astock = getCurrentStock()
+            print("astock : {}".format( astock ))
             trimStock(astock, int(event.xdata))
-            rebuild()
+            updateDisplay()
 
 def configurePlots(fig):
     adjust = 0.05
@@ -610,6 +664,9 @@ def plotIdx():
     plot(stocks[idx])
 
 if __name__ == "__main__":
+#    util.saveProcessedFromYahoo.download = False
+#    req = ("history/selection_standard_3.csv", "Ticker", True)
+#    util.getStocks.fromCsv = req
 
     currentMode = settings(Zen.lastMode, default=Modes.none)
     ivvonly = Modes.history in currentMode
@@ -624,8 +681,7 @@ if __name__ == "__main__":
 
     idx = 0
     try:
-        stocks = getStocks(ivv = ivvonly)
-        stock_count = len(stocks)
+        resetStocks(update=False)
     except Exception as e:
         import traceback
         print (traceback.format_exc())

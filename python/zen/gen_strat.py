@@ -38,8 +38,8 @@ def standard():
 
 def historical():
     where = "history"
-    pyutil.clearDir(where, "{}_".format(where))
-
+    pyutil.clearDir(where, "*".format(where))
+    raise SystemExit
     util.getStocks.totalOverride = True
     stocks = util.getStocks()
     ranges = getRanges(util.getNumberOfDates(), forHistory = True)
