@@ -117,6 +117,7 @@ if ! shopt -oq posix; then
 fi
 alias rg="ag"
 export PATH=/usr/local/bin:/usr/bin:/home/pzhang/apps/gvim8/vim/src/bin:${PATH}
+export PATH=/home/zoe/.local/bin:${PATH}
 
 if [ -f ~/.bash_local ]; then
     . ~/.bash_local

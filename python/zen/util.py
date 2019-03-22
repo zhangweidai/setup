@@ -15,7 +15,7 @@ from termcolor import colored
 from collections import deque, defaultdict
 from functools import lru_cache
 
-CsvColumn = "Close"
+CsvColumn = "Adj Close"
 EtfBaselineTicker = "SPY"
 unnamed = "Unnamed: 0"
 
@@ -346,7 +346,7 @@ def getStocks(holding = "IVV", andEtfs = True,
         difference = False, dev=False, ivv=False, reset = False):
 
     if dev:
-        return ["BA", "BRO", "IFF", "MU", "SM", "WCC"]
+        return ["SPY", "BA", "BRO"]
 
     if not reset:
         try: return getStocks.ret
@@ -551,7 +551,7 @@ def writeMinimizedReport(stocks, directory = "report"):
     for astock in stocks:
         path = getPath("csv_mini/{}.csv".format(astock))
         df = pandas.read_csv(path)
-        values = df['Adj Close'].tolist()
+        values = df[CsvColumn].tolist()
         percent_list[astock] = getMinimizedVector(values)
     writeFile(percent_list, ["Final", "Dip"], directory, 
             name="minimal_report")
@@ -680,7 +680,7 @@ def getTargetPrice(astock, end = None, start = None):
                 df = pandas.read_csv(path)
                 df = df[start:end]
 
-                values = df['Close'].tolist()
+                values = df[CsvColumn].tolist()
                 minv = targetPrice(values)
                 idx = listRightIndex(values, minv)
                 date = df['Date'].tolist()[idx]
@@ -719,7 +719,7 @@ def updatePort():
                 continue
             name = json_util.updateJsonCompany(astock)
             try:
-                last = df['Close'].iloc[-1]
+                last = df[CsvColumn].iloc[-1]
                 port[astock] = [name, round(float(last) * float(count),2)]
             except:
                 continue
@@ -793,9 +793,7 @@ def getCsv(astock, idx = None, asPath=False):
     return df
 getCsv.csvdir = "csv"
 getCsv.savedReads = dict()
-
 skipstock = []
-
 def getEtfQualifications(astock):
     ret = []
     for etf in getCompanyName.etfs:
@@ -813,7 +811,6 @@ def report(stocks,
 
     global skipstock
     loadBaseline(start=start, end=end)
-    print ("loaded")
     percent_list = {}
     ivv = getETF()
     iusg = getETF("IUSG")
@@ -825,6 +822,7 @@ def report(stocks,
         df = getCsv(astock)
         if df is None:
             continue
+        print("astock : {}".format( astock ))
 
         bar = getStartDate()
         if start and end:
@@ -849,10 +847,10 @@ def report(stocks,
             print ("date problem {}".format(astock))
             continue
 
-        last = 0
-        lasth = 0
-        lastl = 0
-        name = ""
+        last, lasth, lastl, name = 0,0,0,""
+#        lasth = 0
+#        lastl = 0
+#        name = ""
 
         if astock in getFromHoldings():
             name = "ETF"
@@ -861,7 +859,7 @@ def report(stocks,
 
         lasth = max(df['High'].iloc[-8:])
         lastl = min(df['Low'].iloc[-4:])
-        last = df['Close'].iloc[-1]
+        last = df[CsvColumn].iloc[-1]
 
         if "main" in reportname:
             try:
@@ -878,12 +876,18 @@ def report(stocks,
 
         mains = []
         if "main" in reportname:
-            mains = [1]
-            report.headers.insert(7, "New")
+            spdip = getSPDip(df)
+            mains = [spdip]
+            if not report.mainupdated:
+                report.mainupdated = True
+                report.headers.insert(8, "Dip1")
 
         try:
-            percent_list[astock] = getVectorForStrategy(values, astock) + mains +\
-            [rangescore] + [name, last, lastl, lasth]
+            sub = getVectorForStrategy(values, astock) + \
+            mains + [rangescore] + [name, last, lastl, lasth]
+            print("sub : {}".format( sub ))
+            percent_list[astock] = sub
+
         except Exception as e:
             print("values : {}".format( len(values)))
             print("bar")
@@ -902,10 +906,73 @@ def report(stocks,
     r_name = "{}{}".format(reportname, getEndDate())
     return writeFile(percent_list, report.headers, 
             reportdir, name = r_name)
-
+report.mainupdated = False
 report.headers = ["Score", "Discount", "Dip", 
     "HighLow","Vari", "Vari2", "PointsAbove", "WC", 
     "Range", "ETF", "Last", "LastL", "LastH"]
+
+def getSPDip(df, start = None, end = None):
+    if not start and not end:
+        start, end = getDipDates()
+
+    dates = list(df["Date"])
+    starti = dates.index(start)
+    endi = dates.index(end) if end else starti
+
+    start = df["High"].iloc[starti]
+    end = df["Low"].iloc[endi]
+    adjust = df[CsvColumn].iloc[endi]
+    if adjust < end:
+        return round(adjust/start,3)
+    return round(end/start,3)
+
+def analyzeDrops(df):
+    dic = dict()
+    for idx,row in df.iterrows():
+        change = round(row[CsvColumn]/row['Open'],3)
+        dic[row['Date']] = change
+    bar = list(dic.values())
+    bar.sort() 
+    print(bar[:10])
+
+#def getSPDip2(df):
+#    start, end = getDipDates()
+#    dates = list(df["Date"])
+#    starti = dates.index(start)
+#    endi = dates.index(end)
+#    start = df["Open"].iloc[starti]
+#    end = df["Close"].iloc[endi]
+#    ret = round(end/start,3)
+drops = [ "2018-02-05", "2018-02-08", "2008-09-29", "2008-10-15", "2018-03-22", "2011-08-08"]
+
+#    Start : 2007-10-16(153.78)
+#    End   : 2009-03-11(72.64)
+getCsv.csvdir = "historical"
+df = getCsv("SPY")
+#for day in drops:
+#    print (formatDecimal(getSPDip(df, start = day)))
+
+analyzeDrops(df)
+raise SystemExit
+#tstart = list(df["Date"]).index("2008-09-29")
+#print("tstart : {}".format( tstart ))
+#end = list(df["Date"]).index("2009-09-21")
+#print("end : {}".format( end ))
+
+@lru_cache(maxsize=6)
+def getDipDates(astock = "SPY"):
+    df = getCsv(astock)
+    df = df[-150:-1]
+    highs = df["High"].tolist()
+    lows = df["Low"].tolist()
+    hv = max(highs)
+    lv = min(lows)
+    hi = highs.index(hv)
+    li = lows.index(lv)
+    dlist = list(df['Date'])
+    hd = dlist[hi]
+    ld = dlist[li]
+    return (hd, ld)
 
 def getTrimStock(astock):
     try : return getp("trims")[astock]

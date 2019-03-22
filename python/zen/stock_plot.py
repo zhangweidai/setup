@@ -27,7 +27,7 @@ def deleteStock(astock, force=False):
 
 def resetStocks(update=True):
     global stocks, stock_count
-    stocks = getStocks(reset=True)
+    stocks = getStocks(dev=True,reset=True)
     stock_count = len(stocks)
     if update:
         updateDisplay()
@@ -114,8 +114,11 @@ def rebuild(start = None, end = None,
                 df = df[1::2]
                 df = df[1::2]
 
+    start = rebuild.start or start
+    end = rebuild.end or end
+
     df = df[start:end]
-    values = df[csvColumn].tolist()
+    values = df[CsvColumn].tolist()
 
     if Modes.more in currentMode:
         local_ax.plot(df["Low"].tolist(), linewidth = .5)
@@ -168,6 +171,8 @@ def rebuild(start = None, end = None,
 rebuild.sort_desc = None
 rebuild.recentIncrement = 35
 rebuild.chaBy = 3
+rebuild.start = None
+rebuild.end = None
 
 def displayStats(values, astock, date):
     avg = pyutil.changeValues(values, rebuild.chaBy, 
@@ -181,8 +186,12 @@ def displayStats(values, astock, date):
 
     print("\t{}  : Length:{}".format(date, len(values)))
     opens = df["Open"].tolist()
-    print("\tDailyAvgDrop: {}".format(pyutil.dailyAverage(opens, values)))
+    avg, maxd = pyutil.dailyAverage(opens, values)
+
+    print("\tDailyAvgDrop: {}".format(avg))
+    print("\tMaxDailyDrop: {}".format(maxd))
     print("\tAvgDrop {}   : {}".format(rebuild.chaBy, avg))
+
     changep = util.formatDecimal(values[-1]/values[0])
     if not changep[0] == "-":
         changep = colored(changep,"green")  
@@ -556,11 +565,13 @@ def onrelease(event):
     if currentMode == Modes.zoom:
         xadjust = x2
         rebuild(x2, x1)
+        print("x1: {}".format( x1))
+        print("x2: {}".format( x2))
         currentMode = Modes.none
 
 def onclick(event):
-    if Modes.target in currentMode and event.ydata:
 
+    if Modes.target in currentMode and event.ydata:
         astock = event.inaxes.get_title().split("(")[0]
         print("astock : {}".format( astock ))
         util.setTargetPrice(astock, round(event.ydata,3))
@@ -591,7 +602,7 @@ def configurePlots(fig):
     fig.subplots_adjust(left=adjust, bottom=adjust, 
                         right=1-adjust, top=1-adjust)
 
-    move_figure(fig, 1920, 0)
+#    move_figure(fig, 1920, 0)
 #    move_figure(fig, 0, 0)
     fig.canvas.mpl_connect('key_press_event', press)
     fig.canvas.mpl_connect('scroll_event', handle_scroll)
@@ -661,20 +672,22 @@ def plotIdx():
     global idx, xcount
     xcount = 10
     idx = settings(Zen.lastStock, default=0)
-    if idx > len(stocks):
+    if idx >= len(stocks):
         idx = 0
     plot(stocks[idx])
 
 if __name__ == "__main__":
-#    util.saveProcessedFromYahoo.download = False
+    util.saveProcessedFromYahoo.download = False
+    util.getCsv.csvdir = "historical"
 #    req = ("history/selection_standard_3.csv", "Ticker", True)
 #    util.getStocks.fromCsv = req
 
     currentMode = settings(Zen.lastMode, default=Modes.none)
-    ivvonly = Modes.history in currentMode
-    lap = False
+#    ivvonly = Modes.history in currentMode
+    ivvonly = False
+    lap = True
     if lap:
-        plt.rcParams["figure.figsize"] = [11,6]
+        plt.rcParams["figure.figsize"] = [10,5]
         xcount = 7
     else:
         plt.rcParams["figure.figsize"] = [11,8]
@@ -694,7 +707,7 @@ if __name__ == "__main__":
     values = None
     df = None
     dates = None
-    csvColumn = "Close"
+    CsvColumn = "Adj Close"
     endx = 0
     xl = None
     fig = None

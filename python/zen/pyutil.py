@@ -1,24 +1,31 @@
 import os
 import sys
 from multiprocessing import Process
-from enum import IntFlag, Enum
+from enum import Enum
+try:
+    from enum import IntFlag
+except:
+    pass
 from util import getp, setp
 import logging
 import util
 
-class Modes(IntFlag):
-    none = 0
-    trim = 1
-    zoom = 2
-    average = 4
-    more = 8
-    change = 16
-    target = 32
-    recent = 64
-    multi = 128
-    history = 256
-    sort = 512
-
+try:
+    class Modes(IntFlag):
+        none = 0
+        trim = 1
+        zoom = 2
+        average = 4
+        more = 8
+        change = 16
+        target = 32
+        recent = 64
+        multi = 128
+        history = 256
+        sort = 512
+except:
+    pass
+    
 #bar = Modes.zoom 
 #bar |= Modes.average
 #if Modes.zoom in bar:
@@ -160,7 +167,9 @@ def dailyAverage(opens, closes):
         if temp < 1:
             negs.append(temp)
     try:
-        return util.formatDecimal(sum(negs)/len(negs))
+        ret1 = util.formatDecimal(sum(negs)/len(negs))
+        ret2 = util.formatDecimal(min(negs))
+        return ret1, ret2
     except:
         pass
     return None
