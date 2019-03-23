@@ -27,7 +27,7 @@ def deleteStock(astock, force=False):
 
 def resetStocks(update=True):
     global stocks, stock_count
-    stocks = getStocks(dev=True,reset=True)
+    stocks = getStocks(reset=True)
     stock_count = len(stocks)
     if update:
         updateDisplay()
@@ -89,6 +89,10 @@ def rebuild(start = None, end = None,
 
         print(util.getEtfQualifications(astock))
 
+    df = getCsv(astock)
+    if df is None:
+        return
+
     if Modes.sort in currentMode:
         ascend = "Ascend" if handleSort.curr_sort_ascend else "Descend"
         print("{} | {}".format(ascend, util.getSortDisplay()))
@@ -96,17 +100,14 @@ def rebuild(start = None, end = None,
     if util.getStocks.fromCsv:
         print(os.path.basename(util.getStocks.fromCsv[0]))
 
-    df = getCsv(astock)
-    if df is None:
-        return
 
     maxvalues = len(df)
 
     if Modes.recent in currentMode:
         start = maxvalues-rebuild.recentIncrement
     else:
-        if maxvalues > 500:
-            df = df[1::2]
+#        if maxvalues > 500:
+#            df = df[1::2]
 
         if Modes.multi in currentMode:
             if Modes.history in currentMode and maxvalues > 500:
@@ -119,6 +120,10 @@ def rebuild(start = None, end = None,
 
     df = df[start:end]
     values = df[CsvColumn].tolist()
+
+    if Modes.sort in currentMode:
+        if rebuild.showSelections:
+            plotSelection(astock, local_ax, df)
 
     if Modes.more in currentMode:
         local_ax.plot(df["Low"].tolist(), linewidth = .5)
@@ -168,15 +173,15 @@ def rebuild(start = None, end = None,
     local_ax.set_xticks(xranges)
     fig.canvas.draw()
     fig.canvas.get_tk_widget().focus_set()
+rebuild.showSelections = None
 rebuild.sort_desc = None
 rebuild.recentIncrement = 35
-rebuild.chaBy = 3
+rebuild.chaBy = 6
 rebuild.start = None
 rebuild.end = None
 
 def displayStats(values, astock, date):
-    avg = pyutil.changeValues(values, rebuild.chaBy, 
-            negavg = True)
+    avgby = pyutil.changeValues(values, rebuild.chaBy, negavg = True)
     try:
         highlow, vari, var2 = util.getRangedDist(values)
     except:
@@ -186,25 +191,25 @@ def displayStats(values, astock, date):
 
     print("\t{}  : Length:{}".format(date, len(values)))
     opens = df["Open"].tolist()
-    avg, maxd = pyutil.dailyAverage(opens, values)
+    avg, maxd, davg = pyutil.dailyAverage(opens, values)
 
+    print("\tDailyAvg30  : {}".format(davg))
     print("\tDailyAvgDrop: {}".format(avg))
     print("\tMaxDailyDrop: {}".format(maxd))
-    print("\tAvgDrop {}   : {}".format(rebuild.chaBy, avg))
+    print("\tAvgDrop {}   : {}".format(rebuild.chaBy, avgby))
 
     changep = util.formatDecimal(values[-1]/values[0])
     if not changep[0] == "-":
         changep = colored(changep,"green")  
     print("\tChange      : {}".format(changep))
 
-    if highlow:
-        print("\tHighLow     : {}".format(highlow))
-        print("\tVariance    : {}".format(vari))
+    if vari2:
+#        print("\tHighLow     : {}".format(highlow))
+#        print("\tVariance    : {}".format(vari))
         print("\tVariance2   : {}".format(var2))
-
     try:
         score, dipScore = util.getScore(values)
-        print("\tScore       : {}".format(util.getScoreFromCsv(astock)))
+#        print("\tScore       : {}".format(util.getScoreFromCsv(astock)))
         print("\tDip         : {}".format(dipScore))
     except:
         pass
@@ -213,7 +218,7 @@ def displayStats(values, astock, date):
     if r1:
         print("\tRange1      : {}".format(r1))
     if r2:
-        print("\tRange2      : {}".format(r2))
+        print("\tProbUpScore : {}".format(r2))
         pass
 
 
@@ -318,7 +323,6 @@ def handleSort(sort_col = None, overrideSrc = None):
     global idx, stocks, currentMode
 
     setCurrentMode(Modes.sort, build=False)
-    getStocks.totalOverride = True
     if Modes.history not in currentMode:
         currentMode ^= Modes.history
     
@@ -372,6 +376,13 @@ def setHistory(toggle=True):
         getCsv.csvdir = "csv"
     resetStocks()
 
+def handleSelectionMode(increment = 1):
+    rebuild.showSelections = True
+    col_name = util.getSortVec()[handleSort.curr_sort_col-1]
+    util.fromSelection.mode = "{}/{}".format(col_name, 
+            handleSort.curr_sort_ascend)
+    handleSort(overrideSrc=pyutil.getNextHisSelection(increment))
+
 def press(event):
     if event.key and len(event.key) == 1:
         try: press.last += event.key
@@ -421,6 +432,10 @@ def press(event):
     elif event.key == '`':
         handleSort()
 
+    elif event.key == '<':
+        handleSelectionMode(increment=-1)
+    elif event.key == '>':
+        handleSelectionMode(increment=1)
     elif event.key == ']':
         handleSort(overrideSrc=pyutil.getNextHis())
     elif event.key == '[':
@@ -470,21 +485,24 @@ def press(event):
 
     if Modes.sort in currentMode:
         if event.key == 'f':
-            handleSort.curr_sort_ascend = \
-                not handleSort.curr_sort_ascend
-            handleSort(handleSort.curr_sort_col)
+            handleSort.curr_sort_ascend = not handleSort.curr_sort_ascend
+            if rebuild.showSelections:
+                pyutil.getNextHisSelection.idx = 0
+                handleSelectionMode(increment = 0)
+            else:
+                handleSort(handleSort.curr_sort_col)
     if event.key in [str(i) for i in range(1, 6)]:
         mode = int(event.key)
         if mode == 1:
             handleSort.curr_sort_ascend = True
         elif mode == 2:
-            handleSort.curr_sort_ascend = True
+            handleSort.curr_sort_ascend = False
         elif mode == 3:
             handleSort.curr_sort_ascend = False
         elif mode == 4:
-            handleSort.curr_sort_ascend = False
-        elif mode == 5:
             handleSort.curr_sort_ascend = True
+        elif mode == 5:
+            handleSort.curr_sort_ascend = False
             
         handleSort(mode)
 press.last = ""
@@ -676,6 +694,21 @@ def plotIdx():
         idx = 0
     plot(stocks[idx])
 
+
+def plotSelection(astock, local_ax, df):
+    sels = util.fromSelection.ddict[astock]
+    print("sels : {}".format( sels ))
+    dates = list(df["Date"])
+    print("dates : {}".format(len( dates)))
+    for sel in sels:
+        try :
+            starti = dates.index(sel)
+            print("sel: {}".format( sel))
+            print("starti : {}".format( starti ))
+            local_ax.scatter(starti, 0, s=80, color="orange")
+        except:
+            print ("todo {}".format(astock))
+
 if __name__ == "__main__":
     util.saveProcessedFromYahoo.download = False
     util.getCsv.csvdir = "historical"
@@ -685,7 +718,7 @@ if __name__ == "__main__":
     currentMode = settings(Zen.lastMode, default=Modes.none)
 #    ivvonly = Modes.history in currentMode
     ivvonly = False
-    lap = True
+    lap = False
     if lap:
         plt.rcParams["figure.figsize"] = [10,5]
         xcount = 7
@@ -707,12 +740,13 @@ if __name__ == "__main__":
     values = None
     df = None
     dates = None
-    CsvColumn = "Adj Close"
+    CsvColumn = "Close"
     endx = 0
     xl = None
     fig = None
     savedxdata = None
     previdx = 0
+    getStocks.totalOverride = True
 
     handleSort.curr_sort_col = 1
     handleSort.curr_sort_ascend = True

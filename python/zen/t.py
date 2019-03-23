@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import timeit
 import pickle
+import util
 
 #import debug
 #debug.dipScore.mode = 2
@@ -10,31 +11,50 @@ import pickle
 #print(debug.dipScore())
 #raise SystemExit
 
-en_de = {"red" : "rot", "green" : "grun", "blue" : "blau", "yellow": "gelb"}
+#en_de = {"red" : "rot", "green" : "grun", "blue" : "blau", "yellow": "gelb"}
 
-def Test_pan1():
-    for x in range(0,3000):
-        b = [i for i in range(100)]
-        helper(b)
-
-car = None
+#df = util.getCsv("BA")
+#def Test_pan1():
+#    pd.Index(df["Date"]).get_loc("2018-12-28")
+util.getStocks.totalOverride = True
+df = util.getCsv("SPY")
+stocks = util.getStocks()
+print("stocks : {}".format( len(stocks)))
+print("stocks : {}".format( len(df)))
 def Test_pan2():
-    global car
-    for x in range(0,3000):
-        car = [i for i in range(100)]
-        helper2()
+    global df
+    for idx,row in df.iterrows():
+        if idx % 50:
+            continue
+        for astock in stocks:
+            df = util.getCsv(astock)
+#            try:
+#                list(df["Date"]).index("2018-12-28")
+#            except:
+#                pass
 
-def helper(bar):
-    accum = 0
-    for b in bar:
-        accum += b
-
-def helper2():
-    accum = 0
-    for b in car:
-        accum += b
-
-
+#Test_pan2()
+#def Test_pan1():
+#    for x in range(0,3000):
+#        b = [i for i in range(100)]
+#        helper(b)
+#
+#car = None
+#def Test_pan2():
+#    global car
+#    for x in range(0,3000):
+#        car = [i for i in range(100)]
+#        helper2()
+#
+#def helper(bar):
+#    accum = 0
+#    for b in bar:
+#        accum += b
+#
+#def helper2():
+#    accum = 0
+#    for b in car:
+#        accum += b
 
 
 #    try:
@@ -78,6 +98,6 @@ if __name__ == '__main__':
         print (method)
         answer = timeit.timeit("{}()".format(method), 
                     setup="from __main__ import {}".format(method),
-                    number=500)
+                    number=6)
         print (round(answer,4))
 

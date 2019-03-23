@@ -139,7 +139,7 @@ def tallyFrom(path, mode, ascending, isLast = False):
         amounth = per / lasth
         amountl = per / lastl
 
-        if size == 15:
+        if size == 20:
             date = path.split("_")[3].split(".")[0]
             custom = Cost(mode, ascending, symbol)
             cost_basis.setdefault(custom, [0,0,[]])
@@ -365,11 +365,10 @@ def writeCostDict(newdict, where):
         
 
 #writeCostDict(newdict)
-modes = util.report.headers[:-4]
-
+modes = util.report.headers[:-2]
 def doit(where):
     global size, more_etf
-    testingModes = [15]
+    testingModes = [20]
 #    testingModes = [10, 15, 20]
     appended = []
     for csize in testingModes:
@@ -425,8 +424,7 @@ def multi(where):
     global his_idx, spent, more_etf, etfvs, latest_values, cost_basis
     global etf_purchase_times
 
-#    for i in range(3, 10):
-    for i in range(8, 10):
+    for i in range(3, 10):
         more_etf = True
         his_idx = i
         spent = 1

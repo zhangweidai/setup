@@ -8,20 +8,18 @@ import time
 
 #main()
 yf.pdr_override()
-startdate = date.today() - timedelta(days=6)
+startdate = date.today() - timedelta(days=12)
+#print("startdate : {}".format( startdate ))
+#raise SystemExit
 today = date.today().isoformat()
 
 def getDataFromYahoo(astock):
     data = None
     try:
-        data = pdr.get_data_yahoo([astock], 
-                                  start=str(startdate.isoformat()), 
-                                  end=str(date.today().isoformat()))
+        data = pdr.get_data_yahoo([astock], start=str(startdate.isoformat())) 
     except Exception as e:
         try:
-            data = pdr.get_data_yahoo([astock], 
-                                      start=str(startdate.isoformat()), 
-                                      end=str(date.today().isoformat()))
+            data = pdr.get_data_yahoo([astock], start=str(startdate.isoformat())) 
         except Exception as e:
             print (str(e))
             raise SystemExit
@@ -30,7 +28,6 @@ def getDataFromYahoo(astock):
     for idx,row in data.iterrows():
         for label in ["Open", "Close", "High", "Low", "Adj Close"]:
             data.at[idx, label] = round(data.at[idx, label], 3)
-
     return data
 
 pulled = False
@@ -87,7 +84,8 @@ def updateStocks(yahoo_date):
         try:
             updateCsv(astock, yahoo_date)
         except:
-            continue
+            pass
+
     util.setp(latest, "lastValues")
     util.setp(problem, "problematicUpdateStocks")
     print (problem)

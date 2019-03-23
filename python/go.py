@@ -27,11 +27,11 @@ for b in read:
     i = i + 1
 
     if query == i:
-        print printme
+        print (printme)
         exit()
 
     if printFiles:
-        print "{} {}".format(i, printme)
+        print ("{} {}".format(i, printme))
 
     dirs.append(printme)
     if len(dirs) > 30:

@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import operator
 import math
 import pandas
 import datetime
@@ -15,7 +16,7 @@ from termcolor import colored
 from collections import deque, defaultdict
 from functools import lru_cache
 
-CsvColumn = "Adj Close"
+CsvColumn = "Close"
 EtfBaselineTicker = "SPY"
 unnamed = "Unnamed: 0"
 
@@ -342,6 +343,7 @@ def getAdded():
     return getAdded.added
 getAdded.added = list()
 
+
 def getStocks(holding = "IVV", andEtfs = True, 
         difference = False, dev=False, ivv=False, reset = False):
 
@@ -358,14 +360,18 @@ def getStocks(holding = "IVV", andEtfs = True,
         print("path : {}".format( path ))
         if not os.path.exists(path):
             path = getPath(path)
+
+        if "selection" in path:
+            getStocks.ret = fromSelection(path)
+            return getStocks.ret
+
         df = pandas.read_csv(path)
         getStocks.cols = df.columns
         try:
             getStocks.colname = df.columns[val[1]]
         except:
             getStocks.colname = val[1]
-        df.sort_values(by=getStocks.colname, 
-                inplace=True, ascending=val[2])
+        df.sort_values(by=getStocks.colname, inplace=True, ascending=val[2])
         getStocks.dataf = df
         retCol = df.columns[0]
         getStocks.ret = df[retCol].tolist()
@@ -418,11 +424,40 @@ getStocks.fromCsv = None
 getStocks.colname = None
 getStocks.totalOverride = False
 
+def fromSelection(path):
+    df = pandas.read_csv(path)
+    getStocks.cols = df.columns
+    fromSelection.cdict = dict()
+    fromSelection.ddict = dict()
+    for idx,row in df.iterrows():
+        if fromSelection.mode in row[unnamed]:
+            fromSelection.cdict[row["Ticker"]] = row["DollarChange"]
+            dates = row["PurchaseDates"].split(" ")
+            fromSelection.ddict[row["Ticker"]] = dates
+
+    getStocks.colname = fromSelection.mode.split("/")[0]
+
+    sorted_x = sorted(fromSelection.cdict.items(), 
+            key=operator.itemgetter(1),
+            reverse = True)
+
+    ret = []
+    for item in sorted_x:
+        ret.append(item[0])
+    return ret
+fromSelection.ddict = dict()
+fromSelection.mode = "Vari/True"
+
+#path = getPath("history/selection_standard_3.csv")
+#fromSelection(path)
+#raise SystemExit
+
+
 #print (len(getStocks()))
 #raise SystemExit
 
 def getSortVec():
-    return ["Vari", "Score", "Vari2", "Dip", "WC"]
+    return ["Last", "Dip", "Range", "WC", "Vari2"]
 
 def getSortDisplay():
 #    ret = getStocks.cols.tolist()[1:5]
@@ -747,8 +782,11 @@ def getVectorForStrategy(values, astock):
 def getBuyBackTrack():
     return 180
 
-def getCsv(astock, idx = None, asPath=False):
-
+def getCsv(astock, asPath=False):
+    try:
+        return getCsv.savedReads[astock]
+    except :
+        pass
     val = getStocks.fromCsv
     if getStocks.totalOverride or val:
         getCsv.csvdir = "historical"
@@ -756,20 +794,10 @@ def getCsv(astock, idx = None, asPath=False):
     if asPath:
         return getPath("{}/{}.csv".format(getCsv.csvdir, astock))
 
-    if idx == 0:
-        idx = unnamed
-
-    df = None
-    try:
-        if getCsv.savedReads and (astock in getCsv.savedReads):
-            if idx:
-                return df[idx].tolist()
-            return getCsv.savedReads[astock]
-    except Exception as e:
-        return None
 
     try:
-        path = getPath("{}/{}.csv".format(getCsv.csvdir, astock))
+        path = getPath("{}/{}.csv".format(getCsv.csvdir, astock), 
+                allowmake = False)
         df = pandas.read_csv(path)
     except:
         # allow getCsv to return from specified csv files
@@ -788,12 +816,11 @@ def getCsv(astock, idx = None, asPath=False):
                 print ("problem with {}".format(astock))
                 return None
     getCsv.savedReads[astock] = df
-    if idx:
-        return df[idx].tolist()
     return df
 getCsv.csvdir = "csv"
 getCsv.savedReads = dict()
 skipstock = []
+
 def getEtfQualifications(astock):
     ret = []
     for etf in getCompanyName.etfs:
@@ -822,7 +849,6 @@ def report(stocks,
         df = getCsv(astock)
         if df is None:
             continue
-        print("astock : {}".format( astock ))
 
         bar = getStartDate()
         if start and end:
@@ -830,11 +856,10 @@ def report(stocks,
             try:
                 tstart = list(df["Date"]).index(getStartDate())
             except Exception as e:
-                print ('DateVec: '+ str(e))
-                print("df : {}".format( len(df)))
+#                print ('DateVec: '+ str(e))
+#                print("df : {}".format( len(df)))
 #                if delete_fail:
 #                    delStock(astock)
-                print("astock: {}".format( astock))
                 continue
             df = df[tstart:tstart+dist]
 
@@ -852,10 +877,6 @@ def report(stocks,
 #        lastl = 0
 #        name = ""
 
-        if astock in getFromHoldings():
-            name = "ETF"
-        else:
-            name = getEtfQualifications(astock)
 
         lasth = max(df['High'].iloc[-8:])
         lastl = min(df['Low'].iloc[-4:])
@@ -872,20 +893,31 @@ def report(stocks,
             except:
                 pass
 
-        rangescore = getRangeScore(values)
+
+        rangescore = getRangeScore(astock)
 
         mains = []
         if "main" in reportname:
-            spdip = getSPDip(df)
-            mains = [spdip]
+            if astock in getFromHoldings():
+                name = "ETF"
+            else:
+                name = getEtfQualifications(astock)
+
+            try:
+                spdip = getSPDip(df)
+            except:
+                print ("problem sp with {}".format(astock))
+                spdip = "NA"
+
+            mains = [spdip, name]
             if not report.mainupdated:
                 report.mainupdated = True
                 report.headers.insert(8, "Dip1")
+                report.headers.insert(9, "ETF")
 
         try:
             sub = getVectorForStrategy(values, astock) + \
-            mains + [rangescore] + [name, last, lastl, lasth]
-            print("sub : {}".format( sub ))
+            mains + [rangescore] + [last, lastl, lasth]
             percent_list[astock] = sub
 
         except Exception as e:
@@ -909,7 +941,7 @@ def report(stocks,
 report.mainupdated = False
 report.headers = ["Score", "Discount", "Dip", 
     "HighLow","Vari", "Vari2", "PointsAbove", "WC", 
-    "Range", "ETF", "Last", "LastL", "LastH"]
+    "Range", "Last", "LastL", "LastH"]
 
 def getSPDip(df, start = None, end = None):
     if not start and not end:
@@ -929,11 +961,13 @@ def getSPDip(df, start = None, end = None):
 def analyzeDrops(df):
     dic = dict()
     for idx,row in df.iterrows():
-        change = round(row[CsvColumn]/row['Open'],3)
+        change = round(row[CsvColumn]/row['Open'],4)
         dic[row['Date']] = change
     bar = list(dic.values())
-    bar.sort() 
-    print(bar[:10])
+    sorted_x = sorted(dic.items(), key=operator.itemgetter(1))
+    print(sorted_x[:5])
+    print(sorted_x[-5:])
+#    print(sorted_x[:-5])
 
 #def getSPDip2(df):
 #    start, end = getDipDates()
@@ -943,17 +977,17 @@ def analyzeDrops(df):
 #    start = df["Open"].iloc[starti]
 #    end = df["Close"].iloc[endi]
 #    ret = round(end/start,3)
-drops = [ "2018-02-05", "2018-02-08", "2008-09-29", "2008-10-15", "2018-03-22", "2011-08-08"]
+#drops = [ "2018-02-05", "2018-02-08", "2008-09-29", "2008-10-15", "2018-03-22", "2011-08-08"]
 
 #    Start : 2007-10-16(153.78)
 #    End   : 2009-03-11(72.64)
-getCsv.csvdir = "historical"
-df = getCsv("SPY")
+#getCsv.csvdir = "historical"
+#df = getCsv("SPY")
 #for day in drops:
 #    print (formatDecimal(getSPDip(df, start = day)))
 
-analyzeDrops(df)
-raise SystemExit
+#analyzeDrops(df)
+#raise SystemExit
 #tstart = list(df["Date"]).index("2008-09-29")
 #print("tstart : {}".format( tstart ))
 #end = list(df["Date"]).index("2009-09-21")
@@ -973,6 +1007,8 @@ def getDipDates(astock = "SPY"):
     hd = dlist[hi]
     ld = dlist[li]
     return (hd, ld)
+#getDipDates()
+#raise SystemExit
 
 def getTrimStock(astock):
     try : return getp("trims")[astock]
@@ -1045,13 +1081,17 @@ def getAverageStats(values, interval=3, last=30):
     values = values[-1*last:]
     return dipScore(items, interval=interval, avg=1, retAvg=True)
 
+def getRangeScore(astock, sub=False):
+    values = astock
+    if type(astock) is str:
+        df = getCsv(astock)
+        values = df[CsvColumn].tolist()
 
-def getRangeScore(values, sub=False):
     ups = []
     downs = []
     minv = 6000 
     maxl = len(values)
-    normalized = 1800
+    normalized = 1500
     num = 0
 
     if maxl > normalized:
@@ -1059,7 +1099,7 @@ def getRangeScore(values, sub=False):
 
     values = values[num:maxl]
     maxl = len(values)
-    span = 30
+    span = 35
     maxr = int(maxl/(span*3.1415))
     intervals = [i for i in range(1, maxr)]
 
@@ -1085,7 +1125,6 @@ def getRangeScore(values, sub=False):
         mapping[idxspan] = round(len(ups)/maxl,3)
         mapall[idxspan] = round(sum(alls)/maxl,3)
 
-
     probupsum  = sum(mapping.values())
     percsum  = sum(mapall.values())
     if sub:
@@ -1093,7 +1132,7 @@ def getRangeScore(values, sub=False):
     return round(probupsum * percsum, 3)
 
 def getConsider():
-    return ["FF", "ACB"]
+    return ["FF", "ACB", "BABA", "CRM", "ABT"]
 
 def getConsider2():
     return {"Janus": ["PAGS","ZTS", "CSGP"]}
@@ -1122,3 +1161,40 @@ def getConsider2():
 #    d[k] = d.get(k, 0) + 1
 #print (getCompanyName("GOOG"))
 #print (list(getCsv("KO")["Date"]).index("2001-12-28"))
+
+def getPrice(astock, idx=-1):
+    df = getCsv(astock)
+    if type(idx) == int:
+        return df["Close"].iloc[idx]
+    try:
+        idx = list(df["Date"]).index(idx)
+    except:
+        print("astock: {}".format(astock))
+        print("idx: {}".format( idx))
+        print(df)
+        print(len(df))
+    return df["Close"].iloc[idx]
+
+def calcPortfolio(stocks, idx = -1):
+    balance = 0
+    printed = False
+    for astock in stocks:
+        df = getCsv(astock)
+
+        if type(idx) != int:
+            idx = list(df["Date"]).index(idx)
+
+        price = df["Open"].iloc[idx]
+
+#        if not printed:
+#            date = df["Date"].iloc[idx]
+#            print("date : {}".format( date ))
+#            printed = True
+        balance += round(price * stocks[astock], 3)
+    return balance
+
+calcPortfolio.latest = None
+#df = getCsv("BA")
+#print (pandas.Index(df["Date"]).get_loc("2018-12-28"))
+#print (list(df["Date"]).index(getStartDate()))
+#print (calcPortfolio({"BA":1}, idx = -1))

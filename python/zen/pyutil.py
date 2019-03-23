@@ -162,17 +162,24 @@ def averageValues(values):
 
 def dailyAverage(opens, closes):
     negs = []
+    davg = len(opens) - 60
+
+    davglist = []
     for i,closed in enumerate(closes):
+
         temp = closed/opens[i]
+        if i > davg:
+            davglist.append(temp)
         if temp < 1:
             negs.append(temp)
     try:
         ret1 = util.formatDecimal(sum(negs)/len(negs))
         ret2 = util.formatDecimal(min(negs))
-        return ret1, ret2
+        davg = util.formatDecimal(sum(davglist)/len(davglist))
+        return ret1, ret2, davg
     except:
         pass
-    return None
+    return None, None, None
 
 
 def changeValues(values, by = 5, negavg = False):
@@ -235,6 +242,14 @@ def getFiles(where, his_idx = None):
     getFiles.rememberedFiles.sort()
     return getFiles.rememberedFiles
 getFiles.rememberedFiles = []
+
+def getNextHisSelection(increment = 1):
+    count = [i for i in range(3,10)]
+    index = count[getNextHisSelection.idx]
+    path = util.getPath("history/selection_standard_{}.csv".format(index))
+    getNextHisSelection.idx += increment
+    return path
+getNextHisSelection.idx = 0
 
 def getNextHis(increment = True):
     try :

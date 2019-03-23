@@ -30,19 +30,6 @@ import math
 #DSI     4.68%   0.018   21.74%  -20.35% 0.167
 #Disco   17.02%  0.017   33.60%  -6.00%  0.181
 #Vari    7.35%   0.014   28.40%  -17.80% 0.181
-#Vari2A  11.41%  0.014   30.10%  -11.90% 0.181
-#Score   12.93%  0.017   26.00%  -14.30% 0.194
-#HighLow 16.33%  0.017   33.00%  -7.10%  0.194
-#PointsA 16.40%  0.028   42.60%  -16.60% 0.194
-#WC      12.79%  0.017   28.90%  -14.90% 0.194
-#Hghw    9.85%   0.013   32.00%  -11.10% 0.208
-#PointA  9.61%   0.012   31.50%  -8.00%  0.208
-#WCA     19.42%  0.029   56.40%  -5.40%  0.208
-#DsntA   14.24%  0.02    42.60%  -11.40% 0.222
-#Dip     21.04%  0.054   61.50%  -18.50% 0.236
-#IJH     9.76%   0.01    24.90%  -3.94%  0.25
-#EWH     8.87%   0.01    24.92%  -5.90%  0.25
-#MCHI    2.11%   0.038   33.19%  -20.12% 0.75
 
 
 def shouldUpdate():
@@ -68,7 +55,7 @@ def shouldUpdate():
     return True, yahoo_date
 
 def what_to_buy():
-#    util.getStocks.totalOverride = True
+    util.getStocks.totalOverride = True
 #    should, latestInfo = shouldUpdate()
 #    if should:
 #        import update_csv
@@ -85,9 +72,9 @@ def what_to_buy():
     util.setp(csvfile, "buyfile")
 #    print (util.getWhatToBuy(1, True))
 
-#util.getStocks.totalOverride = True
+util.getStocks.totalOverride = True
 util.saveProcessedFromYahoo.download = False
-#util.getCsv.csvdir="historical"
+util.getCsv.csvdir="historical"
 #print (util.getp("buyfile"))
 what_to_buy()
 

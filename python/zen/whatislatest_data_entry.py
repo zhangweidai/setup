@@ -4,7 +4,7 @@ import os
 import datetime
 import sys
 import util
-
+#spy 234.34 12 24 18
 lookup = "IVV"
 if len(sys.argv) == 2:
     lookup = sys.argv[1]
@@ -15,9 +15,7 @@ yf.pdr_override() # <== that's all it takes :-)
 print (tday)
 try:
     startdate = "2019-03-05"
-    data = pdr.get_data_yahoo([lookup], start=startdate, 
-                              end=str(tday))
-#    data.rename( columns={'Unnamed: 0':'Date'}, inplace=True )
+    data = pdr.get_data_yahoo([lookup], start=startdate)
     dates = data.tail()
     print(dates)
 #    path = util.getPath("csv/{}.csv".format(lookup))
