@@ -14,7 +14,7 @@ rng = random.Random(seed)
 #util.getCsv.csvdir = "historical"
 spdf = util.getCsv("SPY")
 util.getStocks.totalOverride=True
-stocks = util.getStocks(noivv = True)
+stocks = util.getStocks()
 print("stocks : {}".format( len(stocks)))
 
 totalfee = 0
@@ -35,7 +35,7 @@ spend = original
 minthresh = 300 
 negt = 0.70
 fee = 5
-interval = 12
+interval = 15
 miniport = dict()
 
 def doit(start, end):
@@ -49,8 +49,7 @@ def doit(start, end):
         if idx % interval or idx == 0:
             continue
 
-        spcdate = spdf.at[i,"Date"]
-
+        spcdate = spdf.at[idx,"Date"]
         theday = dict()
         for astock in stocks:
             df = util.getCsv(astock)
@@ -87,7 +86,8 @@ def doit(start, end):
             for item in buyme:
                 lowstock = item[0]
                 if lowstock not in miniport:
-                    something = buySomething(spdf.at[idx+1, "Date"], lowstock, spend)
+                    something = buySomething(spdf.at[idx+1, "Date"], 
+                                             lowstock, spend)
                     if something:
                         miniport[lowstock] = something
         else:
@@ -176,7 +176,7 @@ def buySomething(cdate, astock, spend):
 def doits():
     global miniport
     changes = list()
-    for b in range(15):
+    for b in range(30):
         miniport = dict()
         start = random.randrange(lastcount-duration)
         end = start + duration
@@ -191,7 +191,7 @@ def getSpread():
     global negt
     x1list = list()
     x2list = list()
-    ylist = [0.68, 0.72, 0.75, 0.8, 0.85]
+    ylist = [0.60, 0.76, 0.77, 0.78]
 
     for percent in ylist:
         negt = percent
