@@ -8,7 +8,8 @@ def getDroppers():
     st = dict()
     for astock in stocks:
         df = util.getCsv(astock)
-        change = df["Close"].iloc[-1] / df["Close"].iloc[-2] 
+        leng = len(df)-1
+        change = df.at[leng,"Close"] / df.at[leng-1,"Close"]
         st[astock] = round(change,3)
     sorted_x = sorted(st.items(), key=operator.itemgetter(1))
     for change in sorted_x[:10]:
@@ -28,8 +29,8 @@ maxdrop = 0
 streaks = []
 percentdown = 0.065
 compar = 1-percentdown
-for idx,row in df.iterrows():
-    drop = row["Close"] / row["Open"]
+for idx in df.index:
+    drop = df.at[idx,"Close"] / df.at[idx, "Open"]
     if dropped:
         if drop < 1:
             consecdrop += 1

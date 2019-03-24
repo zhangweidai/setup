@@ -17,10 +17,10 @@ avgchangeh = list()
 avgchangels = list()
 avgchangehs = list()
 lastcount = len(spdf)-1
-for idx,row in spdf.iterrows():
+for idx in spdf.index:
     if idx % 5:
         continue
-    cdate = row["Date"]
+    cdate = spdf.at[idx, "Date"]
     theday = dict()
     maxv = 0
     minv = 10

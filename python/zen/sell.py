@@ -41,7 +41,7 @@ miniport = dict()
 def doit(start, end):
     lastdate = None
     spend = original
-    for idx,row in spdf.iterrows():
+    for idx in spdf.index:
 
         if idx < start or idx > end:
             continue
@@ -49,7 +49,7 @@ def doit(start, end):
         if idx % interval or idx == 0:
             continue
 
-        spcdate = row["Date"]
+        spcdate = spdf.at[i,"Date"]
 
         theday = dict()
         for astock in stocks:

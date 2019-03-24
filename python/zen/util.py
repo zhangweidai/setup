@@ -438,18 +438,16 @@ def fromSelection(path):
     getStocks.cols = df.columns
     fromSelection.cdict = dict()
     fromSelection.ddict = dict()
-    for idx,row in df.iterrows():
-        if fromSelection.mode in row[unnamed]:
-            fromSelection.cdict[row["Ticker"]] = row["DollarChange"]
-            dates = row["PurchaseDates"].split(" ")
-            fromSelection.ddict[row["Ticker"]] = dates
-
+    for idx in df.index:
+        if fromSelection.mode in df.at[idx,unnamed]:
+            ticker = df.at[idx,"Ticker"]
+            fromSelection.cdict[ticker] = df.at[idx,"DollarChange"]
+            dates = df.at[idx,"PurchaseDates"].split(" ")
+            fromSelection.ddict[ticker] = dates
     getStocks.colname = fromSelection.mode.split("/")[0]
-
     sorted_x = sorted(fromSelection.cdict.items(), 
             key=operator.itemgetter(1),
             reverse = True)
-
     ret = []
     for item in sorted_x:
         ret.append(item[0])
@@ -552,7 +550,7 @@ def saveProcessedFromYahoo(astock, add=False):
         removed.append(astock)
         return
 
-    for idx,row in df.iterrows():
+    for idx in df.index:
         if df.at[idx, "Volume"] == "0":
             print ("corrupt data ".format(astock))
             removed.append(astock)
@@ -639,8 +637,9 @@ def loadBaseline(end = None, start=None):
     df = getCsv(EtfBaselineTicker)
     df = df[start:end]
 
-    endDate = df['Date'].iloc[-1]
-    startDate = df['Date'].iloc[0]
+    lasti = len(df)-1
+    endDate = df.at[lasti,'Date']
+    startDate = df.at[0,'Date']
 
     values = df[CsvColumn].tolist()
     numberOfDates = len(values)
@@ -762,7 +761,8 @@ def updatePort():
                 continue
             name = json_util.updateJsonCompany(astock)
             try:
-                last = df[CsvColumn].iloc[-1]
+                lasti = len(df)-1
+                last = df.at[lasti,CsvColumn]
                 port[astock] = [name, round(float(last) * float(count),2)]
             except:
                 continue
@@ -880,10 +880,7 @@ def report(stocks,
 
         values = df[CsvColumn].tolist()
 
-        bar = df['Date'].iloc[0]
-        foo = getStartDate()
-
-        if df['Date'].iloc[0] != getStartDate():
+        if df.at[0,'Date'] != getStartDate():
             print ("date problem {}".format(astock))
             continue
 
@@ -895,7 +892,8 @@ def report(stocks,
 
         lasth = max(df['High'].iloc[-8:])
         lastl = min(df['Low'].iloc[-4:])
-        last = df[CsvColumn].iloc[-1]
+        lasti = len(df)-1
+        last = df.at[lasti, CsvColumn]
 
         if "main" in reportname:
             try:
@@ -937,9 +935,6 @@ def report(stocks,
 
         except Exception as e:
             print("values : {}".format( len(values)))
-            print("bar")
-            print(bar )
-            print(foo )
             skipstock.append(astock)
             import traceback
             print (traceback.format_exc())
@@ -966,33 +961,23 @@ def getSPDip(df, start = None, end = None):
     starti = dates.index(start)
     endi = dates.index(end) if end else starti
 
-    start = df["High"].iloc[starti]
-    end = df["Low"].iloc[endi]
-    adjust = df[CsvColumn].iloc[endi]
+    start = df.at[starti,"High"]
+    end = df.at[endi,"Low"]
+    adjust = df.at[endi,CsvColumn]
     if adjust < end:
         return round(adjust/start,3)
     return round(end/start,3)
 
 def analyzeDrops(df):
     dic = dict()
-    for idx,row in df.iterrows():
-        change = round(row[CsvColumn]/row['Open'],4)
-        dic[row['Date']] = change
+    for idx in df.index:
+        change = round(df.at[idx, CsvColumn]/df.at[idx, "Open"],4)
+        dic[df.at[idx, "Date"]] = change
     bar = list(dic.values())
     sorted_x = sorted(dic.items(), key=operator.itemgetter(1))
     print(sorted_x[:5])
     print(sorted_x[-5:])
 #    print(sorted_x[:-5])
-
-#def getSPDip2(df):
-#    start, end = getDipDates()
-#    dates = list(df["Date"])
-#    starti = dates.index(start)
-#    endi = dates.index(end)
-#    start = df["Open"].iloc[starti]
-#    end = df["Close"].iloc[endi]
-#    ret = round(end/start,3)
-#drops = [ "2018-02-05", "2018-02-08", "2008-09-29", "2008-10-15", "2018-03-22", "2011-08-08"]
 
 #    Start : 2007-10-16(153.78)
 #    End   : 2009-03-11(72.64)
@@ -1179,13 +1164,13 @@ def getConsider2():
 def getPrice(astock, idx=-1):
     df = getCsv(astock)
     if type(idx) == int:
-        return df["Close"].iloc[idx]
+        return df.at[idx,"Close"]
     try:
         idx = list(df["Date"]).index(idx)
     except Exception as e:
         getPrice.noprice.append(astock)
         return None
-    return df["Close"].iloc[idx]
+    return df.at[idx,"Close"]
 getPrice.noprice = list()
 
 def calcPortfolio(stocks, idx = -1):
@@ -1197,12 +1182,7 @@ def calcPortfolio(stocks, idx = -1):
         if type(idx) != int:
             idx = list(df["Date"]).index(idx)
 
-        price = df["Open"].iloc[idx]
-
-#        if not printed:
-#            date = df["Date"].iloc[idx]
-#            print("date : {}".format( date ))
-#            printed = True
+        price = df.at[idx,"Open"]
         balance += round(price * stocks[astock], 3)
     return balance
 

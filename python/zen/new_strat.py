@@ -23,7 +23,7 @@ for i in range(1, 10):
     path = util.getPath("final/selection_standard_{}.csv".format(i))
     df = pandas.read_csv(path)
 #    print("dic : {}".format( dic.columns ))
-    for idx,row in df.iterrows():
+    for idx in df.index:
         mode =  df.at[idx, "Unnamed: 0"]
         dollar =  df.at[idx, "Cost"]
         tokens = mode.split("/")

@@ -279,7 +279,7 @@ def interpret(answer):
         updateDisplay()
 
     elif "sets" in answer:
-        setstart_date = df["Date"].iloc[0]
+        setstart_date = df.at[0,"Date"]
         updateDisplay()
 
     elif "/2" in answer:

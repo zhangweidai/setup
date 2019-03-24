@@ -7,12 +7,12 @@ from scipy import stats
 lengm = 6 * 12
 def doit(df, durdays):
     subtotal = list()
-    for idx,row in df.iterrows():
+    for idx in df.index:
         if idx % 2:
             continue
         if idx > durdays:
-            opened = df["High"].iloc[idx-durdays]
-            close = row["Close"]
+            opened = df.at[idx-durdays, "High"]
+            close = df.at[idx, "Close"]
             change = round(close/opened, 5)
             subtotal.append(change)
     return round(sum(subtotal)/len(subtotal),5)
@@ -50,15 +50,15 @@ def getScoreLocked(astock):
 def getEm():
     stocks = util.getStocks()
     print("stocks : {}".format(len(stocks)))
-    path = util.getPath("report/scores.csv")
+    path = util.getPath("report/scores2.csv")
     with open(path, "a") as f:
 #        row = ",".join(["Ticker", "Score", "Months", "Value", "Values"])
 #        f.write(row)
 #        f.write("\n")
 #        f.flush()
         for i,astock in enumerate(stocks):
-            if i < 83: 
-                continue
+#            if i < 83: 
+#                continue
             print (i)
             try:
                 f.write(getScore(astock))
@@ -67,6 +67,7 @@ def getEm():
                 print ('FailedWrite: '+ str(e))
                 print("problem astock: {}".format( astock))
                 pass
+            break
 
 #    util.writeFile(saved, ["Score", "Months", "Value", "Values"], directory="report", name = "scores")
 #getEm()

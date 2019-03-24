@@ -25,7 +25,7 @@ def getDataFromYahoo(astock):
             raise SystemExit
             return None
     
-    for idx,row in data.iterrows():
+    for idx in data.index:
         for label in ["Open", "Close", "High", "Low", "Adj Close"]:
             data.at[idx, label] = round(data.at[idx, label], 3)
     return data
@@ -58,7 +58,7 @@ def updateCsv(astock, yahoo_date = None):
 #    latest[astock] = loaded.tail(1)["Close"].item()
 #    return
     appending = False
-    for idx,row in data.iterrows():
+    for idx in data.index:
         cdate = str(idx.to_pydatetime()).split(" ")[0]
 
         if appending:

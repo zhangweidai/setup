@@ -1,11 +1,5 @@
-import numpy as np
-import pandas as pd
 import timeit
-from importlib import reload
 import util
-import math
-import test
-import numpy
 #import debug
 #debug.dipScore.mode = 2
 #print(debug.dipScore())
@@ -15,32 +9,91 @@ import numpy
 
 df = util.getCsv("BA")
 interval  = 15
-def Test_get_value():
+start  = 1005
+end  = 1030
+def igest_2():
     for i in df.index:
         if i < start or i > end:
             continue
-        if i % interval or i == 0:
-            continue
-        val = df.get_value(i,'Date')
-        print("val : {}".format( val ))
+#        if i % interval:
+#            continue
+        val = df['Date'].iloc[-1]
+        val = df['Close'].iloc[-1]
+        val = df['Open'].iloc[-1]
+        val = df['Low'].iloc[-1]
+        val = df['High'].iloc[-1]
 
-def Test_panp():
-    for i,row in df.iterrows():
+def Test_1():
+    endi = df.tail(1).index.item()
+    for idx in df.index:
         if idx < start or idx > end:
             continue
-        if idx % interval or idx == 0:
+        val = df.at[endi, 'Date']
+        val = df.at[endi, 'Close']
+        val = df.at[endi, 'Open']
+        val = df.at[endi, 'Low']
+        val = df.at[endi, 'High']
+def Test_3():
+    endi = len(df)-1
+    for idx in df.index:
+        if idx < start or idx > end:
             continue
-        val = row['Date']
-        print("val : {}".format( val ))
+        val = df.at[endi, 'Date']
+        val = df.at[endi, 'Close']
+        val = df.at[endi, 'Open']
+        val = df.at[endi, 'Low']
+        val = df.at[endi, 'High']
 
 
-Test_panp()
-Test_get_value()
-raise SystemExit
+
+#def Test_slow():
+#    for i,row in df.iterrows():
+#        if i < start or i > end:
+#            continue
+##        if i % interval:
+##            continue
+#        val = row["Close"]
+#        val = row["Open"]
+#        val = row["Low"]
+#        val = row["High"]
+#
+#Test_3()
+#raise SystemExit
+#def Test_1():
+#    for idx in df.index:
+#        if idx < start or idx > end:
+#            continue
+#        val = df['Date'][df.index[-1]]
+#        val = df['Close'][df.index[-1]]
+#        val = df['Open'][df.index[-1]]
+#        val = df['Low'][df.index[-1]]
+#        val = df['High'][df.index[-1]]
+
+#        val = df.at[endi, "Close"]
+#        val = df.at[endi, "Open"]
+#        val = df.at[endi, "Low"]
+#raise SystemExit
+#def Test_panpold():
+#    for idx,row in df.iterrows():
+#        if idx < start or idx > end:
+#            continue
+#        if idx % interval or idx == 0:
+#            continue
+#        val = row['Date']
+#        val = row['Close']
+#        val = row['Open']
+#        val = row['Low']
+
+
+#Test_panp()
+#print("Test_panp:")
+#
+#Test_get_value()
+#raise SystemExit
 #def Test_pan1():
 #    reload(util)
-def Test_pant():
-    reload(test)
+#def Test_pant():
+#    reload(test)
 
 #en_de = {"red" : "rot", "green" : "grun", "blue" : "blau", "yellow": "gelb"}
 
@@ -123,12 +176,24 @@ def Test_pant():
 
 if __name__ == '__main__':
     methods = dir()
+    times = list()
+    names = list()
     for method in methods:
         if not "Test" in method:
             continue
+
         print (method)
+        names.append(method)
         answer = timeit.timeit("{}()".format(method), 
                     setup="from __main__ import {}".format(method),
                     number=10000)
+        times.append(answer)
         print (round(answer,4))
 
+    if len(times) > 1:
+        mint = min(times)
+        maxt = max(times)
+        idx = times.index(mint)
+        from termcolor import colored
+        msg = "\n{} is {:.2%} faster".format(names[idx], (maxt/mint)-1)
+        print (colored(msg, "green"))

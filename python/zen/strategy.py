@@ -102,7 +102,7 @@ def tallyFrom(path, mode, ascending, isLast = False):
     tranfees += 10
     purchased = 0
     if isLast and more_etf:
-        for idx,row in loaded.iterrows():
+        for idxin loaded.index:
             symbol = loaded.at[idx, "Unnamed: 0"]
             last = loaded.at[idx, "Last"]
             latest_values[symbol] = last
@@ -111,7 +111,7 @@ def tallyFrom(path, mode, ascending, isLast = False):
 #                print("symbol: {}".format( symbol))
     
     count = 0
-    for idx,row in loaded.iterrows():
+    for idx in loaded.index:
         symbol = loaded.at[idx, "Unnamed: 0"]
         if symbol in dontBuy:
             continue
