@@ -1,5 +1,23 @@
 import util
+import operator
+
 util.getCsv.csvdir = "historical"
+def getDroppers():
+    stocks = util.getStocks()
+    print("stocks : {}".format( len(stocks)))
+    st = dict()
+    for astock in stocks:
+        df = util.getCsv(astock)
+        change = df["Close"].iloc[-1] / df["Close"].iloc[-2] 
+        st[astock] = round(change,3)
+    sorted_x = sorted(st.items(), key=operator.itemgetter(1))
+    for change in sorted_x[:10]:
+        print("change {} : {}".format( change[0], 
+                    util.formatDecimal(change[1])))
+getDroppers()
+
+raise SystemExit
+
 df = util.getCsv("W")
 
 total = 0

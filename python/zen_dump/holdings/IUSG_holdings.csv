@@ -52,7 +52,6 @@ Ticker,Name,Asset Class,Weight (%),Price,Shares,Market Value,Notional Value,Sect
 "SCI","SERVICE","Equity","0.05","39.53","79,303.00","3,134,847.59","3,134,847.59","Consumer Discretionary","2797560","US8175651046","New York Stock Exchange Inc."
 "BRO","BROWN & BROWN INC","Equity","0.05","29.16","102,669.00","2,993,828.04","2,993,828.04","Financials","2692687","US1152361010","New York Stock Exchange Inc."
 "POST","POST HOLDINGS INC","Equity","0.05","102.36","29,118.00","2,980,518.48","2,980,518.48","Consumer Staples","B6T0518","US7374461041","New York Stock Exchange Inc."
-"CC","CHEMOURS","Equity","0.05","38.61","74,668.00","2,882,931.48","2,882,931.48","Materials","BZ0CTP8","US1638511089","New York Stock Exchange Inc."
 "COO","COOPER INC","Equity","0.05","294.81","9,125.00","2,690,141.25","2,690,141.25","Health Care","2222631","US2166484020","New York Stock Exchange Inc."
 "ROL","ROLLINS INC","Equity","0.05","41.02","64,521.00","2,646,651.42","2,646,651.42","Industrials","2747305","US7757111049","New York Stock Exchange Inc."
 "NVR","NVR INC","Equity","0.04","2,722.77","931.00","2,534,898.87","2,534,898.87","Consumer Discretionary","2637785","US62944T1051","New York Stock Exchange Inc."

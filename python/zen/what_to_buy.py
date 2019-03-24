@@ -56,10 +56,10 @@ def shouldUpdate():
 
 def what_to_buy():
     util.getStocks.totalOverride = True
-#    should, latestInfo = shouldUpdate()
+    should, latestInfo = shouldUpdate()
 #    if should:
-#        import update_csv
-#        update_csv.updateStocks(latestInfo)
+    import update_csv
+    update_csv.updateStocks(latestInfo)
 
     end = util.getNumberOfDates()
     start = end - util.getBuyBackTrack()

@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import os
 import operator
 import math
@@ -11,9 +10,6 @@ import fnmatch
 import urllib.request, json
 from scipy import stats
 from pandas_datareader import data as pdr
-from importlib import reload
-from termcolor import colored
-from collections import deque, defaultdict
 from functools import lru_cache
 
 CsvColumn = "Close"
@@ -116,6 +112,7 @@ def averageRegress(items):
 #print (averageRegress(getTestItems()))
 
 def dipScore(items, interval=7, avg=3, retAvg=False):
+    from collections import deque
     currentStack = deque([])
     low = deque([])
     dips = []
@@ -333,7 +330,7 @@ def saveAdded(astock):
     getAdded.added = getp("addedStocks")
     if getAdded.added == None:
         getAdded.added = set()
-    getAdded.added.insert(astock)
+    getAdded.added.add(astock)
     setp(getAdded.added, "addedStocks")
 
 def getAdded():
@@ -345,7 +342,7 @@ getAdded.added = list()
 
 
 def getStocks(holding = "IVV", andEtfs = True, 
-        difference = False, dev=False, ivv=False, reset = False):
+        dev=False, ivv=False, reset = False, noivv = False):
 
     if dev:
         return ["SPY", "BA", "BRO"]
@@ -353,6 +350,12 @@ def getStocks(holding = "IVV", andEtfs = True,
     if not reset:
         try: return getStocks.ret
         except: pass
+
+    if ivv:
+        subset = getETF()
+        ret = list(subset) + getFromHoldings()
+        ret.sort()
+        return ret
 
     val = getStocks.fromCsv
     if val and len(val) == 3:
@@ -389,19 +392,25 @@ def getStocks(holding = "IVV", andEtfs = True,
         return getStocks.ret
 
     if getStocks.totalOverride:
-        path = getPath("holdings/ITOT_holdings.csv")
+        over = "ITOT"
+        if type(getStocks.totalOverride) == str:
+            over = getStocks.totalOverride
+        path = getPath("holdings/{}_holdings.csv".format(over))
         tmp = pandas.read_csv(path)
-        getStocks.ret = tmp['Ticker'].tolist() + getFromHoldings() + \
+        thelist = tmp['Ticker'].tolist()
+
+        if noivv:
+            path = getPath("holdings/IVV_holdings.csv")
+            ivv = set(pandas.read_csv(path)['Ticker'].tolist())
+            return list(set(thelist) - set(ivv))
+
+        returnl = list(getAdded())
+        getStocks.ret = thelist + getFromHoldings() + \
                 list(getAdded())
         cleanUpRet()
         return getStocks.ret
 
     subset = getETF()
-    if ivv:
-        ret = list(subset) + getFromHoldings()
-        ret.sort()
-        return ret
-
     etfs = ["IWB", "IUSG"]
     ret = subset
     for etf in etfs:
@@ -422,7 +431,7 @@ def cleanUpRet():
 
 getStocks.fromCsv = None
 getStocks.colname = None
-getStocks.totalOverride = False
+getStocks.totalOverride = True
 
 def fromSelection(path):
     df = pandas.read_csv(path)
@@ -460,6 +469,7 @@ def getSortVec():
     return ["Last", "Dip", "Range", "WC", "Vari2"]
 
 def getSortDisplay():
+    from termcolor import colored
 #    ret = getStocks.cols.tolist()[1:5]
     ret = getSortVec()
 #    del ret["Discount"]
@@ -516,7 +526,7 @@ def saveProcessedFromYahoo(astock, add=False):
         pass
 
     tday = datetime.date.today().isoformat()
-    saveStartDate = "2015-01-05" if getCsv.csvdir == "csv" else "2002-01-05"
+    saveStartDate = "2015-01-05" if getCsv.csvdir == "csv" else "2000-01-05"
 
     global removed
     path = getCsv(astock, asPath = True)
@@ -528,13 +538,11 @@ def saveProcessedFromYahoo(astock, add=False):
 
     df = None
     try:
-        df = pdr.get_data_yahoo([astock], start=saveStartDate, end=str(tday),
-                pause=0.3, adjust_price=True )
+        df = pdr.get_data_yahoo([astock], start=saveStartDate)
     except Exception as e:
         print (str(e))
         try:
-            df = pdr.get_data_yahoo([astock], start=saveStartDate, end=str(tday),
-                pause=0.3, adjust_price=True )
+            df = pdr.get_data_yahoo([astock], start=saveStartDate)
         except Exception as e:
             print (str(e))
 
@@ -782,11 +790,8 @@ def getVectorForStrategy(values, astock):
 def getBuyBackTrack():
     return 180
 
-def getCsv(astock, asPath=False):
-    try:
-        return getCsv.savedReads[astock]
-    except :
-        pass
+def getCsv(astock, asPath=False, save=True):
+
     val = getStocks.fromCsv
     if getStocks.totalOverride or val:
         getCsv.csvdir = "historical"
@@ -794,28 +799,38 @@ def getCsv(astock, asPath=False):
     if asPath:
         return getPath("{}/{}.csv".format(getCsv.csvdir, astock))
 
+    try:
+        return getCsv.savedReads[astock]
+    except :
+        pass
 
+    df = None
     try:
         path = getPath("{}/{}.csv".format(getCsv.csvdir, astock), 
                 allowmake = False)
         df = pandas.read_csv(path)
+        if df is None:
+            return None
     except:
         # allow getCsv to return from specified csv files
         path = getPath(astock, allowmake = False)
         if os.path.exists(path):
             df = pandas.read_csv(path)
+            if df is None:
+                return None
         else:
             try:
                 path = saveProcessedFromYahoo(astock)
                 if path:
                     df = pandas.read_csv(path)
-                else:
-                    return None
+                    if df is None:
+                        return None
             except Exception as e:
                 print (str(e))
                 print ("problem with {}".format(astock))
                 return None
-    getCsv.savedReads[astock] = df
+    if save:
+        getCsv.savedReads[astock] = df
     return df
 getCsv.csvdir = "csv"
 getCsv.savedReads = dict()
@@ -1161,19 +1176,17 @@ def getConsider2():
 #    d[k] = d.get(k, 0) + 1
 #print (getCompanyName("GOOG"))
 #print (list(getCsv("KO")["Date"]).index("2001-12-28"))
-
 def getPrice(astock, idx=-1):
     df = getCsv(astock)
     if type(idx) == int:
         return df["Close"].iloc[idx]
     try:
         idx = list(df["Date"]).index(idx)
-    except:
-        print("astock: {}".format(astock))
-        print("idx: {}".format( idx))
-        print(df)
-        print(len(df))
+    except Exception as e:
+        getPrice.noprice.append(astock)
+        return None
     return df["Close"].iloc[idx]
+getPrice.noprice = list()
 
 def calcPortfolio(stocks, idx = -1):
     balance = 0

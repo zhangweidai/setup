@@ -116,6 +116,11 @@ def rebuild(start = None, end = None,
                 df = df[1::2]
 
     start = rebuild.start or start
+    try:
+        if setstart_date:
+            start = list(df["Date"]).index(setstart_date)
+    except:
+        pass
     end = rebuild.end or end
 
     df = df[start:end]
@@ -167,6 +172,9 @@ def rebuild(start = None, end = None,
         xlabels[1] = ""
         xlabels[2] = ""
     else:
+
+        leng = len(values)
+        half = int(leng/2)
         displayStats(values, astock, dates[0])
 
     local_ax.set_xticklabels(xlabels)
@@ -189,7 +197,8 @@ def displayStats(values, astock, date):
         pass
 #        deleteStock(astock)
 
-    print("\t{}  : Length:{}".format(date, len(values)))
+    leng = len(values)
+    print("\t{}  : Length:{}".format(date, leng))
     opens = df["Open"].tolist()
     avg, maxd, davg = pyutil.dailyAverage(opens, values)
 
@@ -198,12 +207,26 @@ def displayStats(values, astock, date):
     print("\tMaxDailyDrop: {}".format(maxd))
     print("\tAvgDrop {}   : {}".format(rebuild.chaBy, avgby))
 
+    half = int(leng/2)
+    mid = values[-1 * half]
+
     changep = util.formatDecimal(values[-1]/values[0])
+
+    csm = util.formatDecimal( mid / values[0])
+    cme = util.formatDecimal( values[-1] / mid)
+
     if not changep[0] == "-":
         changep = colored(changep,"green")  
-    print("\tChange      : {}".format(changep))
+    if not csm[0] == "-":
+        csm = colored(csm,"green")  
+    if not cme[0] == "-":
+        cme = colored(cme,"green")  
 
-    if vari2:
+    print("\tChange      : {}".format(changep))
+    print("\tCs-m        : {}".format(csm))
+    print("\tCm-e        : {}".format(cme))
+
+    if var2:
 #        print("\tHighLow     : {}".format(highlow))
 #        print("\tVariance    : {}".format(vari))
         print("\tVariance2   : {}".format(var2))
@@ -243,7 +266,7 @@ def previ():
         updateDisplay()
 
 def interpret(answer):
-    global idx, stocks, previdx, stock_count
+    global idx, stocks, previdx, stock_count, setstart_date
     print("answer: {}".format( answer))
     if not answer:
         return
@@ -253,6 +276,10 @@ def interpret(answer):
             stock = answer.split(" ")[1].upper()
 
         util.resetStock(stock)
+        updateDisplay()
+
+    elif "sets" in answer:
+        setstart_date = df["Date"].iloc[0]
         updateDisplay()
 
     elif "/2" in answer:
@@ -276,23 +303,25 @@ def interpret(answer):
         answer = answer.upper()
         try:
             idx = stocks.index(answer)
-            print("idx : {}".format(idx))
+            updateDisplay()
         except Exception as e:
             try:
                 setHistory(toggle=False)
                 idx = stocks.index(answer)
             except:
-                if util.getCsv(answer, asPath=True):
+                if util.getCsv(answer) is not None:
                     util.saveAdded(answer)
-                    resetStocks()
+                    resetStocks(update=False)
+                    idx = stocks.index(answer)
+                    updateDisplay()
                 else:
                     try:
                         ret = util.saveProcessedFromYahoo(answer, add=True)
                         if ret: 
+                            util.saveAdded(answer)
                             resetStocks()
                         else:
-                            util.saveAdded(answer)
-    #                        deleteStock(answer)
+                            print("Did not find : {}".format( answer))
                     except Exception as e:
                         print ('xFailed2: '+ str(e))
                         pass
@@ -562,11 +591,11 @@ def onrelease(event):
         return
 
     x1 = int(event.xdata) 
-    print("x1 : {}".format( x1 ))
+#    print("x1 : {}".format( x1 ))
     x2 = int(savedxdata) 
-    print("x2 : {}".format( x2 ))
+#    print("x2 : {}".format( x2 ))
     endx = len(values)
-    print("leng : {}".format( endx ))
+#    print("leng : {}".format( endx ))
     answer = values[x1] / values[x2]
     date1 = dates[x2]
     date2 = dates[x1]
@@ -604,7 +633,7 @@ def onclick(event):
 
     global df, savedxdata
     savedxdata = event.xdata
-    print("savedxdata : {}".format( savedxdata ))
+#    print("savedxdata : {}".format( savedxdata ))
 #    print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
 #          ('double' if event.dblclick else 'single', event.button,
 #           event.x, event.y, event.xdata, event.ydata))
@@ -710,7 +739,7 @@ def plotSelection(astock, local_ax, df):
             print ("todo {}".format(astock))
 
 if __name__ == "__main__":
-    util.saveProcessedFromYahoo.download = False
+    util.saveProcessedFromYahoo.download = True
     util.getCsv.csvdir = "historical"
 #    req = ("history/selection_standard_3.csv", "Ticker", True)
 #    util.getStocks.fromCsv = req
@@ -736,6 +765,7 @@ if __name__ == "__main__":
         print ('getStocks2: '+ str(e))
         pass
 
+    setstart_date = None
     ax = None
     values = None
     df = None

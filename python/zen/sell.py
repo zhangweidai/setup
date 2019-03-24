@@ -1,116 +1,216 @@
 import util
 import operator
+import random
+import sys
+from random import sample
+import numpy as np
 from collections import defaultdict
+
+seed = random.randrange(sys.maxsize)
+rng = random.Random(seed)
+#print("Seed was:", seed)
+#random.seed(3729851342536597050)
+
 #util.getCsv.csvdir = "historical"
 spdf = util.getCsv("SPY")
-#stocks = util.getStocks(ivv=True)
-stocks = util.getStocks()
-every = 5
-bought_low = defaultdict(int)
-bought_high = defaultdict(int)
-lowpaid = 0
-highpaid = 0
+util.getStocks.totalOverride=True
+stocks = util.getStocks(noivv = True)
+print("stocks : {}".format( len(stocks)))
 
-offsets = defaultdict(lambda:None)
-avgchangel = list()
-avgchangeh = list()
-avgchangels = list()
-avgchangehs = list()
+totalfee = 0
+
+#maxp = None
+#maxd = None
+#maxv = 0
+
 lastcount = len(spdf)-1
 
-tracks = 10
+ayear = 252
+years = 2
+duration = years * ayear
+
+tracks = 25
 original = 1000
 spend = original
-threshold = 1.07
-fee = 10
+minthresh = 300 
+negt = 0.70
+fee = 5
+interval = 12
 miniport = dict()
-def doit():
+
+def doit(start, end):
+    lastdate = None
+    spend = original
     for idx,row in spdf.iterrows():
-        if idx % 5:
+
+        if idx < start or idx > end:
             continue
-        cdate = row["Date"]
+
+        if idx % interval or idx == 0:
+            continue
+
+        spcdate = row["Date"]
+
         theday = dict()
-        minv = 10
-        lowstock = None
         for astock in stocks:
             df = util.getCsv(astock)
             if df is None:
-                print("astock: {}".format( astock))
                 continue
     
-            if offsets.get(astock) == None:
-                dates = list(df["Date"])
-                try:
-                    starti = dates.index(cdate)
-                    offsets[astock] = idx-starti
-                except:
-                    continue
-    
-            off = offsets[astock]
-            if off == None:
-                continue
-    
-            myidx = idx - off
             try:
-                change = round(df.at[myidx,"Close"]/df.at[myidx,"Open"],3)
+                dates = list(df["Date"])
+                starti = dates.index(spcdate)
+                if not starti:
+                    continue
             except:
                 continue
     
-            if change < minv:
-                lowstock = astock
-                minv = change
+            try:
+                close = df.at[starti,"Close"]
+                if close < 5:
+                    continue
+                change = round(close/df.at[starti-3,"Open"],3) - \
+                         round(close/df.at[starti-9,"Open"],3)
+            except Exception as e:
+                continue
     
-#        df = util.getCsv(lowstock)
-#        if len(df)-1 != lastcount:
-#            continue
+            if change > 1:
+                continue
+
+            theday[astock] = change
+
+        sorted_x = sorted(theday.items(), key=operator.itemgetter(1))
+        buyme = sample(sorted_x[:7],2)
 
         stock_count = len(miniport)
         if stock_count < tracks:
-            if lowstock not in miniport:
-                myidx = idx - offsets[lowstock]
-                miniport[lowstock] = buySomething(myidx, lowstock)
+            for item in buyme:
+                lowstock = item[0]
+                if lowstock not in miniport:
+                    something = buySomething(spdf.at[idx+1, "Date"], lowstock, spend)
+                    if something:
+                        miniport[lowstock] = something
         else:
-            sell(cdate)
+            try:
+                spend = sell(spend, spcdate)
+            except:
+                nextdate = spdf.at[idx+1, "Date"]
+                spend = sell(spend, nextdate)
+    try:
+        ret = portvalue(spcdate)
+    except:
+        try:
+            nextdate = spdf.at[idx+1, "Date"]
+            ret = portvalue(nextdate)
+        except Exception as e:
+            print ('port: '+ str(e))
+            print("nextdate : {}".format( nextdate ))
+            raise SystemExit
 
-    print("lastcount : {}".format( lastcount ))
-    portvalue()
+#    if ret > maxv:
+#        maxp = miniport
+#        maxd = spcdate
+#        maxv = ret
+    return ret
 
-def portvalue():
+def portvalue(cdate):
     total = 0
-    for astock in miniport:
-        cprice = util.getPrice(astock)
-        item = miniport[astock]
-        cvalue = (cprice * item[0])-fee
-        total += cvalue
-
-    print("total : {}".format( total ))
-    print("change : {}".format(util.formatDecimal( total/(tracks*original))))
-
-def sell(cdate):
-    global spend
-    print ("\tselling time")
-    sold = None
-    print("cdate: {}".format( cdate))
     for astock in miniport:
         cprice = util.getPrice(astock, cdate)
         item = miniport[astock]
+        if cprice:
+            cvalue = round((cprice * item[0])-fee)
+            total += cvalue
+        else:
+            total += item[1]
+
+    print("{} {}".format( cdate, total))
+    return round(total/(tracks*original),3)
+
+def sell(spend, cdate):
+    sold = None
+    sells = []
+    for astock,item in miniport.items():
+        try:
+            cprice = util.getPrice(astock, cdate)
+        except Exception as e:
+            print("astock: {}".format( astock))
+            continue
+
+        if not cprice:
+            continue
+
         cvalue = (cprice * item[0])-fee
-        soldvalue = cvalue/item[1]
-        if soldvalue > threshold:
-            print("selling : {} {}".format(astock, cvalue))
-            spend = cvalue
-            sold = astock
-            break
-    if sold:
-        del miniport[astock]
+        if (cvalue/item[1]) < negt and cvalue > minthresh:
+            spend += cvalue
+            sells.append(astock)
+        else:
+            miniport[astock] = [item[0], cvalue]
 
-def buySomething(myidx, lowstock):
-    df = util.getCsv(lowstock)
-    bought = round(df.at[myidx + 1,"Open"])
-    count = round((spend-fee)/bought,3)
-    print("bought: {}".format( bought))
-    print("lowstock: {}".format( lowstock))
-    print("count: {}".format( count))
-    return [count, spend]
+    if sells:
+        spend = round(spend/len(sells),2)
+        for sell in sells:
+            del miniport[sell]
+    return spend
 
-doit()
+def buySomething(cdate, astock, spend):
+#    global totalfee
+    try:
+        cprice = util.getPrice(astock, cdate)
+        if not cprice:
+            return None
+        count = round((spend-fee)/cprice,3)
+
+        if spend == 0 or spend-fee <= 0:
+            print("spend : {}".format( spend ))
+            print("astock: {}".format( astock))
+            print("df : {}".format(len( df)))
+            raise SystemExit
+
+    except Exception as e:
+        print ('failedBuys: '+ str(e))
+        print("astock: {}".format( astock))
+        print("df : {}".format(len( df)))
+    return [count, spend-fee]
+
+def doits():
+    global miniport
+    changes = list()
+    for b in range(15):
+        miniport = dict()
+        start = random.randrange(lastcount-duration)
+        end = start + duration
+        changes.append(doit(start, end))
+    vari = np.var(changes)
+    average = round(sum(changes)/len(changes),3)
+    return vari, average
+#doits()
+
+import matplotlib.pyplot as plt
+def getSpread():
+    global negt
+    x1list = list()
+    x2list = list()
+    ylist = [0.68, 0.72, 0.75, 0.8, 0.85]
+
+    for percent in ylist:
+        negt = percent
+        print("negt : {}".format( negt ))
+        x1, x2 = doits()
+        x1list.append(x1)
+        x2list.append(x2)
+
+#    print("maxp : {}".format( maxp ))
+#    print("maxd : {}".format( maxd ))
+#    print("maxv : {}".format( maxv ))
+#
+    plt.scatter(ylist, x1list, color="red")
+    plt.scatter(ylist, x2list, color="blue")
+    plt.show()
+
+    saved = [ylist, x1list, x2list]
+    util.setp(saved, "sellstrat_3")
+#    util.setp(util.getPrice.noprice, "noprices")
+
+
+getSpread()

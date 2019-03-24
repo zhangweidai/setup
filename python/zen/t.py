@@ -1,9 +1,11 @@
 import numpy as np
 import pandas as pd
 import timeit
-import pickle
+from importlib import reload
 import util
-
+import math
+import test
+import numpy
 #import debug
 #debug.dipScore.mode = 2
 #print(debug.dipScore())
@@ -11,23 +13,52 @@ import util
 #print(debug.dipScore())
 #raise SystemExit
 
+df = util.getCsv("BA")
+interval  = 15
+def Test_get_value():
+    for i in df.index:
+        if i < start or i > end:
+            continue
+        if i % interval or i == 0:
+            continue
+        val = df.get_value(i,'Date')
+        print("val : {}".format( val ))
+
+def Test_panp():
+    for i,row in df.iterrows():
+        if idx < start or idx > end:
+            continue
+        if idx % interval or idx == 0:
+            continue
+        val = row['Date']
+        print("val : {}".format( val ))
+
+
+Test_panp()
+Test_get_value()
+raise SystemExit
+#def Test_pan1():
+#    reload(util)
+def Test_pant():
+    reload(test)
+
 #en_de = {"red" : "rot", "green" : "grun", "blue" : "blau", "yellow": "gelb"}
 
 #df = util.getCsv("BA")
 #def Test_pan1():
 #    pd.Index(df["Date"]).get_loc("2018-12-28")
-util.getStocks.totalOverride = True
-df = util.getCsv("SPY")
-stocks = util.getStocks()
-print("stocks : {}".format( len(stocks)))
-print("stocks : {}".format( len(df)))
-def Test_pan2():
-    global df
-    for idx,row in df.iterrows():
-        if idx % 50:
-            continue
-        for astock in stocks:
-            df = util.getCsv(astock)
+#util.getStocks.totalOverride = True
+#df = util.getCsv("SPY")
+#stocks = util.getStocks()
+#print("stocks : {}".format( len(stocks)))
+#print("stocks : {}".format( len(df)))
+#def Test_pan2():
+#    global df
+#    for idx,row in df.iterrows():
+#        if idx % 50:
+#            continue
+#        for astock in stocks:
+#            df = util.getCsv(astock)
 #            try:
 #                list(df["Date"]).index("2018-12-28")
 #            except:
@@ -98,6 +129,6 @@ if __name__ == '__main__':
         print (method)
         answer = timeit.timeit("{}()".format(method), 
                     setup="from __main__ import {}".format(method),
-                    number=6)
+                    number=10000)
         print (round(answer,4))
 
