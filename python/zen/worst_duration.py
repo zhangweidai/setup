@@ -4,7 +4,7 @@ import random
 import numpy as np
 from collections import defaultdict
 from scipy import stats
-lengm = 6 * 12
+lengm = 7 * 12
 def doit(df, durdays):
     subtotal = list()
     for idx in df.index:
@@ -19,7 +19,6 @@ def doit(df, durdays):
 
 listx = range(1, lengm, 2)
 def getScore(astock):
-    util.getCsv.csvdir = "historical"
     df = util.getCsv(astock, save=False)
     listy = []
     for month in listx:
@@ -42,8 +41,9 @@ def getScoreLocked(astock):
         score = getScore(astock)
     except:
         return
+
     with FileLock("myfile.txt.lck"):
-        path = util.getPath("report/scores.csv")
+        path = util.getPath("report/scores_new.csv")
         open(path,"a").write(score)
         print ("written " + astock)
 

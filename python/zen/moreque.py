@@ -16,15 +16,13 @@ def threader():
 q = Queue()
 
 # how many threads are we going to allow for
-for x in range(6):
+for x in range(7):
     t = threading.Thread(target=threader)
     t.daemon = True
     t.start()
 
 stocks = util.getStocks()
-for i,astock in enumerate(stocks):
-    if i < 82 or i > 200: 
-        continue
-    print ("sent "+astock)
+for astock in stocks:
+    print("astock : {}".format( astock ))
     q.put(astock)
 q.join()

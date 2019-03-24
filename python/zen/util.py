@@ -792,15 +792,12 @@ def getBuyBackTrack():
 
 def getCsv(astock, asPath=False, save=True):
 
-    val = getStocks.fromCsv
-    if getStocks.totalOverride or val:
-        getCsv.csvdir = "historical"
-
     if asPath:
         return getPath("{}/{}.csv".format(getCsv.csvdir, astock))
 
     try:
-        return getCsv.savedReads[astock]
+        if save:
+            return getCsv.savedReads[astock]
     except :
         pass
 
@@ -832,7 +829,7 @@ def getCsv(astock, asPath=False, save=True):
     if save:
         getCsv.savedReads[astock] = df
     return df
-getCsv.csvdir = "csv"
+getCsv.csvdir = "historical"
 getCsv.savedReads = dict()
 skipstock = []
 
@@ -981,7 +978,6 @@ def analyzeDrops(df):
 
 #    Start : 2007-10-16(153.78)
 #    End   : 2009-03-11(72.64)
-#getCsv.csvdir = "historical"
 #df = getCsv("SPY")
 #for day in drops:
 #    print (formatDecimal(getSPDip(df, start = day)))
