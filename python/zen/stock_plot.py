@@ -99,7 +99,15 @@ def rebuild(start = None, end = None,
 
     if util.getStocks.fromCsv:
         print(os.path.basename(util.getStocks.fromCsv[0]))
-
+        if "new" in util.getStocks.fromCsv[0]:
+            cdf = util.getStocks.dataf
+            cdf.reset_index()
+            print(cdf )
+            print (cdf.columns)
+            idx = list(cdf["Ticker"]).index(astock)
+            print("idx : {}".format( idx ))
+            print ("NewScore  : {}".format(cdf.at[idx,"Score"]))
+        
     maxvalues = len(df)
 
     if Modes.recent in currentMode:
@@ -276,6 +284,12 @@ def interpret(answer):
 
         util.resetStock(stock)
         updateDisplay()
+
+    elif "newscore" in answer:
+        path = util.getPath("report/scores_new.csv")
+        util.setWhatToBuy.fromfile = path
+        util.setWhatToBuy(1, False)
+        resetStocks()
 
     elif "sets" in answer:
         setstart_date = df.at[0,"Date"]

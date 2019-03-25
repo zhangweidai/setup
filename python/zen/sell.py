@@ -18,7 +18,6 @@ rng = random.Random(seed)
 #print ("endreading")
 
 spdf = util.getCsv("SPY")
-util.getStocks.totalOverride=True
 stocks = util.getStocks()
 print("stocks : {}".format( len(stocks)))
 
@@ -49,9 +48,6 @@ getrandom = False
 def getBuyStocks(spcdate = None):
     thedayh = dict()
     thedayl = dict()
-#    if getrandom:
-#        return sample(stocks,6)
-
 #    tstocks = sample(stocks,400)
     for astock in stocks:
 
@@ -69,12 +65,12 @@ def getBuyStocks(spcdate = None):
         changel = None
         try:
             close = df.at[starti,"Close"]
-            if close < 2.5:
+            if close < 2:
                 continue
 
             changeh = round(close/df.at[starti-3,"Open"],3) 
             changel = round(close/df.at[starti-3,"Open"] - 
-                     close/df.at[starti-8,"Open"])
+                     close/df.at[starti-8,"Open"], 4)
 
         except Exception as e:
             continue
@@ -89,7 +85,7 @@ def getBuyStocks(spcdate = None):
     sorted_xl = sorted(thedayl.items(), key=operator.itemgetter(1))
     sorted_xh = sorted(thedayh.items(), key=operator.itemgetter(1))
 
-    return [sample(sorted_xh[-5:],1)[0], sample(sorted_xl[:5],1)[0]]
+    return [sample(sorted_xh[-12:],6), sample(sorted_xl[:12],6)]
 
 #    if gethigh:
 #        return sample(sorted_x[-6:],2)
@@ -97,7 +93,7 @@ def getBuyStocks(spcdate = None):
 #    return sample(sorted_x[:6],2)
 
 #getrandom = True
-#print (getBuyStocks("2019-03-20"))
+#print (getBuyStocks("2019-03-22"))
 #raise SystemExit
 
 def doit(start, end):

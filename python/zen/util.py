@@ -393,10 +393,12 @@ def getStocks(holding = "IVV", andEtfs = True,
 
         df = pandas.read_csv(path)
         getStocks.cols = df.columns
+        print("getStocks: {}".format( getStocks.cols))
         try:
             getStocks.colname = df.columns[val[1]]
         except:
             getStocks.colname = val[1]
+        print("getStocks: {}".format( getStocks.colname))
         df.sort_values(by=getStocks.colname, inplace=True, ascending=val[2])
         getStocks.dataf = df
         retCol = df.columns[0]
