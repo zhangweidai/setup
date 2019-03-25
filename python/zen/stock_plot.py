@@ -23,7 +23,7 @@ def deleteStock(astock, force=False):
     print ("Deleting : {}".format(astock))
     util.delStock(astock)
     idx += 1
-    resetStocks()
+    resetStocks(update = True)
 
 def resetStocks(update=True):
     global stocks, stock_count
@@ -99,7 +99,6 @@ def rebuild(start = None, end = None,
 
     if util.getStocks.fromCsv:
         print(os.path.basename(util.getStocks.fromCsv[0]))
-
 
     maxvalues = len(df)
 

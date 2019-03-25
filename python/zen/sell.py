@@ -26,10 +26,10 @@ totalfee = 0
 lastcount = len(spdf)-1
 
 ayear = 252
-years = 2
+years = 3
 duration = years * ayear
 
-tracks = 25
+tracks = 20
 original = 1000
 spend = original
 minthresh = 300 
@@ -37,6 +37,52 @@ negt = 0.70
 fee = 5
 interval = 15
 miniport = dict()
+
+gethigh = False
+getrandom = False
+def getBuyStocks(spcdate = None):
+    theday = dict()
+    if getrandom:
+        return sample(stocks,6)
+
+    for astock in stocks:
+
+        df = util.getCsv(astock)
+        if df is None:
+            continue
+        try:
+            dates = list(df["Date"])
+            starti = dates.index(spcdate)
+            if not starti:
+                continue
+        except:
+            continue
+        change = None
+        try:
+            close = df.at[starti,"Close"]
+            if close < 5:
+                continue
+
+            if gethigh:
+                change = round(close/df.at[starti-3,"Open"],3) 
+            else:
+                change = round(close/df.at[starti-3,"Open"],3) - \
+                     round(close/df.at[starti-9,"Open"],3)
+        except Exception as e:
+            continue
+
+#        if change > 1:
+#            continue
+        theday[astock] = round(change,4)
+
+    sorted_x = sorted(theday.items(), key=operator.itemgetter(1))
+    if gethigh:
+        return sample(sorted_x[-6:],2)
+    return sample(sorted_x[:6],2)
+
+#getrandom = True
+#print (getBuyStocks())
+#raise SystemExit
 
 def doit(start, end):
     lastdate = None
@@ -50,46 +96,21 @@ def doit(start, end):
             continue
 
         spcdate = spdf.at[idx,"Date"]
-        theday = dict()
-        for astock in stocks:
-            df = util.getCsv(astock)
-            if df is None:
-                continue
-    
-            try:
-                dates = list(df["Date"])
-                starti = dates.index(spcdate)
-                if not starti:
-                    continue
-            except:
-                continue
-    
-            try:
-                close = df.at[starti,"Close"]
-                if close < 5:
-                    continue
-                change = round(close/df.at[starti-3,"Open"],3) - \
-                         round(close/df.at[starti-9,"Open"],3)
-            except Exception as e:
-                continue
-    
-            if change > 1:
-                continue
 
-            theday[astock] = change
-
-        sorted_x = sorted(theday.items(), key=operator.itemgetter(1))
-        buyme = sample(sorted_x[:7],2)
+        buyme = getBuyStocks(spcdate)
 
         stock_count = len(miniport)
         if stock_count < tracks:
+
             for item in buyme:
                 lowstock = item[0]
-                if lowstock not in miniport:
+
+                if lowstock not in miniport and stock_count < tracks:
                     something = buySomething(spdf.at[idx+1, "Date"], 
                                              lowstock, spend)
                     if something:
                         miniport[lowstock] = something
+                        stock_count = len(miniport)
         else:
             try:
                 spend = sell(spend, spcdate)
@@ -176,7 +197,7 @@ def buySomething(cdate, astock, spend):
 def doits():
     global miniport
     changes = list()
-    for b in range(30):
+    for b in range(15):
         miniport = dict()
         start = random.randrange(lastcount-duration)
         end = start + duration
@@ -188,17 +209,68 @@ def doits():
 
 import matplotlib.pyplot as plt
 def getSpread():
-    global negt
+    global negt, gethigh, getrandom
     x1list = list()
     x2list = list()
-    ylist = [0.60, 0.76, 0.77, 0.78]
+    ylist = [1,2,3,4,5,6,7]
 
-    for percent in ylist:
-        negt = percent
-        print("negt : {}".format( negt ))
-        x1, x2 = doits()
-        x1list.append(x1)
-        x2list.append(x2)
+    negt = 0.77
+
+    gethigh = True
+    x1, x2 = doits()
+    x1list.append(x1)
+    x2list.append(x2)
+    print(x1list)
+    print(x2list)
+
+    gethigh = False
+    x1, x2 = doits()
+    x1list.append(x1)
+    x2list.append(x2)
+    print(x1list)
+    print(x2list)
+
+    negt = 0.78
+
+    gethigh = True
+    x1, x2 = doits()
+    x1list.append(x1)
+    x2list.append(x2)
+    print(x1list)
+    print(x2list)
+
+    gethigh = False
+
+    x1, x2 = doits()
+    x1list.append(x1)
+    x2list.append(x2)
+    print(x1list)
+    print(x2list)
+
+    negt = 0.85
+
+    x1, x2 = doits()
+    x1list.append(x1)
+    x2list.append(x2)
+    print(x1list)
+    print(x2list)
+
+    negt = 0.77
+
+    getrandom = True
+
+    x1, x2 = doits()
+    x1list.append(x1)
+    x2list.append(x2)
+    print(x1list)
+    print(x2list)
+
+    x1, x2 = doits()
+    x1list.append(x1)
+    x2list.append(x2)
+    print(x1list)
+    print(x2list)
+
 
 #    print("maxp : {}".format( maxp ))
 #    print("maxd : {}".format( maxd ))
@@ -206,10 +278,11 @@ def getSpread():
 #
     plt.scatter(ylist, x1list, color="red")
     plt.scatter(ylist, x2list, color="blue")
-    plt.show()
 
     saved = [ylist, x1list, x2list]
-    util.setp(saved, "sellstrat_3")
+    util.setp(saved, "sellstrat_4")
+
+    plt.show()
 #    util.setp(util.getPrice.noprice, "noprices")
 
 

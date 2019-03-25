@@ -339,12 +339,35 @@ def getAdded():
         getAdded.added = set()
     return getAdded.added
 getAdded.added = list()
+toremove = list()
+def getProblems():
+    global toremove
+    getStocks.totalOverride=True
+    stocks = getStocks()
+    problems = []
+    for astock in stocks:
+        df = getCsv(astock)
+        if df is None:
+            toremove.append(astock)
+            continue
 
-
+        vals = []
+        for idx in range(len(df)-2):
+            start = df.at[idx,"Close"]
+            end = df.at[idx+1,"Close"]
+            change = start/end
+            if change > 5:
+                problems.append(astock)
+                break
+    print(toremove )
+    print("problems: {}".format( problems))
+    return problems
+    
 def getStocks(holding = "IVV", andEtfs = True, 
         dev=False, ivv=False, reset = False, noivv = False):
 
     if dev:
+#        return getProblems()
         return ["SPY", "BA", "BRO"]
 
     if not reset:
