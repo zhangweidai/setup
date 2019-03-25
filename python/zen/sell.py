@@ -12,12 +12,18 @@ rng = random.Random(seed)
 #random.seed(3729851342536597050)
 
 #util.getCsv.csvdir = "historical"
+
+#print ("startreading")
+#util.getCsv.savedReads = util.getp("allcsvs")
+#print ("endreading")
+
 spdf = util.getCsv("SPY")
 util.getStocks.totalOverride=True
 stocks = util.getStocks()
 print("stocks : {}".format( len(stocks)))
 
 totalfee = 0
+oneofeach = False
 
 #maxp = None
 #maxd = None
@@ -26,25 +32,27 @@ totalfee = 0
 lastcount = len(spdf)-1
 
 ayear = 252
-years = 3
+years = 3.5
 duration = years * ayear
 
-tracks = 20
+tracks = 25
 original = 1000
 spend = original
-minthresh = 300 
+minthresh = 400 
 negt = 0.70
 fee = 5
-interval = 15
+interval = 20
 miniport = dict()
 
 gethigh = False
 getrandom = False
 def getBuyStocks(spcdate = None):
-    theday = dict()
-    if getrandom:
-        return sample(stocks,6)
+    thedayh = dict()
+    thedayl = dict()
+#    if getrandom:
+#        return sample(stocks,6)
 
+#    tstocks = sample(stocks,400)
     for astock in stocks:
 
         df = util.getCsv(astock)
@@ -57,31 +65,39 @@ def getBuyStocks(spcdate = None):
                 continue
         except:
             continue
-        change = None
+        changeh = None
+        changel = None
         try:
             close = df.at[starti,"Close"]
-            if close < 5:
+            if close < 2.5:
                 continue
 
-            if gethigh:
-                change = round(close/df.at[starti-3,"Open"],3) 
-            else:
-                change = round(close/df.at[starti-3,"Open"],3) - \
-                     round(close/df.at[starti-9,"Open"],3)
+            changeh = round(close/df.at[starti-3,"Open"],3) 
+            changel = round(close/df.at[starti-3,"Open"] - 
+                     close/df.at[starti-8,"Open"])
+
         except Exception as e:
             continue
 
 #        if change > 1:
 #            continue
-        theday[astock] = round(change,4)
+        if changeh > 1:
+            thedayh[astock] = round(changeh,4)
+        if changel < 1:
+            thedayl[astock] = round(changel,4)
 
-    sorted_x = sorted(theday.items(), key=operator.itemgetter(1))
-    if gethigh:
-        return sample(sorted_x[-6:],2)
-    return sample(sorted_x[:6],2)
+    sorted_xl = sorted(thedayl.items(), key=operator.itemgetter(1))
+    sorted_xh = sorted(thedayh.items(), key=operator.itemgetter(1))
+
+    return [sample(sorted_xh[-5:],1)[0], sample(sorted_xl[:5],1)[0]]
+
+#    if gethigh:
+#        return sample(sorted_x[-6:],2)
+#
+#    return sample(sorted_x[:6],2)
 
 #getrandom = True
-#print (getBuyStocks())
+#print (getBuyStocks("2019-03-20"))
 #raise SystemExit
 
 def doit(start, end):
@@ -197,11 +213,14 @@ def buySomething(cdate, astock, spend):
 def doits():
     global miniport
     changes = list()
-    for b in range(15):
+    for b in range(25):
         miniport = dict()
         start = random.randrange(lastcount-duration)
         end = start + duration
         changes.append(doit(start, end))
+
+    changes.remove(max(changes))
+
     vari = np.var(changes)
     average = round(sum(changes)/len(changes),3)
     return vari, average
@@ -209,37 +228,18 @@ def doits():
 
 import matplotlib.pyplot as plt
 def getSpread():
-    global negt, gethigh, getrandom
+    global negt, gethigh, getrandom, tracks, minthresh
     x1list = list()
     x2list = list()
-    ylist = [1,2,3,4,5,6,7]
+    ylist = [1,2,3,4,5,6]
 
     negt = 0.77
 
-    gethigh = True
     x1, x2 = doits()
     x1list.append(x1)
     x2list.append(x2)
     print(x1list)
     print(x2list)
-
-    gethigh = False
-    x1, x2 = doits()
-    x1list.append(x1)
-    x2list.append(x2)
-    print(x1list)
-    print(x2list)
-
-    negt = 0.78
-
-    gethigh = True
-    x1, x2 = doits()
-    x1list.append(x1)
-    x2list.append(x2)
-    print(x1list)
-    print(x2list)
-
-    gethigh = False
 
     x1, x2 = doits()
     x1list.append(x1)
@@ -247,17 +247,21 @@ def getSpread():
     print(x1list)
     print(x2list)
 
-    negt = 0.85
+    x1, x2 = doits()
+    x1list.append(x1)
+    x2list.append(x2)
+    print(x1list)
+    print(x2list)
+ 
+    minthresh = 800 
+    original = 2000
+    tracks = 13
 
     x1, x2 = doits()
     x1list.append(x1)
     x2list.append(x2)
     print(x1list)
     print(x2list)
-
-    negt = 0.77
-
-    getrandom = True
 
     x1, x2 = doits()
     x1list.append(x1)
@@ -272,15 +276,11 @@ def getSpread():
     print(x2list)
 
 
-#    print("maxp : {}".format( maxp ))
-#    print("maxd : {}".format( maxd ))
-#    print("maxv : {}".format( maxv ))
-#
     plt.scatter(ylist, x1list, color="red")
     plt.scatter(ylist, x2list, color="blue")
 
-    saved = [ylist, x1list, x2list]
-    util.setp(saved, "sellstrat_4")
+#    saved = [ylist, x1list, x2list]
+#    util.setp(saved, "sellstrat_4")
 
     plt.show()
 #    util.setp(util.getPrice.noprice, "noprices")

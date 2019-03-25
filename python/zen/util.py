@@ -813,7 +813,13 @@ def getVectorForStrategy(values, astock):
 def getBuyBackTrack():
     return 180
 
-def getCsv(astock, asPath=False, save=True):
+def saveCsvCache():
+    stocks = getStocks()
+    for astock in stocks:
+        getCsv.savedReads[astock] = getCsv(astock)
+    setp(getCsv.savedReads, "allcsvs")
+                
+def getCsv(astock, asPath=False, save=True, fromCache = False):
 
     if asPath:
         return getPath("{}/{}.csv".format(getCsv.csvdir, astock))
