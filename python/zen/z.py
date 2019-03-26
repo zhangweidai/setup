@@ -23,7 +23,7 @@ def setp(data, name):
     path = getPath("pkl/{}.pkl".format(name))
     pickle.dump(data, open(path, "wb"))
 
-def getStocks(dev=False, reset = False, simple = False, preload = True, etf = None):
+def getStocks(etf = None, dev=False, reset = False, simple = False, preload = True):
     if not reset:
         try: return getStocks.ret
         except: pass
@@ -37,10 +37,15 @@ def getStocks(dev=False, reset = False, simple = False, preload = True, etf = No
         getStocks.ret = getp("alls")
         return getStocks.ret
 
-    if etf:
-        etfs = getp("etfsdict")
-        getStocks.ret = etfs[etf]
+    if etf and getStocks.etfs:
+        getStocks.ret = getStocks.etfs[etf]
         return getStocks.ret
+
+    if etf:
+        getStocks.etfs = getp("etfdict")
+        getStocks.ret = getStocks.etfs[etf]
+        return getStocks.ret
+getStocks.etfs = None
 
 
 util = None
