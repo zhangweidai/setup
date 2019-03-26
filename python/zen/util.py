@@ -338,6 +338,7 @@ def getAdded():
     if getAdded.added == None:
         getAdded.added = set()
     return getAdded.added
+
 getAdded.added = list()
 toremove = list()
 def getProblems():
@@ -364,7 +365,8 @@ def getProblems():
     return problems
     
 def getStocks(holding = "IVV", andEtfs = True, 
-        dev=False, ivv=False, reset = False, noivv = False, simple = False):
+        dev=False, ivv=False, reset = False, noivv = False, 
+        simple = False):
 
     if dev:
 #        return getProblems()

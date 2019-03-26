@@ -11,4 +11,20 @@ def getCsvsFiles():
             holds.append("{}/{}".format(path,entry))
     return holds
 
-print(getCsvsFiles())
+def cleanFiles():
+    for afile in getCsvsFiles():
+        with open(afile, "r") as f:
+            lines = f.readlines()
+            found = 0
+            for i,aline in enumerate(lines):
+                if "Ticker" in aline:
+                    found = i
+                    break
+        if found != 0:
+            with open(afile, "w") as f:
+                f.writelines(lines[found:])
+    
+os.system("./scrub.sh Derivatives")
+dels = util.getp("deletes")
+for astock in dels:
+    os.system("./scrub.sh {}".format(astock))
