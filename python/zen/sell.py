@@ -5,17 +5,11 @@ import sys
 from random import sample
 import numpy as np
 from collections import defaultdict
+import matplotlib.pyplot as plt
 
 seed = random.randrange(sys.maxsize)
 rng = random.Random(seed)
-#print("Seed was:", seed)
-#random.seed(3729851342536597050)
-
-#util.getCsv.csvdir = "historical"
-
-#print ("startreading")
 #util.getCsv.savedReads = util.getp("allcsvs")
-#print ("endreading")
 
 spdf = util.getCsv("SPY")
 stocks = util.getStocks()
@@ -28,10 +22,10 @@ oneofeach = False
 #maxd = None
 #maxv = 0
 
-lastcount = len(spdf)-1
+num_days = len(spdf)-1
 
 ayear = 252
-years = 3.5
+years = 3
 duration = years * ayear
 
 tracks = 25
@@ -211,7 +205,7 @@ def doits():
     changes = list()
     for b in range(25):
         miniport = dict()
-        start = random.randrange(lastcount-duration)
+        start = random.randrange(num_days-duration)
         end = start + duration
         changes.append(doit(start, end))
 
@@ -222,7 +216,6 @@ def doits():
     return vari, average
 #doits()
 
-import matplotlib.pyplot as plt
 def getSpread():
     global negt, gethigh, getrandom, tracks, minthresh
     x1list = list()
@@ -249,29 +242,6 @@ def getSpread():
     print(x1list)
     print(x2list)
  
-    minthresh = 800 
-    original = 2000
-    tracks = 13
-
-    x1, x2 = doits()
-    x1list.append(x1)
-    x2list.append(x2)
-    print(x1list)
-    print(x2list)
-
-    x1, x2 = doits()
-    x1list.append(x1)
-    x2list.append(x2)
-    print(x1list)
-    print(x2list)
-
-    x1, x2 = doits()
-    x1list.append(x1)
-    x2list.append(x2)
-    print(x1list)
-    print(x2list)
-
-
     plt.scatter(ylist, x1list, color="red")
     plt.scatter(ylist, x2list, color="blue")
 

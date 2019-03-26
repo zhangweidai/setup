@@ -91,15 +91,7 @@ def doit():
             dates = list(df["Date"])
             try:
                 starti = dates.index(qdate)
-                if not starti:
-                    continue
-            except:
-                continue
-
-            try:
                 endi = dates.index(edate)
-                if not endi:
-                    continue
             except:
                 continue
 

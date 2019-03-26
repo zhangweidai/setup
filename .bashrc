@@ -146,11 +146,14 @@ alias go1="cds; cd python/zen"
 alias gof="cds; cd python/zen_dump/final"
 alias goh="cds; cd python/zen_dump/holdings"
 alias goc="cds; cd python/zen_dump/historical"
+alias gop="cds; cd python/zen_dump/pkl"
 alias ipy="ipython"
+alias python="python3"
 alias ka="killall python3"
 alias checkout="git checkout --"
 alias st2="git status -uno"
 #sudo -S true
+set bell-style none
 
 #THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
 export SDKMAN_DIR="/home/zoe/.sdkman"

@@ -364,7 +364,7 @@ def getProblems():
     return problems
     
 def getStocks(holding = "IVV", andEtfs = True, 
-        dev=False, ivv=False, reset = False, noivv = False):
+        dev=False, ivv=False, reset = False, noivv = False, simple = False):
 
     if dev:
 #        return getProblems()
@@ -417,22 +417,7 @@ def getStocks(holding = "IVV", andEtfs = True,
         return getStocks.ret
 
     if getStocks.totalOverride:
-        over = "ITOT"
-        if type(getStocks.totalOverride) == str:
-            over = getStocks.totalOverride
-        path = getPath("holdings/{}_holdings.csv".format(over))
-        tmp = pandas.read_csv(path)
-        thelist = tmp['Ticker'].tolist()
-
-        if noivv:
-            path = getPath("holdings/IVV_holdings.csv")
-            ivv = set(pandas.read_csv(path)['Ticker'].tolist())
-            return list(set(thelist) - set(ivv))
-
-        returnl = list(getAdded())
-        getStocks.ret = thelist + getFromHoldings() + \
-                list(getAdded())
-        cleanUpRet()
+        setGetStocksRet(noivv, simple)
         return getStocks.ret
 
     subset = getETF()
@@ -446,6 +431,42 @@ def getStocks(holding = "IVV", andEtfs = True,
     cleanUpRet()
     return getStocks.ret
 
+def setGetStocksRet(noivv, simple):
+    etfs = ["ITOT"]
+    merge = False
+    if type(getStocks.totalOverride) == str:
+        if "|" in getStocks.totalOverride:
+            etfs = getStocks.totalOverride.split("|")
+            merge = True
+        else:
+            etfs = [getStocks.totalOverride]
+
+    thelist = []
+    theset = set()
+    for etf in etfs:
+        path = getPath("holdings/{}_holdings.csv".format(etf))
+        tmp = pandas.read_csv(path)
+        if merge:
+            thelist.append(tmp['Ticker'].tolist())
+        else:
+            thelist = tmp['Ticker'].tolist()
+
+    if merge:
+        thelist = list(set(thelist[0]).intersection(thelist[1]))
+            
+    if noivv:
+        path = getPath("holdings/IVV_holdings.csv")
+        ivv = set(pandas.read_csv(path)['Ticker'].tolist())
+        return list(set(thelist) - set(ivv))
+
+    if simple:
+        getStocks.ret = thelist
+    else:
+        getStocks.ret = thelist + getFromHoldings() + list(getAdded())
+
+    cleanUpRet()
+
+
 def cleanUpRet():
     try:
         dels = getp("deletes")
@@ -457,6 +478,8 @@ def cleanUpRet():
 getStocks.fromCsv = None
 getStocks.colname = None
 getStocks.totalOverride = True
+#setGetStocksRet(noivv=False, simple=True)
+#raise SystemExit
 
 def fromSelection(path):
     df = pandas.read_csv(path)
@@ -584,9 +607,10 @@ def saveProcessedFromYahoo(astock, add=False):
         for label in ["Open", "Close", "High", "Low", "Adj Close"]:
             df.at[idx, label] = round(df.at[idx, label], 4)
 
+    print ("saved {}".format(astock))
     df.to_csv(path)
     return path
-saveProcessedFromYahoo.download = True
+saveProcessedFromYahoo.download = False
 #    try : trimStock(astock, getTrimStock(astock))
 #    except: pass
 
@@ -816,12 +840,13 @@ def getBuyBackTrack():
     return 180
 
 def saveCsvCache():
+    saveProcessedFromYahoo.download = False
     stocks = getStocks()
     for astock in stocks:
         getCsv.savedReads[astock] = getCsv(astock)
     setp(getCsv.savedReads, "allcsvs")
                 
-def getCsv(astock, asPath=False, save=True, fromCache = False):
+def getCsv(astock, asPath=False, save=True):
 
     if asPath:
         return getPath("{}/{}.csv".format(getCsv.csvdir, astock))
@@ -1212,6 +1237,23 @@ def calcPortfolio(stocks, idx = -1):
         price = df.at[idx,"Open"]
         balance += round(price * stocks[astock], 3)
     return balance
+
+import code, traceback, signal
+
+def debug(sig, frame):
+    """Interrupt running process, and provide a python prompt for
+    interactive debugging."""
+    d={'_frame':frame}         # Allow access to frame object.
+    d.update(frame.f_globals)  # Unless shadowed by global
+    d.update(frame.f_locals)
+
+    i = code.InteractiveConsole(d)
+    message  = "Signal received : entering python shell.\nTraceback:\n"
+    message += ''.join(traceback.format_stack(frame))
+    i.interact(message)
+
+def listen():
+    signal.signal(signal.SIGUSR1, debug)  # Register handler
 
 calcPortfolio.latest = None
 #df = getCsv("BA")
