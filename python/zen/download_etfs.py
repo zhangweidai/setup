@@ -31,37 +31,38 @@ def getCode(i, etf):
                 with open(etf,"w") as f:
                     f.writelines(lines)
 
-etfs = ["IJR", "IVV", "IWB", "IUSG", "USMV", "ITOT", "IJH"]
+etfs = ["ITOT", "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV"]
 alls = set()
 from collections import defaultdict
 etfdict = defaultdict(set)
 company = dict()
 codes = [
+    "239724/ishares-core-sp-total-us-stock-market-etf",
+    "239763/ishares-core-sp-midcap-etf",
     "239774/ishares-core-sp-smallcap-etf",
     "239726/ishares-core-sp-500-etf", 
     "239707/ishares-russell-1000-etf",
     "239713/ishares-core-sp-us-growth-etf",
-    "239695/ishares-msci-usa-minimum-volatility-etf",
-    "239724/ishares-core-sp-total-us-stock-market-etf"
-    "239763/ishares-core-sp-midcap-etf"
+    "239695/ishares-msci-usa-minimum-volatility-etf"
 ]
 
 import time
 def doit():
-#    global alls, company, etfdict
+    global alls, company, etfdict
 
-#    alls = util.getp("alletfs")
-#    company = util.getp("company")
-#    etfdict = util.getp("etfdict")
+    alls = util.getp("alletfs")
+    company = util.getp("company")
+    etfdict = util.getp("etfdict")
 #
     dels = util.getp("deletes")
     for i,etf in enumerate(etfs):
+        print("i: {}".format( i))
         try:
             code = getCode(i, etf)
         except Exception as e:
             print ("download")
             print (str(e))
-#            continue
+            continue
 
         print("code : {}".format( code ))
         addy = 'https://www.ishares.com/us/products/{}'\
@@ -77,9 +78,9 @@ def doit():
 #        with open(path,"w") as f:
 #            f.writelines(lines)
         cleanLines(lines, etf, dels)
-        time.sleep(10)
+        time.sleep(3)
 
-    util.setp(alls, "alletfs")
+    util.setp(alls, "alls")
     util.setp(company, "company")
     util.setp(etfdict, "etfdict")
 

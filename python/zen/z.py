@@ -33,19 +33,35 @@ def getStocks(etf = None, dev=False, reset = False, simple = False, preload = Tr
             getCsv.savedReads = getp("devdf")
         return ["SPY", "BA", "BRO"]
 
+    if preload:
+        getCsv.savedReads = getp("allcsvs")
+
     if not etf:
         getStocks.ret = getp("alls")
         return getStocks.ret
 
-    if etf and getStocks.etfs:
-        getStocks.ret = getStocks.etfs[etf]
-        return getStocks.ret
+    if not getStocks.etfs:
+        getStocks.etfs = getp("etfdict")
 
     if etf:
-        getStocks.etfs = getp("etfdict")
-        getStocks.ret = getStocks.etfs[etf]
+        if "/" in etf:
+            tokens = etf.split("/")
+            getStocks.ret = getStocks.etfs[tokens[0]].intersection(\
+                    getStocks.etfs[tokens[1]])
+        elif "-" in etf:
+            tokens = etf.split("-")
+            getStocks.ret = getStocks.etfs[tokens[0]] - \
+                    getStocks.etfs[tokens[1]]
+        elif "|" in etf:
+            tokens = etf.split("|")
+            getStocks.ret = getStocks.etfs[tokens[0]] | \
+                    getStocks.etfs[tokens[1]]
+        else:
+            getStocks.ret = getStocks.etfs[etf]
         return getStocks.ret
 getStocks.etfs = None
+#print (getStocks("IUSG") - getStocks("ITOT"))
+#print (len(getStocks("IUSG|IVV")))
 
 
 util = None
@@ -93,3 +109,16 @@ def getCsv(astock, asPath=False, save=True):
         getCsv.savedReads[astock] = df
     return df
 getCsv.savedReads = dict()
+
+def getPrice(astock, idx=-1):
+    df = getCsv(astock)
+    if type(idx) == int:
+        return df.at[idx,"Close"]
+    try:
+        idx = list(df["Date"]).index(idx)
+    except Exception as e:
+        getPrice.noprice.append(astock)
+        return None
+    return df.at[idx,"Close"]
+getPrice.noprice = list()
+

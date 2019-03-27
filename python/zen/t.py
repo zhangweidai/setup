@@ -22,8 +22,26 @@ def igest_2():
         val = df['Open'].iloc[-1]
         val = df['Low'].iloc[-1]
         val = df['High'].iloc[-1]
+import zprep
+import z
+def doit(stocks):
+    for astock in stocks:
+        pass
+
+stocks = z.getStocks()
+def doitg():
+    global stocks
+    for astock in stocks:
+        pass
 
 def Test_1():
+    doitg()
+
+def Test_2():
+    global stocks
+    doit(stocks)
+
+def est_1():
     endi = df.tail(1).index.item()
     for idx in df.index:
         if idx < start or idx > end:
@@ -33,7 +51,7 @@ def Test_1():
         val = df.at[endi, 'Open']
         val = df.at[endi, 'Low']
         val = df.at[endi, 'High']
-def Test_3():
+def est_3():
     endi = len(df)-1
     for idx in df.index:
         if idx < start or idx > end:
@@ -186,7 +204,7 @@ if __name__ == '__main__':
         names.append(method)
         answer = timeit.timeit("{}()".format(method), 
                     setup="from __main__ import {}".format(method),
-                    number=10000)
+                    number=100)
         times.append(answer)
         print (round(answer,4))
 
