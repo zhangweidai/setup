@@ -80,4 +80,4 @@ def getBuyStocks(idxdate, mode, howmany=1):
         print("orted_xh: {}".format( sorted_xh))
         raise SystemExit
 
-print(getBuyStocks("2019-03-26", mode="both", howmany=3))
+print(getBuyStocks("2019-03-27", mode="both", howmany=3))
