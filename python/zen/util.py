@@ -573,9 +573,6 @@ def saveProcessedFromYahoo(astock, add=False):
     except:
         pass
 
-    tday = datetime.date.today().isoformat()
-    saveStartDate = "2015-01-05" if getCsv.csvdir == "csv" else "2000-01-05"
-
     global removed
     path = getCsv(astock, asPath = True)
     if os.path.exists(path):
@@ -585,6 +582,7 @@ def saveProcessedFromYahoo(astock, add=False):
         return
 
     df = None
+    saveStartDate = "2000-01-05"
     try:
         df = pdr.get_data_yahoo([astock], start=saveStartDate)
     except Exception as e:

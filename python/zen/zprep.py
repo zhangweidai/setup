@@ -44,8 +44,8 @@ def updateCsv(astock):
         print("path: {}".format( path))
         util.saveProcessedFromYahoo(astock)
         downloaded.append(astock)
-        print("i didnt exist astock: {}".format( astock))
-        raise SystemExit
+#        print("i didnt exist astock: {}".format( astock))
+#        raise SystemExit
         return
 
     t = os.path.getmtime(path)
@@ -93,9 +93,10 @@ def updateCsv(astock):
 
 
 def updateStocks():
+    util.saveProcessedFromYahoo.download = True
+#    stocks = z.getStocks()
     stocks = z.getStocks()
-#    stocks = z.getStocks(preload=True)
-    for astock in ["SPY"]:
+    for astock in stocks:
         try:
             updateCsv(astock)
         except Exception as e:

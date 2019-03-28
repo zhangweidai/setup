@@ -190,12 +190,18 @@ def removeFromStocks(itemd):
 def clearFromEtfDics(items = None):
     dels = items if items else getp("deletes")
     etfs = getp("etfdict")
+    stocks = getp("alls")
     for key in etfs:
         for astock in dels:
             try:
                 etfs[key].remove(astock)
             except:
-                continue
+                pass
+            try:
+                stocks.remove(astock)
+            except:
+                pass
+    setp(stocks, "alls")
     setp(etfs, "etfdict")
 
 def delStock(astock, save=False):
