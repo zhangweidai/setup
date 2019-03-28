@@ -99,7 +99,7 @@ def buySellSim(droppage, start, end, mode):
 
         stocks_owned = len(miniport)
 
-        delay = 2.5 if stocks_owned >= tracks else 1
+        delay = 3 if stocks_owned >= tracks else 1
         if idx % int(interval*delay) or idx == 0:
             continue
 
@@ -201,9 +201,10 @@ def buySomething(cdate, astock, spend, idxdate):
     return [count, spend-fee]
 
 def calcPortfolio(droppage, alist, mode):
+    print("mode: {}".format( mode))
     global miniport
     changes = list()
-    for tries in range(10):
+    for tries in range(15):
         miniport = dict()
         start = random.randrange(num_days-duration)
         end = start + duration
@@ -224,28 +225,27 @@ def getSpread():
 #    x1list = list()
 #    x2list = list()
 
-    tlist = list()
+#    tlist = list()
     ulist = list()
     dlist = list()
     ddlist = list()
     try:
-        ylist = [i/100 for i in range(80,92,4)]
+        ylist = [i/100 for i in range(76,92,4)]
         for droppage in ylist:
             print("droppage : {}".format( droppage ))
 #            calcPortfolio(droppage, tlist, mode="both")
-            calcPortfolio(droppage, ulist, mode="up")
-            calcPortfolio(droppage, dlist, mode="down")
+            calcPortfolio(droppage, ulist, mode="high")
+            calcPortfolio(droppage, dlist, mode="low")
             calcPortfolio(droppage, ddlist, mode="lowlow")
 
-        print(tlist)
         print(ulist)
         print(dlist)
         print(ddlist)
 
-        plt.scatter(ylist, tlist, color="blue")
+#        plt.scatter(ylist, tlist, color="blue")
         plt.scatter(ylist, ulist, color="green")
         plt.scatter(ylist, dlist, color="red")
-        plt.scatter(ylist, ddlist, color="red")
+        plt.scatter(ylist, ddlist, color="blue")
 
         path = z.getPath("plots/{}.png".format(etfsource))
         plt.savefig(path)
@@ -253,9 +253,10 @@ def getSpread():
 
     except Exception as e:
         print ('port: '+ str(e))
-        print(tlist)
+#        print(tlist)
         print(ulist)
         print(dlist)
+        print(ddlist)
 
 
 getSpread()
