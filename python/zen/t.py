@@ -1,5 +1,22 @@
 import timeit
 import util
+
+lll1=[1.675, 1.673, 1.851, 1.75]
+print (sum(lll1)/3)
+
+lll2=[1.652, 1.747, 1.992, 2.098]
+print (sum(lll2)/3)
+
+lll3=[1.858, 1.958, 1.86, 2.081]
+print (sum(lll3)/3)
+
+print (lll1[0] + lll2[0] + lll3[0])
+print (lll1[1] + lll2[1] + lll3[1])
+print (lll1[2] + lll2[2] + lll3[2])
+print (lll1[3] + lll2[3] + lll3[3])
+
+raise SystemExit
+
 #import debug
 #debug.dipScore.mode = 2
 #print(debug.dipScore())
