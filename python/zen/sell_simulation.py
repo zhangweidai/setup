@@ -13,12 +13,12 @@ dates = z.getp("dates")
 interval = 7
 num_days = len(dates)
 print("num_days : {}".format( num_days ))
-etfsource = "ITOT"
+etfsource = "IUSG"
 stocks = z.getStocks(etfsource, preload=True)
 #stocks.sort()
 
 ayear = 252
-years = 2.5
+years = 2
 duration = int (years * ayear)
 
 seed = random.randrange(sys.maxsize)
@@ -34,6 +34,7 @@ miniport = dict()
 def getBuyStocks(idxdate, mode):
     thedayh=dict()
     thedayl=dict()
+    thedayll=dict()
     for astock in stocks:
 
         df = z.getCsv(astock)
@@ -57,6 +58,7 @@ def getBuyStocks(idxdate, mode):
             changeh = round(close/df.at[starti-3,"Open"],3) 
             changel = round(close/df.at[starti-3,"Open"] - 
                      (close/df.at[starti-8,"Open"])/2,3)
+            changell = round(close/df.at[starti-3,"Open"],3) 
 
         except Exception as e:
             continue
@@ -65,8 +67,11 @@ def getBuyStocks(idxdate, mode):
             thedayh[astock] = round(changeh,4)
         if changel < 1:
             thedayl[astock] = round(changel,4)
+        if changell < 1:
+            thedayll[astock] = round(changell,4)
 
     sorted_xl = sorted(thedayl.items(), key=operator.itemgetter(1))
+    sorted_xll = sorted(thedayll.items(), key=operator.itemgetter(1))
     sorted_xh = sorted(thedayh.items(), key=operator.itemgetter(1))
 
     try:
@@ -74,6 +79,8 @@ def getBuyStocks(idxdate, mode):
             return sample(sorted_xh[-6:],2)
         elif mode == "low":
             return sample(sorted_xl[:6],2)
+        elif mode == "lowlow":
+            return sample(sorted_xll[:6],2)
     except:
         print("sorted_xl: {}".format( sorted_xl))
         print("sorted_xh: {}".format( sorted_xh))
@@ -196,7 +203,7 @@ def buySomething(cdate, astock, spend, idxdate):
 def calcPortfolio(droppage, alist, mode):
     global miniport
     changes = list()
-    for tries in range(15):
+    for tries in range(10):
         miniport = dict()
         start = random.randrange(num_days-duration)
         end = start + duration
@@ -220,21 +227,25 @@ def getSpread():
     tlist = list()
     ulist = list()
     dlist = list()
+    ddlist = list()
     try:
-        ylist = [i/100 for i in range(76,96,4)]
+        ylist = [i/100 for i in range(80,92,4)]
         for droppage in ylist:
             print("droppage : {}".format( droppage ))
-            calcPortfolio(droppage, tlist, mode="both")
+#            calcPortfolio(droppage, tlist, mode="both")
             calcPortfolio(droppage, ulist, mode="up")
             calcPortfolio(droppage, dlist, mode="down")
+            calcPortfolio(droppage, ddlist, mode="lowlow")
 
         print(tlist)
         print(ulist)
         print(dlist)
+        print(ddlist)
 
         plt.scatter(ylist, tlist, color="blue")
         plt.scatter(ylist, ulist, color="green")
         plt.scatter(ylist, dlist, color="red")
+        plt.scatter(ylist, ddlist, color="red")
 
         path = z.getPath("plots/{}.png".format(etfsource))
         plt.savefig(path)
