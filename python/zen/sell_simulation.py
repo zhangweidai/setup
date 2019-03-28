@@ -18,7 +18,7 @@ stocks = z.getStocks(etfsource, preload=True)
 #stocks.sort()
 
 ayear = 252
-years = 2
+years = 3
 duration = int (years * ayear)
 
 seed = random.randrange(sys.maxsize)
@@ -31,10 +31,29 @@ minthresh = 350
 fee = 5
 miniport = dict()
 
+def getScore(idxstart, df):
+    minid = 10
+    realstart = idxstart-15
+    dips = 0 
+    for idx in range(realstart, idxstart):
+        bought = df.at[idx,"Close"]
+        now = df.at[idx+1,"Close"]
+        change = now/bought
+        if change < 1:
+            dips += 1-change
+
+    bought = df.at[realstart,"Close"]
+    now = df.at[idxstart,"Close"]
+    change = now/bought
+    if change > 1:
+        return -1
+    return round(dips*change,3)
+
 def getBuyStocks(idxdate, mode):
     thedayh=dict()
     thedayl=dict()
     thedayll=dict()
+    thedays=dict()
     for astock in stocks:
 
         df = z.getCsv(astock)
@@ -55,28 +74,34 @@ def getBuyStocks(idxdate, mode):
             if close < 2:
                 continue
 
-            changeh = round(close/df.at[starti-3,"Open"],3) 
+#            changeh = round(close/df.at[starti-3,"Open"],3) 
             changel = round(close/df.at[starti-3,"Open"] - 
                      (close/df.at[starti-8,"Open"])/2,3)
             changell = round(close/df.at[starti-3,"Open"],3) 
+            changes = getScore(starti, df)
 
         except Exception as e:
             continue
 
-        if changeh > 1:
-            thedayh[astock] = round(changeh,4)
+#        if changeh > 1:
+#            thedayh[astock] = round(changeh,4)
         if changel < 1:
             thedayl[astock] = round(changel,4)
         if changell < 1:
             thedayll[astock] = round(changell,4)
 
+        thedays[astock] = round(changes,4)
+
     sorted_xl = sorted(thedayl.items(), key=operator.itemgetter(1))
     sorted_xll = sorted(thedayll.items(), key=operator.itemgetter(1))
-    sorted_xh = sorted(thedayh.items(), key=operator.itemgetter(1))
+#    sorted_xh = sorted(thedayh.items(), key=operator.itemgetter(1))
+    sorted_xs = sorted(thedays.items(), key=operator.itemgetter(1))
 
     try:
-        if mode == "high":
-            return sample(sorted_xh[-6:],2)
+#        if mode == "high":
+#            return sample(sorted_xh[-6:],2)
+        if mode == "special":
+            return sample(sorted_xs[-6:],2)
         elif mode == "low":
             return sample(sorted_xl[:6],2)
         elif mode == "lowlow":
@@ -234,7 +259,7 @@ def getSpread():
         for droppage in ylist:
             print("droppage : {}".format( droppage ))
 #            calcPortfolio(droppage, tlist, mode="both")
-            calcPortfolio(droppage, ulist, mode="high")
+            calcPortfolio(droppage, ulist, mode="special")
             calcPortfolio(droppage, dlist, mode="low")
             calcPortfolio(droppage, ddlist, mode="lowlow")
 
@@ -247,7 +272,7 @@ def getSpread():
         plt.scatter(ylist, dlist, color="red")
         plt.scatter(ylist, ddlist, color="blue")
 
-        path = z.getPath("plots/{}.png".format(etfsource))
+        path = z.getPath("plots/{}_special.png".format(etfsource))
         plt.savefig(path)
         plt.show()
 
