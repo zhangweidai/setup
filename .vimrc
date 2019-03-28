@@ -85,6 +85,7 @@ nmap <leader><Space>  :call DebugExtension2()<cr>
 nmap <s-l>          0i<tab><esc>
 nmap <s-h>          0xxxx<esc>
 nmap <leader>ex     0iraise SystemExit<esc>
+nmap ;;             A:<esc>
 
 
 

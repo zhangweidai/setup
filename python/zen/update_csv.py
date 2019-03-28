@@ -3,6 +3,7 @@ from pandas_datareader import data as pdr
 import fix_yahoo_finance as yf
 import os
 import pandas
+import z
 import util
 import time
 
@@ -31,20 +32,19 @@ def getDataFromYahoo(astock):
     return data
 
 pulled = False
-#latest = util.getp("lastValues")
 latest = dict()
 problem = []
 def updateCsv(astock, yahoo_date = None):
     global pulled, latest, problem
     loaded = None
 
-    path = util.getCsv(astock, asPath=True)
+    path = z.getCsv(astock, asPath=True)
     if not os.path.exists(path):
         util.saveProcessedFromYahoo(astock)
         pulled = True
         return
 
-    loaded = util.getCsv(astock)
+    loaded = z.getCsv(astock)
     lastdate = loaded.tail(1)["Date"].item()
     if yahoo_date and lastdate == yahoo_date:
         return
@@ -78,19 +78,18 @@ def updateCsv(astock, yahoo_date = None):
             appending = True
 
 def updateStocks(yahoo_date):
-    stocks = util.getStocks()
-    print("stocks : {}".format(len(stocks)))
+    stocks = z.getStocks()
     for astock in stocks:
         try:
             updateCsv(astock, yahoo_date)
         except:
             pass
 
-    util.setp(latest, "lastValues")
-    util.setp(problem, "problematicUpdateStocks")
+    z.setp(latest, "lastValues")
+    z.setp(problem, "problematicUpdateStocks")
     print (problem)
-
+updateStocks()
 
 #if pulled:
-#    util.saveJsonData(stocks, "ijh")
+#    z.saveJsonData(stocks, "ijh")
 

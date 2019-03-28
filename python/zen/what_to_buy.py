@@ -55,21 +55,19 @@ def shouldUpdate():
     return True, yahoo_date
 
 def what_to_buy():
-    util.getStocks.totalOverride = True
     should, latestInfo = shouldUpdate()
-#    if should:
     import update_csv
     update_csv.updateStocks(latestInfo)
 
-    end = util.getNumberOfDates()
-    start = end - util.getBuyBackTrack()
-    vals = [start, end]
-    stocks = util.getStocks()
-
-    csvfile = util.report(stocks, 
-            start=vals[0], end=vals[1], reportname = "main_")
-
-    util.setp(csvfile, "buyfile")
+#    end = util.getNumberOfDates()
+#    start = end - util.getBuyBackTrack()
+#    vals = [start, end]
+#    stocks = util.getStocks()
+#
+#    csvfile = util.report(stocks, 
+#            start=vals[0], end=vals[1], reportname = "main_")
+#
+#    util.setp(csvfile, "buyfile")
 #    print (util.getWhatToBuy(1, True))
 
 util.getStocks.totalOverride = True

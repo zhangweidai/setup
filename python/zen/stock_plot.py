@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 from tkinter import *
 from util import getCsv, getStocks, trimStock, getTrimStock
 import util
+import z
 from matplotlib.pyplot import figure
 from tkinter import simpledialog
 from pyutil import Modes, Zen, settings
@@ -21,14 +22,18 @@ def deleteStock(astock, force=False):
         print ("Not Deleting : {}".format(astock))
         return
     print ("Deleting : {}".format(astock))
-    util.delStock(astock)
+    z.delStock(astock)
     idx += 1
-    resetStocks(update = True)
+    updateDisplay()
+#    resetStocks(update = True)
 
 def resetStocks(update=True):
     global stocks, stock_count
-    stocks = getStocks(reset=True)
+    z.getCsv.download = False
+    stocks = list(z.getStocks(dev=True))
+    print("stocks : {}".format( stocks ))
     stock_count = len(stocks)
+    print("stock_count : {}".format( stock_count ))
     if update:
         updateDisplay()
 
@@ -727,9 +732,10 @@ def saveSettings():
             currentMode ^= mode
     settings(Zen.lastMode, setValue = currentMode)
     util.saveTargets()
+    z.removeFromStocks(z.delStock.items)
 
 def plotIdx():
-    global idx, xcount
+    global idx, xcount, stocks
     xcount = 10
     idx = settings(Zen.lastStock, default=0)
     if idx >= len(stocks):

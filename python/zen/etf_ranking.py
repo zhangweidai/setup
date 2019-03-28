@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 days = z.getp("dates")
 num_days = len(days)
 print("num_days : {}".format( num_days ))
-
+z.getCsv.savedReads = z.getp("allcsvs")
 spdf = z.getCsv("SPY")
 stocks = z.getStocks()
 
@@ -96,7 +96,7 @@ def more_doits():
     for etf in ylist:
         print("etf : {}".format( etf ))
 #        problems = set()
-        stocks = z.getStocks(etf, reset=True, simple = True, preload=True)
+        stocks = z.getStocks(etf, reset=True, simple = True)
         doits(tlist, ulist, dlist, avg = 4)
 
     plt.scatter(ylist, tlist, color="blue")

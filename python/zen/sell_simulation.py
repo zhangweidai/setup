@@ -7,16 +7,18 @@ import sys
 from random import sample
 import numpy as np
 from collections import defaultdict
+z.listen()
 
 dates = z.getp("dates")
-interval = 20
+interval = 7
 num_days = len(dates)
 print("num_days : {}".format( num_days ))
-
-stocks = z.getStocks("IVV")
+etfsource = "ITOT"
+stocks = z.getStocks(etfsource, preload=True)
+#stocks.sort()
 
 ayear = 252
-years = 3
+years = 2.5
 duration = int (years * ayear)
 
 seed = random.randrange(sys.maxsize)
@@ -25,7 +27,7 @@ rng = random.Random(seed)
 tracks = 25
 original = 1000
 spend = original
-minthresh = 400 
+minthresh = 350 
 fee = 5
 miniport = dict()
 
@@ -36,14 +38,15 @@ def getBuyStocks(idxdate, mode):
 
         df = z.getCsv(astock)
         if df is None:
+            print("problem astock: {}".format( astock))
             continue
 
+        df_dates = df["Date"].tolist() 
         try:
-            starti = dates.index(idxdate)
+            starti = df_dates.index(idxdate)
             if not starti:
                 continue
         except Exception as e:
-            print ('po: '+ str(e))
             continue
 
         try:
@@ -56,10 +59,6 @@ def getBuyStocks(idxdate, mode):
                      (close/df.at[starti-8,"Open"])/2,3)
 
         except Exception as e:
-            print("starti: {}".format( starti))
-            print("astock: {}".format( astock))
-            print ('pxort: '+ str(e))
-            raise SystemExit
             continue
 
         if changeh > 1:
@@ -91,27 +90,34 @@ def buySellSim(droppage, start, end, mode):
     spend = original
     for idx, idxdate in enumerate(dates[start:end]):
 
-        if idx % interval or idx == 0:
+        stocks_owned = len(miniport)
+
+        delay = 2.5 if stocks_owned >= tracks else 1
+        if idx % int(interval*delay) or idx == 0:
             continue
 
-        buyme = getBuyStocks(idxdate, mode)
-
-        stock_count = len(miniport)
-        if stock_count < tracks:
-
+        if stocks_owned < tracks:
+            buyme = getBuyStocks(idxdate, mode)
             for item in buyme:
                 astock = item[0]
-                if astock not in miniport and stock_count < tracks:
-                    something = buySomething(dates[idx+1], astock, spend)
+                if astock not in miniport and stocks_owned < tracks:
+                    something = buySomething(dates[idx+start+1], 
+                            astock, spend, idxdate)
                     if something:
                         miniport[astock] = something
-                        stock_count = len(miniport)
+                        stocks_owned = len(miniport)
         else:
             try:
                 spend = sell(spend, idxdate, droppage)
             except:
-                nextdate = dates[idx+1]
-                spend = sell(spend, nextdate, droppage)
+                try:
+                    nextdate = dates[start+idx+1]
+                    spend = sell(spend, nextdate, droppage)
+                except:
+                    print("why not sell miniport:")
+                    print(miniport)
+                    print("nextdate : {}".format( nextdate ))
+
     try:
         port_value = portvalue(idxdate)
     except:
@@ -123,7 +129,6 @@ def buySellSim(droppage, start, end, mode):
             print("nextdate : {}".format( nextdate ))
             raise SystemExit
 
-    print("port_value: {}".format( port_value))
     return port_value
 
 def portvalue(cdate):
@@ -137,7 +142,6 @@ def portvalue(cdate):
         else:
             total += item[1]
 
-    print("{} {}".format( cdate, total))
     return round(total/(tracks*original),3)
 
 def sell(spend, cdate, droppage):
@@ -158,18 +162,22 @@ def sell(spend, cdate, droppage):
             spend += cvalue
             sells.append(astock)
         else:
-            miniport[astock] = [item[0], cvalue]
+            newcvalue = max(cvalue, item[1])
+            miniport[astock] = [item[0], newcvalue]
 
     if sells:
         spend = round(spend/len(sells),2)
         for sell in sells:
             del miniport[sell]
-    return spend
+        return spend
+    return 0
 
-def buySomething(cdate, astock, spend):
+def buySomething(cdate, astock, spend, idxdate):
     try:
         cprice = z.getPrice(astock, cdate)
         if not cprice:
+            print("no price cdate: {} {} ".format( cdate, astock))
+            print("idxdate: {}".format( idxdate))
             return None
         count = round((spend-fee)/cprice,3)
 
@@ -188,15 +196,13 @@ def buySomething(cdate, astock, spend):
 def calcPortfolio(droppage, alist, mode):
     global miniport
     changes = list()
-    for b in range(25):
+    for tries in range(15):
         miniport = dict()
         start = random.randrange(num_days-duration)
         end = start + duration
         changes.append(buySellSim(droppage, start, end, mode))
-        print("changes: {}".format( changes))
-        raise SystemExit
-        
 
+    changes.remove(max(changes))
     changes.remove(max(changes))
 
     vari = np.var(changes)
@@ -214,25 +220,31 @@ def getSpread():
     tlist = list()
     ulist = list()
     dlist = list()
+    try:
+        ylist = [i/100 for i in range(76,96,4)]
+        for droppage in ylist:
+            print("droppage : {}".format( droppage ))
+            calcPortfolio(droppage, tlist, mode="both")
+            calcPortfolio(droppage, ulist, mode="up")
+            calcPortfolio(droppage, dlist, mode="down")
 
-    ylist = [i/100 for i in range(75,84)]
-    for droppage in ylist:
-        print("droppage : {}".format( droppage ))
+        print(tlist)
+        print(ulist)
+        print(dlist)
 
-        calcPortfolio(droppage, tlist, mode="both")
-        raise SystemExit
-        calcPortfolio(droppage, ulist, mode="up")
-        calcPortfolio(droppage, dlist, mode="down")
-#        x1list.append(x1)
-#        x2list.append(x2)
-#        print(x1list)
-#        print(x2list)
+        plt.scatter(ylist, tlist, color="blue")
+        plt.scatter(ylist, ulist, color="green")
+        plt.scatter(ylist, dlist, color="red")
 
-    plt.scatter(ylist, tlist, color="blue")
-    plt.scatter(ylist, ulist, color="green")
-    plt.scatter(ylist, dlist, color="red")
+        path = z.getPath("plots/{}.png".format(etfsource))
+        plt.savefig(path)
+        plt.show()
 
-    plt.show()
+    except Exception as e:
+        print ('port: '+ str(e))
+        print(tlist)
+        print(ulist)
+        print(dlist)
 
 
 getSpread()

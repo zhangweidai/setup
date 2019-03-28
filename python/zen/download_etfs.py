@@ -2,6 +2,7 @@ import urllib.request
 import util
 import os
 import fnmatch
+import z
 
 def savefile():
     addy = 'https://www.ishares.com/us/products/239724/ishares-core-sp-total-us-stock-market-etf'
@@ -31,7 +32,6 @@ def getCode(i, etf):
                 with open(etf,"w") as f:
                     f.writelines(lines)
 
-etfs = ["ITOT", "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV"]
 alls = set()
 from collections import defaultdict
 etfdict = defaultdict(set)
@@ -55,7 +55,7 @@ def doit():
     etfdict = util.getp("etfdict")
 #
     dels = util.getp("deletes")
-    for i,etf in enumerate(etfs):
+    for i,etf in enumerate(z.getEtfList()):
         print("i: {}".format( i))
         try:
             code = getCode(i, etf)
