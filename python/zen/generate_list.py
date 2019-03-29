@@ -1,27 +1,47 @@
 import z 
-import matplotlib.pyplot as plt
-
 import operator
-import random
-import sys
 from random import sample
-import numpy as np
-from collections import defaultdict
 
-dates = z.getp("dates")
-interval = 7
-num_days = len(dates)
-print("num_days : {}".format( num_days ))
-etfsource = "IUSG"
-stocks = z.getStocks(etfsource)
-#stocks.sort()
+def getScore(idxstart, df):
+    minid = 10
+    realstart = idxstart-15
+    dips = 0 
+    gains = 0 
+    for idx in range(realstart, idxstart):
+        bought = df.at[idx,"Close"]
+        now = df.at[idx+1,"Close"]
+        change = now/bought
+        if change < 1:
+            dips += 1-change
+        else:
+            gains += change
 
-def getBuyStocks(idxdate, mode, howmany=1):
-    thedayh=dict()
+    bought = df.at[realstart,"Close"]
+    now = df.at[idxstart,"Close"]
+    change = now/bought
+    s1 = -1
+    if change > 1 and dips:
+        s1 = ((change-1)*100)/dips
+
+    bought = df.at[idxstart-4,"Close"]
+    now = df.at[idxstart-2,"Close"]
+    change = now/bought
+
+    s2 = -1
+    if change < 1:
+        s2 = round((1-change)*gains,3)
+
+    return s1,s2
+
+#    return round(dips+change,3)
+#    return round(dips+change,3)
+
+def getBuyStocks(idxdate, mode, howmany = 2):
     thedayl=dict()
     thedayll=dict()
-    for astock in stocks:
-
+    thedays1=dict()
+    thedays2=dict()
+    for astock in getBuyStocks.stocks:
         df = z.getCsv(astock)
         if df is None:
             print("problem astock: {}".format( astock))
@@ -31,60 +51,67 @@ def getBuyStocks(idxdate, mode, howmany=1):
         try:
             starti = df_dates.index(idxdate)
             if not starti:
-                print("did not find start date astock: {} {}".\
-                        format( astock, idxdate))
                 continue
         except Exception as e:
-            print(df_dates.iloc[-1])
-            print (str(e))
-            print("astock: {}".format( astock))
-            raise SystemExit
+            continue
+
+        close = df.at[starti,"Close"]
+        if close < 2:
             continue
 
         try:
-            close = df.at[starti,"Close"]
-            if close < 2:
-                continue
-
-            changeh = round(close/df.at[starti-3,"Open"],3) 
-            changel = round(close/df.at[starti-3,"Open"] - 
-                     (close/df.at[starti-8,"Open"])/2,3)
-            changell = round(close/df.at[starti-3,"Open"],3)
-
+            opened = df.at[starti-3,"Open"]
+            changel = round((close/opened) - (close/df.at[starti-8,"Open"])/2,3)
+            changell = round(close/opened,3)
+            s1,s2 = getScore(starti, df)
         except Exception as e:
-            print ("str(e)")
-            print (str(e))
             continue
 
-        if changeh > 1:
-            thedayh[astock] = round(changeh,4)
+#        if changeh > 1:
+#            thedayh[astock] = round(changeh,4)
         if changel < 1:
             thedayl[astock] = round(changel,4)
         if changell < 1:
             thedayll[astock] = round(changell,4)
 
+        thedays1[astock] = s1
+        thedays2[astock] = s2
+
     sorted_xl = sorted(thedayl.items(), key=operator.itemgetter(1))
     sorted_xll = sorted(thedayll.items(), key=operator.itemgetter(1))
-    sorted_xh = sorted(thedayh.items(), key=operator.itemgetter(1))
+    sorted_xs1 = sorted(thedays1.items(), key=operator.itemgetter(1))
+    sorted_xs2 = sorted(thedays2.items(), key=operator.itemgetter(1))
 
     try:
-        if mode == "high":
-            return sample(sorted_xh[-6:],2)
+#        if mode == "high":
+#            return sample(sorted_xh[-6:],2)
+        if mode == "special1":
+            return sample(sorted_xs1[-6:],howmany)
+        elif mode == "special2":
+            return sample(sorted_xs2[-6:],howmany)
         elif mode == "low":
-            return sample(sorted_xl[:6],2)
+            return sample(sorted_xl[:6],howmany)
         elif mode == "lowlow":
-            return sample(sorted_xll[:6],2)
-    except:
-        print("sorted_xl: {}".format( sorted_xl))
-        print("sorted_xh: {}".format( sorted_xh))
-        raise SystemExit
+            return sample(sorted_xll[:6],howmany)
+    except Exception as e:
+        print("mode : {}".format( mode ))
+        print ('port: '+ str(e))
+        print("idxdate: {}".format( idxdate))
+        return []
 
-    try:
-        return [sample(sorted_xh[-6:],howmany), sample(sorted_xl[:6],howmany)]
-    except:
-        print("orted_xl: {}".format( sorted_xl))
-        print("orted_xh: {}".format( sorted_xh))
-        raise SystemExit
+    print ("shoudlntget here")
+    raise SystemExit
+getBuyStocks.stocks = []
 
-print(getBuyStocks("2019-03-27", mode="lowlow"))
-print(getBuyStocks("2019-03-27", mode="high"))
+
+if __name__ == '__main__':
+    import matplotlib.pyplot as plt
+#    dates = z.getp("dates")
+#    num_days = len(dates)
+#    print("num_days : {}".format( num_days ))
+    etfsource = "IUSG"
+    getBuyStocks.stocks = z.getStocks(etfsource)
+#    print(getBuyStocks("2019-03-27", mode="lowlow"))
+    print(getBuyStocks("2014-03-27", mode="special1", howmany=4))
+#    print(getBuyStocks("2019-03-27", mode="special2", howmany=4))
+

@@ -1,12 +1,13 @@
 import z 
-import matplotlib.pyplot as plt
 
 import operator
 import random
 import sys
 from random import sample
 import numpy as np
+import generate_list
 from collections import defaultdict
+
 z.listen()
 
 dates = z.getp("dates")
@@ -14,7 +15,7 @@ interval = 7
 num_days = len(dates)
 print("num_days : {}".format( num_days ))
 etfsource = "IUSG"
-stocks = z.getStocks(etfsource, preload=True)
+generate_list.getBuyStocks.stocks = z.getStocks(etfsource)
 #stocks.sort()
 
 ayear = 252
@@ -24,99 +25,13 @@ duration = int (years * ayear)
 seed = random.randrange(sys.maxsize)
 rng = random.Random(seed)
 
-tracks = 25
+tracks = 13
 original = 1000
 spend = original
 minthresh = 350 
 fee = 5
 miniport = dict()
 
-def getScore(idxstart, df):
-    minid = 10
-    realstart = idxstart-15
-    dips = 0 
-    for idx in range(realstart, idxstart):
-        bought = df.at[idx,"Close"]
-        now = df.at[idx+1,"Close"]
-        change = now/bought
-        if change < 1:
-            dips += 1-change
-
-    bought = df.at[realstart,"Close"]
-    now = df.at[idxstart,"Close"]
-    change = now/bought
-    if change > 1:
-        return -1
-    return round(dips*change,3)
-
-def getBuyStocks(idxdate, mode):
-    thedayh=dict()
-    thedayl=dict()
-    thedayll=dict()
-    thedays=dict()
-    for astock in stocks:
-
-        df = z.getCsv(astock)
-        if df is None:
-            print("problem astock: {}".format( astock))
-            continue
-
-        df_dates = df["Date"].tolist() 
-        try:
-            starti = df_dates.index(idxdate)
-            if not starti:
-                continue
-        except Exception as e:
-            continue
-
-        try:
-            close = df.at[starti,"Close"]
-            if close < 2:
-                continue
-
-#            changeh = round(close/df.at[starti-3,"Open"],3) 
-            changel = round(close/df.at[starti-3,"Open"] - 
-                     (close/df.at[starti-8,"Open"])/2,3)
-            changell = round(close/df.at[starti-3,"Open"],3) 
-            changes = getScore(starti, df)
-
-        except Exception as e:
-            continue
-
-#        if changeh > 1:
-#            thedayh[astock] = round(changeh,4)
-        if changel < 1:
-            thedayl[astock] = round(changel,4)
-        if changell < 1:
-            thedayll[astock] = round(changell,4)
-
-        thedays[astock] = round(changes,4)
-
-    sorted_xl = sorted(thedayl.items(), key=operator.itemgetter(1))
-    sorted_xll = sorted(thedayll.items(), key=operator.itemgetter(1))
-#    sorted_xh = sorted(thedayh.items(), key=operator.itemgetter(1))
-    sorted_xs = sorted(thedays.items(), key=operator.itemgetter(1))
-
-    try:
-#        if mode == "high":
-#            return sample(sorted_xh[-6:],2)
-        if mode == "special":
-            return sample(sorted_xs[-6:],2)
-        elif mode == "low":
-            return sample(sorted_xl[:6],2)
-        elif mode == "lowlow":
-            return sample(sorted_xll[:6],2)
-    except:
-        print("sorted_xl: {}".format( sorted_xl))
-        print("sorted_xh: {}".format( sorted_xh))
-        raise SystemExit
-
-    try:
-        return [sample(sorted_xh[-6:],1)[0], sample(sorted_xl[:6],1)[0]]
-    except:
-        print("sorted_xl: {}".format( sorted_xl))
-        print("sorted_xh: {}".format( sorted_xh))
-        raise SystemExit
 
 def buySellSim(droppage, start, end, mode):
     spend = original
@@ -129,7 +44,7 @@ def buySellSim(droppage, start, end, mode):
             continue
 
         if stocks_owned < tracks:
-            buyme = getBuyStocks(idxdate, mode)
+            buyme = generate_list.getBuyStocks(idxdate, mode)
             for item in buyme:
                 astock = item[0]
                 if astock not in miniport and stocks_owned < tracks:
@@ -169,7 +84,7 @@ def portvalue(cdate):
         cprice = z.getPrice(astock, cdate)
         item = miniport[astock]
         if cprice:
-            cvalue = round((cprice * item[0])-fee)
+            cvalue = round((cprice * item[0])-fee,3)
             total += cvalue
         else:
             total += item[1]
@@ -229,12 +144,13 @@ def calcPortfolio(droppage, alist, mode):
     print("mode: {}".format( mode))
     global miniport
     changes = list()
-    for tries in range(15):
+    for tries in range(13):
         miniport = dict()
         start = random.randrange(num_days-duration)
         end = start + duration
         changes.append(buySellSim(droppage, start, end, mode))
 
+    changes.remove(max(changes))
     changes.remove(max(changes))
     changes.remove(max(changes))
 
@@ -250,35 +166,53 @@ def getSpread():
 #    x1list = list()
 #    x2list = list()
 
-#    tlist = list()
+    tlist = list()
     ulist = list()
     dlist = list()
     ddlist = list()
     try:
-        ylist = [i/100 for i in range(76,92,4)]
+        ylist = [i/100 for i in range(76,92,2)]
         for droppage in ylist:
             print("droppage : {}".format( droppage ))
-#            calcPortfolio(droppage, tlist, mode="both")
-            calcPortfolio(droppage, ulist, mode="special")
+            calcPortfolio(droppage, tlist, mode="special2")
+            calcPortfolio(droppage, ulist, mode="special1")
             calcPortfolio(droppage, dlist, mode="low")
             calcPortfolio(droppage, ddlist, mode="lowlow")
 
+        print(tlist)
         print(ulist)
         print(dlist)
         print(ddlist)
 
-#        plt.scatter(ylist, tlist, color="blue")
+        for i,droppage in enumerate(ylist):
+            tosum=[]
+            tosum.append(tlist[i])
+            tosum.append(ulist[i])
+            tosum.append(dlist[i])
+            tosum.append(ddlist[i])
+            print("droppage : {} = {} ".format( droppage, z.avg(tosum) ))
+
+        print("averages")
+        print(z.avg(tlist))
+        print(z.avg(ulist))
+        print(z.avg(dlist))
+        print(z.avg(ddlist))
+
+        import matplotlib.pyplot as plt
+        plt.scatter(ylist, tlist, color="blue")
         plt.scatter(ylist, ulist, color="green")
         plt.scatter(ylist, dlist, color="red")
-        plt.scatter(ylist, ddlist, color="blue")
+        plt.scatter(ylist, ddlist, color="black")
 
         path = z.getPath("plots/{}_special.png".format(etfsource))
         plt.savefig(path)
         plt.show()
 
     except Exception as e:
+        import traceback
+        print (traceback.format_exc())
         print ('port: '+ str(e))
-#        print(tlist)
+        print(tlist)
         print(ulist)
         print(dlist)
         print(ddlist)

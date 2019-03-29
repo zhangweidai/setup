@@ -232,6 +232,25 @@ def listen():
 def getEtfList():
     return ["ITOT", "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV"]
 
+def avg(lists):
+    return round(sum(lists)/len(lists),3)
+
+#print(avg([2.313, 2.232, 2.358, 2.468, 2.727, 2.965, 3.262, 3.07]))
+#print(avg([1.924, 1.944, 1.986, 2.123, 2.057, 2.405, 2.807, 2.822]))
+#print(avg([2.359, 2.651, 2.148, 3.105, 3.109, 2.695, 3.25, 2.791]))
+#print(avg([2.131, 2.417, 2.238, 2.618, 2.782, 2.829, 3.116, 3.141]))
+#
+#raise SystemExit
+
+def breaker(count):
+    if breaker.count == 0:
+        exit()
+    if not breaker.count:
+        breaker.count = count
+    else:
+        breaker.count -= 1
+        print("breaker: {}".format(breaker.count))
+breaker.count = None
 #removeFromStocks(getCorruptStocks())
 if __name__ == '__main__':
     import sys
