@@ -60,7 +60,7 @@ def parseDividendHtml(lines):
 #parseDividendHtml(path)
 
 def saveDivs():
-    months = ["Mar", "Apr"]
+    months = ["Apr", "May"]
     #months = ["Mar"]
     for month in months:
         for i in range(1,30):

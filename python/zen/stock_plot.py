@@ -30,8 +30,7 @@ def deleteStock(astock, force=False):
 def resetStocks(update=True):
     global stocks, stock_count
     z.getCsv.download = False
-    stocks = list(z.getStocks(dev=True))
-    print("stocks : {}".format( stocks ))
+    stocks = list(z.getStocks())
     stock_count = len(stocks)
     print("stock_count : {}".format( stock_count ))
     if update:

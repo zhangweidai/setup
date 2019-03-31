@@ -53,11 +53,21 @@ def getBuyStocks(idxdate, mode, howmany = 2):
             if not starti:
                 continue
         except Exception as e:
+#            print ('port: '+ str(e))
+#            print("astock: {}".format( astock))
             continue
 
-        close = df.at[starti,"Close"]
-        if close < 2:
-            continue
+        try:
+            close = df.at[starti,"Close"]
+            if close < 2:
+                continue
+        except Exception as e:
+            print ('port: '+ str(e))
+            print("idxdate: {}".format( idxdate))
+            print("starti: {}".format( starti))
+            print("df: {}".format(len( df)))
+            print("df_dates: {}".format(len( df_dates)))
+            exit()
 
         try:
             opened = df.at[starti-3,"Open"]
@@ -79,6 +89,7 @@ def getBuyStocks(idxdate, mode, howmany = 2):
 
     sorted_xl = sorted(thedayl.items(), key=operator.itemgetter(1))
     sorted_xll = sorted(thedayll.items(), key=operator.itemgetter(1))
+
     sorted_xs1 = sorted(thedays1.items(), key=operator.itemgetter(1))
     sorted_xs2 = sorted(thedays2.items(), key=operator.itemgetter(1))
 
@@ -86,16 +97,16 @@ def getBuyStocks(idxdate, mode, howmany = 2):
 #        if mode == "high":
 #            return sample(sorted_xh[-6:],2)
         if mode == "special1":
-            return sample(sorted_xs1[-6:],howmany)
+            return sample(sorted_xs1[-15:],howmany)
         elif mode == "special2":
-            return sample(sorted_xs2[-6:],howmany)
+            return sample(sorted_xs2[-15:],howmany)
         elif mode == "low":
-            return sample(sorted_xl[:6],howmany)
+            return sample(sorted_xl[:15],howmany)
         elif mode == "lowlow":
-            return sample(sorted_xll[:6],howmany)
+            return sample(sorted_xll[:15],howmany)
     except Exception as e:
-        print("mode : {}".format( mode ))
         print ('port: '+ str(e))
+        print("mode : {}".format( mode ))
         print("idxdate: {}".format( idxdate))
         return []
 
@@ -112,6 +123,8 @@ if __name__ == '__main__':
     etfsource = "IUSG"
     getBuyStocks.stocks = z.getStocks(etfsource)
 #    print(getBuyStocks("2019-03-27", mode="lowlow"))
-    print(getBuyStocks("2014-03-27", mode="special1", howmany=4))
+#    print(getBuyStocks("2019-03-28", mode="special1", howmany=4))
+    print(getBuyStocks("2019-03-28", mode="special2", howmany=4))
+    print(getBuyStocks("2019-03-28", mode="lowlow", howmany=4))
 #    print(getBuyStocks("2019-03-27", mode="special2", howmany=4))
 

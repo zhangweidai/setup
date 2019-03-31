@@ -7,20 +7,18 @@ from random import sample
 import numpy as np
 import generate_list
 from collections import defaultdict
-from termcolor import colored
 
 z.listen()
 
 dates = z.getp("dates")
 interval = 7
 num_days = len(dates)
-print("num_days : {}".format( num_days ))
 etfsource = "IUSG"
-generate_list.getBuyStocks.stocks = z.getStocks(etfsource)
+#generate_list.getBuyStocks.stocks = z.getStocks(etfsource)
 #stocks.sort()
 
 ayear = 252
-years = 2
+years = 3
 duration = int (years * ayear)
 
 seed = random.randrange(sys.maxsize)
@@ -34,9 +32,12 @@ fee = 5
 
 collector = dict()
 
-def buySellSim(droppage, start, end, mode, miniport):
+def buySellSim(args):
+    droppage, start, end, mode = args[0], args[1], args[2], args[3]
+    miniport = dict()
     spend = original
-    for idx, idxdate in enumerate(dates[start:end]):
+    sub = dates[start:end]
+    for idx, idxdate in enumerate(sub):
 
         stocks_owned = len(miniport)
 
@@ -49,36 +50,40 @@ def buySellSim(droppage, start, end, mode, miniport):
             for item in buyme:
                 astock = item[0]
                 if astock not in miniport and stocks_owned < tracks:
-                    something = buySomething(dates[idx+start+1], 
+                    something = buySomething(sub[idx+1], 
                             astock, spend, idxdate)
                     if something:
                         miniport[astock] = something
                         stocks_owned = len(miniport)
         else:
             try:
-                spend = sell(spend, idxdate, droppage)
+                spend = sell(spend, idxdate, droppage, miniport)
             except:
                 try:
-                    nextdate = dates[start+idx+1]
-                    spend = sell(spend, nextdate, droppage)
-                except:
-                    pass
-#                    print("why not sell miniport:")
-#                    print(miniport)
-#                    print("nextdate : {}".format( nextdate ))
+                    nextdate = sub[idx+1]
+                    spend = sell(spend, nextdate, droppage, miniport)
+                except Exception as e:
+                    print ('port: '+ str(e))
+                    print("why not sell miniport:")
+                    print(miniport)
+                    print("nextdate : {}".format( nextdate ))
+                    raise SystemExit
 
     try:
         port_value = portvalue(idxdate, miniport)
     except:
         try:
-            nextdate = dates[idx+1]
-            port_value = portvalue(nextdate, miniport)
+            nextdate = sub[idx+1]
+            port_value = portvalue(nextdate)
         except Exception as e:
             print ('port: '+ str(e))
             print("nextdate : {}".format( nextdate ))
             raise SystemExit
 
-    return port_value
+    collector[droppage, mode] = port_value
+
+def getCollector():
+    return collector
 
 def portvalue(cdate, miniport):
     total = 0
@@ -91,14 +96,7 @@ def portvalue(cdate, miniport):
         else:
             total += item[1]
 
-    total = round(total,3)
-    ret = round(total/((tracks-1)*original),3)
-    if ret < 1:
-        total = colored(total,"red")
-    print("Ending Date {} - total: {}".format( cdate,
-                    total,2))
-
-    return ret
+    return round(total/(tracks*original),3)
 
 def sell(spend, cdate, droppage, miniport):
     sold = None
@@ -153,10 +151,9 @@ def calcPortfolio(droppage, alist, mode):
     print("mode: {}".format( mode))
     changes = list()
     for tries in range(13):
-        miniport = dict()
         start = random.randrange(num_days-duration)
         end = start + duration
-        changes.append(buySellSim(droppage, start, end, mode, miniport))
+        changes.append(buySellSim(droppage, start, end, mode))
 
     changes.remove(max(changes))
     changes.remove(max(changes))
@@ -225,4 +222,4 @@ def getSpread():
         print(ddlist)
 
 
-getSpread()
+#getSpread()

@@ -1184,7 +1184,7 @@ def getRangeScore(astock, sub=False):
     return round(probupsum * percsum, 3)
 
 def getConsider():
-    return ["FF", "ACB", "BABA", "CRM", "ABT"]
+    return ["FF", "ACB", "BABA", "CRM", "ABT", "GM"]
 
 def getConsider2():
     return {"Janus": ["PAGS","ZTS", "CSGP"]}

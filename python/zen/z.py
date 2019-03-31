@@ -49,16 +49,17 @@ def getCorruptStocks():
     print("problems: {}".format( problems))
     return problems
     
-def saveCsvCache():
+def saveCsvCache( csv_pkl_name, etf = None ):
     print ("need to update cache")
     global util
     if not util:
         import util as util
     util.saveProcessedFromYahoo.download = False
-    stocks = getStocks()
+    stocks = getStocks(etf)
     for astock in stocks:
-        getCsv.savedReads[astock] = getCsv(astock)
-    setp(getCsv.savedReads, "allcsvs")
+        getCsv.savedReads[astock] = getCsv(astock, save=False)
+    getCsv.savedReads["SPY"] = getCsv("SPY", save=False)
+    setp(getCsv.savedReads, csv_pkl_name)
 
 def getStocks(etf = None, dev=False, reset = False, simple = False, preload = False):
     if not reset:
@@ -72,15 +73,17 @@ def getStocks(etf = None, dev=False, reset = False, simple = False, preload = Fa
 
     if preload:
         df = getCsv("SPY")
+        csv_pkl_name = "{}csvs".format(etf or "all")
 
+        print("csv_pkl_name : {}".format( csv_pkl_name ))
         try:
-            getCsv.savedReads = getp("allcsvs")
+            getCsv.savedReads = getp(csv_pkl_name)
             df2 = getCsv.savedReads["SPY"]
             if len(df2) != len(df):
-                saveCsvCache()
+                saveCsvCache(csv_pkl_name, etf)
         except:
             getCsv.savedReads = dict()
-            saveCsvCache()
+            saveCsvCache(csv_pkl_name, etf)
 
     if not etf:
         getStocks.ret = (getp("alls") | set(getEtfList()) | getAdded())
@@ -109,7 +112,7 @@ getStocks.etfs = None
 #print (getStocks("IUSG") - getStocks("ITOT"))
 #print (len(getStocks("IUSG|IVV")))
 
-
+import dask.dataframe as dd
 util = None
 def getCsv(astock, asPath=False, save=True):
     csvdir = "historical"
@@ -141,9 +144,9 @@ def getCsv(astock, asPath=False, save=True):
             if not util:
                 import util as util
             try:
-                print("downloading astock: {}".format( astock))
                 path = util.saveProcessedFromYahoo(astock)
                 if path:
+                    print("downloading astock: {}".format( astock))
                     df = pandas.read_csv(path)
                     if df is None:
                         print("did not save astock: {}".format( astock))

@@ -67,6 +67,10 @@ nmap <S-Right>    0i<Tab><Esc>
 " paste clipboard
 inoremap <C-v> <C-r><C-o>+
 imap <S-Insert>   <Esc>"*p
+imap <c-j>   (<Esc>ea)<Esc>
+imap <c-k>   ()<esc>
+"imap <c-i>   []<esc>
+
 
 " exec extension / reload vimrc
 nmap <leader>b   :let @* = expand('%:p')<cr>:call ExecExtension()<cr>
@@ -281,6 +285,8 @@ endf
 nmap j gj
 nmap k gk
 
+"call arpeggio#map('i', '', 0, 'fd', '<Esc>a(<Esc>ea)<Esc>')
+"call arpeggio#map('c', '', 0, 'fd', '<Esc>a(<Esc>ea)<Esc>')
 call arpeggio#map('i', '', 0, 'jk', '<Esc>')
 call arpeggio#map('c', '', 0, 'jk', '<Esc>')
 au WinEnter,BufRead,BufNewFile *   :cd %:p:h

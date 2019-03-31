@@ -52,7 +52,7 @@ def updateCsv(astock):
     csvdate = datetime.datetime.fromtimestamp(t)
     csvday = csvdate.day
     csvdate = str(csvdate).split(" ")[0]
-    ttoday = datetime.date.today().day-1
+    ttoday = datetime.date.today().day
     if csvday >= ttoday:
         return
 
