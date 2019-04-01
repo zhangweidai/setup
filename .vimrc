@@ -86,6 +86,7 @@ nmap <leader>f    :echo expand('%:p')<Esc>
 " debug extension
 nmap <space>      :call DebugExtension()<cr>
 nmap <leader><Space>  :call DebugExtension2()<cr>
+nmap <leader>t     :call DebugExtension3()<cr>
 nmap <s-l>          0i<tab><esc>
 nmap <s-h>          0xxxx<esc>
 nmap <leader>ex     0iraise SystemExit<esc>
@@ -132,7 +133,7 @@ imap <m-l>        <Esc>0i<tab><Esc>
 nmap <leader>se   :!gnome-terminal --working-directory '%:p:h' -x tcsh -c "grf '<cword>'; /bin/tcsh -i"&<cr>
 nmap <leader>sl   :!gnome-terminal --working-directory '%:p:h' -x tcsh -c "grf '<cword>'; /bin/tcsh -i"&<cr>
 nmap <leader>go   :exe "!firefox -search '<cword>' &"<cr>
-nmap <leader>t    :let @d = expand('%:p:h')<cr>o<esc>"dp<esc>:set clipboard=unnamed<cr>dd<esc>:set clipboard=<cr>
+"nmap <leader>t    :let @d = expand('%:p:h')<cr>o<esc>"dp<esc>:set clipboard=unnamed<cr>dd<esc>:set clipboard=<cr>
 
 " work specific
 nmap ,s           :find  %:t:r.c*<cr>
@@ -204,6 +205,13 @@ fu! CommentStr()
    elseif exten =~ "ahk"
       let g:comment_str = "; "
    endif
+endf
+
+fu! DebugExtension3()
+   if expand('%:p') =~ ".py"
+      norm bywoprint(type(
+      :norm pA))
+   endif 
 endf
 
 fu! DebugExtension2()

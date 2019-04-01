@@ -8,21 +8,16 @@ import dask
 import pandas as pd
 import dask.dataframe as dd
 from dask import delayed
+import time
 
 import os
 def getName(path):
     return os.path.splitext(os.path.basename(path))[0]
 
 dfd = None
-values = None
 datedics = None
 foo = None
 wow = None
-#def readSaved(read=True):
-#    global dfd, values, datedics, foo, wow
-#    dfd = dd.read_csv(bagspath)
-#    values = dfd.groupby('Date').apply(list, meta = ("Close", "f8"))
-#    print(values.compute().tolist())
 
 def getDF(astock):
     try:
@@ -30,49 +25,56 @@ def getDF(astock):
     except:
         getDF.partition_mapping = z.getp("partition_mapping")
         idx = getDF.partition_mapping[astock]
-    return dfd.get_partition(idx)
+
+    try:
+        return convertToDask.dfdsaved.get_partition(idx)
+    except:
+        convertToDask(save=False)
+        return convertToDask.dfdsaved.get_partition(idx)
 getDF.partition_mapping = dict()
 
-def computeme(grp_obj):
-    print("grp_obj: {}".format( grp_obj))
-#    gr_size = grp_obj.size()
-    return len(grp_obj)
-
-calced=None
-def convertToDask(save=False):
-    global dfd, values, pre, calced
+def convertToDask(save=True):
     path = z.getPath("delme")
+    print ("reading")
     dfd = dd.read_csv('{}/*.csv'.format(path), include_path_column = True)
     dfd = dfd.drop(['Volume', 'Adj Close', 'High','Low'], axis=1)
-
     dfd['path'] = dfd['path'].map(lambda x: getName(x))
-    dfd['Change'] = dfd.Close/dfd.Open
-    dfd['Change'] = dfd['Change'].map(lambda x: round(x,4))
+    convertToDask.dfdsaved = dfd
 
+    if save:
+        dfd['Change'] = dfd.Close/dfd.Open
+        dfd['Change'] = dfd['Change'].map(lambda x: round(x,4))
 
-#    calced = dfd.groupby('path').apply(computeme)
-#    print(calced )
+#        temp = temp.reset_index(level=["path"]).drop(columns=['Change'], level=0)
+#        temp = temp.groupby(['Date']).agg(lambda x: \
+#            tuple(x)).applymap(list).reset_index().set_index(['Date'])
 
-    pre = dfd.groupby(['Date','path']).agg({'Change':['min']})
-    values = pre.compute()
+        newpath = z.getPath("dump")
+#        dfd.to_csv(newpath)
+        print ("creating rolling data")
+        createRollingData(dfd)
+        print ("done rolling data")
 
-    foo = values.reset_index(level=["path"]).drop(columns=['Change'], level=0)
-    getHighLowStocks.ret = foo.groupby(['Date']).agg(lambda x: \
-            tuple(x)).applymap(list).reset_index().set_index(['Date'])
+convertToDask.dfdsaved = None
 
-    newpath = z.getPath("data/end.csv")
-    getHighLowStocks.ret.to_csv(newpath)
-
-
-dates = z.getp("dates")
 def getCsvValue(date, astock, column, days_before = 0, looped = 0):
+    global dfd
     if days_before:
+        dates = z.getp("dates")
         date =  dates[dates.index(date) - days_before]
-        
+
+    setDFD()
+
     try:
-        return dfd[(dfd.Date == date) & (dfd.path == \
-            astock)][column].compute().array[0]
+        
+        print ("sdf")
+        ret = dfd.loc[('Date' == date) & ('path' == astock)]["Open"].compute().array[0]
+#        ret = dfd[(dfd.Date == date) & (dfd.path == astock)][column].compute().array[0]
+        print ("sdfA")
+#        raise SystemExit
+        return ret
     except:
+        raise SystemExit
         if looped >= 3:
             return None
         try:
@@ -82,110 +84,128 @@ def getCsvValue(date, astock, column, days_before = 0, looped = 0):
         except Exception as e:
             pass
     return None
+
+
+def getHighLowStocks(date, count, mode = "Change"):
+    if getHighLowStocks.dfd is None:
+        path = z.getPath("calcd")
+        dfd = dd.read_csv('{}/*.csv'.format(path))
+        getHighLowStocks.dfd = dfd
+    ret = getHighLowStocks.dfd.get_partition(0)
+    ret = ret.loc['Date' == date]['values'].compute()
+    ret = eval(ret.values[0])
+    return ret[-1*count:], ret[:count]
     
-#    return bar[(bar.Date == date) & (bar.path == astock)][column].compute().array[0]
 
-temp = None
-def getHighLowStocks(date, count):
-    global temp
-    if getHighLowStocks.ret is None:
-        newpath = z.getPath("data/end.csv")
-        getHighLowStocks.ret = pd.read_csv(newpath)
-        getHighLowStocks.ret = getHighLowStocks.ret.reset_index().set_index(\
-                               ['Date']).drop(columns=['index'])
-        temp = eval(getHighLowStocks.ret.loc[date].values[0])
-        return temp[-1*count:], temp[:count]
-    temp = getHighLowStocks.ret.loc[date]
-    temp = (temp.tolist()[0])
-    return temp[-1*count:], temp[:count]
-getHighLowStocks.ret = None
+getHighLowStocks.dfd = None
+getHighLowStocks.ret = dict()
 
-def createRollingData():
+def createRollingData(dfd):
     for indx in range(dfd.npartitions):
-        computed = dfd['path'].get_partition(indx).compute()
-        name = computed[0]
+#        computed = dfd['path'].get_partition(indx).compute()
         computed = dfd.get_partition(indx).compute()
-        computed['3D'] = (computed.Close/computed.Open.shift(3))\
-            .map(lambda x: round(x,4))
-        computed['6D'] = (computed.Close/computed.Open.shift(6))\
-            .map(lambda x: round(x,4))
-        computed['12D'] = (computed.Close/computed.Open.shift(12))\
-            .map(lambda x: round(x,4))
-#        dfdk['3D'] = dfd['path'].map
-#        (lambda x: round(x,3))
-#        print("name : {}".format( name ))
-#        part = dfd.get_partition(indx)
-#        name = str(part['path'].compute()[0])
+        name = computed.path[0]
 
-#        print(part.columns)
-        computed['4DA'] = computed.Change.rolling(4).mean()\
+        computed['C3'] = (computed.Close/computed.Open.shift(3))\
             .map(lambda x: round(x,4))
-        print(computed)
+        computed['C6'] = (computed.Close/computed.Open.shift(6))\
+            .map(lambda x: round(x,4))
+        computed['C12'] = (computed.Close/computed.Open.shift(12))\
+            .map(lambda x: round(x,4))
+        computed['C30'] = (computed.Close/computed.Open.shift(30))\
+            .map(lambda x: round(x,4))
+        computed['S12'] = (computed.C12/computed.C3).map(lambda x: round(x,4))
+        computed['S30'] = (computed.C30/computed.C6).map(lambda x: round(x,4))
+        computed['A4'] = computed.Change.rolling(4).mean()\
+            .map(lambda x: round(x,4))
         path = z.getPath("calculated/{}.csv".format(name))
         computed.to_csv(path)
-#        getDF.partition_mapping[name] = indx
-#    z.setp(getDF.partition_mapping, "partition_mapping")
+        getDF.partition_mapping[name] = indx
 
-convertToDask()
-createRollingData()
-def getHighLowStocksSpecial(date, mode, count):
+    z.setp(getDF.partition_mapping, "partition_mapping")
+    processCalculatedData()
 
-print (getHighLowStocksSpecial("2000-01-18", 1))
-#print(getDF("BA").compute())
-#print (getHighLowStocks("2000-01-18", 1))
-#print (getHighLowStocks(
-#print (getCsvValue("2000-01-18", "BA", "Open"))
-#print (getCsvValue("2000-01-18", "BA", "Open", days_before=3))
+def getModes():
+#    return ['C3', 'C6', 'C12', 'C30', 'S30', 'S12','A4', "Change"]
+    return ['C3']
+
+def setDFD():
+    global dfd
+    if dfd is None:
+        print ("reading calculated")
+        path = z.getPath("historical")
+        dfd = dd.read_csv('{}/*.csv'.format(path))
+        print ("done reading calculated")
+
+from collections import defaultdict
+import numpy as np
+from numpy import nan
+
+import dask
+dask.config.set(scheduler='threads')
+def processCalculatedDataOriginal():
+    global dfd
+    setDFD()
+    types = getModes()
+    dfd = dfd.drop(['Unnamed: 0'], axis=1)
+#    print("dfd: {}".format( dfd.columns))
+    for atype in types:
+        print("atype : {}".format( atype ))
+        pre = dfd.groupby(['Date']).apply(pd.DataFrame.sort_values, by=atype, meta=dfd._meta)
+        print("atype : {}".format( atype ))
+        values = pre.compute()[[atype,'path']]
+        values = values.reset_index(level=['Date']).set_index(['Date'])
+        values['path'] = values.groupby(['Date'])['path'].apply(lambda x: x.tolist())
+        values['mode'] = atype
+        values = values.drop([atype], axis=1)
+        values = values[~values.index.duplicated(keep='first')]
+        path = z.getPath("calcd/{}_mode.csv".format(atype))
+        values.to_csv(path)
+
+def what(atype , dx):
+    bar = dx.sort_values(by=atype)[['path']].values.tolist()
+    flat_list = [item for sublist in bar for item in sublist]
+    return flat_list
+
+def processCalculatedData():
+    global dfd
+    setDFD()
+    types = getModes()
+    dfd = dfd.drop(['Unnamed: 0'], axis=1)
+#    print("dfd: {}".format( dfd.columns))
+    for atype in types:
+        print("atype : {}".format( atype ))
+        bar = dfd.groupby(['Date']).apply(lambda x : what(atype, x), \
+                                         meta=(1,'int')).compute()
+#        print (dfd.groupby(['Date'])[[atype,'path']].apply(what).compute())
+#        print (dir(dfd.groupby(['Date'])))
+#        print(pre)
+#        print (pre[pre.index.duplicated()])
+#        print(pre.values.compute())
+#        print(type(pre.values))
+#        values['path'] = values.groupby(['Date'])
+#        .apply(pd.DataFrame.sort_values, by=atype, meta=dfd._meta)
+#        raise SystemExit
+#        print("atype : {}".format( atype ))
+#        values = pre.compute()[[atype,'path']]
+#        values = values.reset_index(level=['Date']).set_index(['Date'])
+#        values['path'] = values.groupby(['Date'])['path'].apply(lambda x: x.tolist())
+#        values['mode'] = atype
+#        values = values.drop([atype], axis=1)
+#        values = values[~values.index.duplicated(keep='first')]
+        path = z.getPath("calcd/{}_mode.csv".format(atype))
+        bar.to_csv(path, header=['values'])
+
+if __name__ == '__main__':
+#    start = time.time()
+#    convertToDask()
+#    processCalculatedData()
+#    end = time.time()
+#    print ("Took %f ms" % ((end - start) * 1000.0))
+
+#    bar =  getHighLowStocks("2000-01-18", 2, "C3")
+#    print (getHighLowStocks("2019-01-18", 2))
+    print (getCsvValue("2000-01-18", "BA", "Close"))
+#    print (getCsvValue("2000-01-18", "BA", "Open", days_before=3))
+#    print (getDF("BA").compute())
 #print (getCsvValue("2000-01-18", "BA", "Open", days_before=10))
-#readSaved()
-
-raise SystemExit
-
-print(mapping)
-def dfdGetter(date, column, astock):
-    idx = mapping[astock]
-    bar = dfd.partitions[idx]['Date'].compute()
-    baridx = bar[bar == date].index[0]
-    bar = dfd.partitions[idx][column].compute()
-    return bar[baridx]
-
-print (dfdGetter("2019-03-20", "Open", "BA"))
-raise SystemExit
-
-bar = dfd.partitions[0].compute().head()
-print("bar : {}".format( bar.columns ))
-
-raise SystemExit
-print(bar.compute()["Close"][0])
-#print(bar.compute())
-bar = dfd.get_partition(0)
-print(bar.compute()["Close"][0])
-#print (dfd.info())
-#df2 = dfd.compute(scheduler='threads')
-#print (df2.info())
-#print (dfd.known_divisions)
-#print("df : {}".format( dfd.divisions ))
-#print("df : {}".format( df ))
-
-
-
-#path = z.getCsv("IJH", asPath=True)
-#df = dd.read_csv(path)
-#df2 = df[df.Date == '2019-03-29'].Close
-#df_dates = df.Date.values
-#print("df_dates : {}".format( df_dates ))
-#print (df2.compute())
-#raise SystemExit
-#
-#import random
-#def function(data):
-#    x = random.randrange(0,5)
-#    return data[1]*x
-#
-#df['Multiple'] = list(map(function, enumerate(df['Close'])))
-#print(df.tail())
-#print (z.getStocks.etfs.keys())
-#print(len(stocks))
-
-#stocks = z.getStocks("ITOT")
-#print(len(stocks))

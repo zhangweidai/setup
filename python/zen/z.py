@@ -1,6 +1,7 @@
 import os
 import pickle
 import pandas
+from functools import lru_cache
 
 def getPath(path, allowmake = True):
     path = "{}/../zen_dump/{}".format(os.getcwd(), path)
@@ -17,6 +18,7 @@ def getAdded():
 def percentage(factor):
     return "{:.2%}".format(factor-1)
 
+@lru_cache(maxsize=5)
 def getp(name):
     try:
         path = getPath("pkl/{}.pkl".format(name))
@@ -26,6 +28,8 @@ def getp(name):
 
 def setp(data, name):
     path = getPath("pkl/{}.pkl".format(name))
+    if os.path.exists(path):
+        os.remove(path)
     pickle.dump(data, open(path, "wb"))
 
 def getCorruptStocks():
