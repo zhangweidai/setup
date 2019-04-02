@@ -1,6 +1,7 @@
 import z 
 import operator
 from random import sample
+import dask_help
 
 def getScore(idxstart, df):
     minid = 10
@@ -35,6 +36,9 @@ def getScore(idxstart, df):
 
 #    return round(dips+change,3)
 #    return round(dips+change,3)
+
+def getBuyStocks2(idxdate, mode, howmany = 5):
+    return z.getEtfList()
 
 def getBuyStocks(idxdate, mode, howmany = 2):
     thedayl=dict()
@@ -114,17 +118,61 @@ def getBuyStocks(idxdate, mode, howmany = 2):
     raise SystemExit
 getBuyStocks.stocks = []
 
+from collections import OrderedDict
+from sortedcontainers import SortedSet
+keeping = 4
+discardlocation = int(keeping/2)
+inputf_dict = dict()
+import csv
+def process(astock, col, datesdict):
+    path = z.getPath("calculated/{}.csv".format(astock))
+    inputf_dict[astock] = csv.DictReader(open(path))
+    inputf = inputf_dict[astock]
+
+    for row in inputf:
+        cdate = row['Date']
+        try:
+            val = float(row[col])
+        except Exception as e:
+            continue
+        try:
+            datesdict[cdate].add((val, astock))
+        except:
+            datesdict[cdate] = SortedSet([(val, astock)])
+
+        if len(datesdict[cdate]) > keeping:
+            datesdict[cdate].discard(datesdict[cdate][discardlocation])
+
+from collections import defaultdict
+def setSortedDict():
+    stocks = z.getStocks(dev=True, reset=True)
+    setSortedDict.sorteddict = defaultdict(dict)
+    for mode in dask_help.getModes():
+        print("mode : {}".format( mode ))
+        for astock in stocks:
+            process(astock, mode, setSortedDict.sorteddict[mode])
+setSortedDict.sorteddict = None
+
+def getSortedStocks(date, mode):
+    if setSortedDict.sorteddict is None:
+        setSortedDict()
+    print("setSortedDict: {}".format( len(setSortedDict.sorteddict)))
+    raise SystemExit
+    return setSortedDict.sorteddict[mode][date]
 
 if __name__ == '__main__':
-    import matplotlib.pyplot as plt
+    setSortedDict()
+    print(setSortedDict.sorteddict['Change'])
+    print(len(setSortedDict.sorteddict))
+
 #    dates = z.getp("dates")
 #    num_days = len(dates)
 #    print("num_days : {}".format( num_days ))
-    etfsource = "IUSG"
-    getBuyStocks.stocks = z.getStocks(etfsource)
+#    etfsource = "IUSG"
+#    getBuyStocks.stocks = z.getStocks(etfsource)
 #    print(getBuyStocks("2019-03-27", mode="lowlow"))
 #    print(getBuyStocks("2019-03-28", mode="special1", howmany=4))
-    print(getBuyStocks("2019-03-28", mode="special2", howmany=4))
-    print(getBuyStocks("2019-03-28", mode="lowlow", howmany=4))
+#    print(getBuyStocks("2019-03-28", mode="special2", howmany=4))
+#    print(getBuyStocks("2019-03-28", mode="lowlow", howmany=4))
 #    print(getBuyStocks("2019-03-27", mode="special2", howmany=4))
 

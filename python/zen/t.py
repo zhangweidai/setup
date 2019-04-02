@@ -1,22 +1,6 @@
 import timeit
 import util
 
-lll1=[1.885, 1.909, 1.827, 2.066]
-print (sum(lll1)/3)
-
-lll2=[1.602, 1.677, 1.813, 2.048]
-print (sum(lll2)/3)
-
-lll3=[1.82, 1.905, 1.828, 2.3]
-print (sum(lll3)/3)
-
-print (lll1[0] + lll2[0] + lll3[0])
-print (lll1[1] + lll2[1] + lll3[1])
-print (lll1[2] + lll2[2] + lll3[2])
-print (lll1[3] + lll2[3] + lll3[3])
-
-raise SystemExit
-
 #import debug
 #debug.dipScore.mode = 2
 #print(debug.dipScore())
@@ -24,10 +8,10 @@ raise SystemExit
 #print(debug.dipScore())
 #raise SystemExit
 
-df = util.getCsv("BA")
-interval  = 15
-start  = 1005
-end  = 1030
+#df = util.getCsv("BA")
+#interval  = 15
+#start  = 1005
+#end  = 1030
 def igest_2():
     for i in df.index:
         if i < start or i > end:
@@ -45,18 +29,52 @@ def doit(stocks):
     for astock in stocks:
         pass
 
-stocks = z.getStocks()
+#stocks = z.getStocks()
 def doitg():
     global stocks
     for astock in stocks:
         pass
+import csv
+def process2(astock, col, date):
+    if process2.inputf is None:
+        path = z.getPath("delme2/{}.csv".format(astock))
+        process2.inputf = csv.DictReader(open(path))
+    for row in process2.inputf:
+        if row['Date'] == date:
+            return row[col]
+process2.inputf = None
+def process(astock, col, date):
+    path = z.getPath("delme2/{}.csv".format(astock))
+    inputf = csv.DictReader(open(path))
+    for row in inputf:
+        if row['Date'] == date:
+            return row[col]
+#        print("row : {}".format( row[col] ))
+#        print("col: {}".format( col))
+#        myset[row[col]] = row["Date"]
 
-def Test_1():
-    doitg()
+import test
+from collections import OrderedDict
 
-def Test_2():
-    global stocks
-    doit(stocks)
+def Test1():
+    dates = OrderedDict()
+    for astock in test.stocks:
+        test.process(astock, "Open", dates, True)
+
+def Test2():
+    dates = OrderedDict()
+    for astock in test.stocks:
+        test.process(astock, "Open", dates, False)
+
+#print("process2: {}".format(process("BA", "Open", "2000-01-18")))
+#raise SystemExit
+
+#def Test_1():
+#    doitg()
+#
+#def Test_2():
+#    global stocks
+#    doit(stocks)
 
 def est_1():
     endi = df.tail(1).index.item()
@@ -221,7 +239,7 @@ if __name__ == '__main__':
         names.append(method)
         answer = timeit.timeit("{}()".format(method), 
                     setup="from __main__ import {}".format(method),
-                    number=100)
+                    number=400)
         times.append(answer)
         print (round(answer,4))
 

@@ -73,7 +73,7 @@ def getStocks(etf = None, dev=False, reset = False, simple = False, preload = Fa
     if dev:
         if preload:
             getCsv.savedReads = getp("devdf")
-        return ["SPY", "BA", "BRO"]
+        return ["SPY", "BA", "C", "KO", "AMD"]
 
     if preload:
         df = getCsv("SPY")

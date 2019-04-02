@@ -25,7 +25,6 @@ def getDF(astock):
     except:
         getDF.partition_mapping = z.getp("partition_mapping")
         idx = getDF.partition_mapping[astock]
-
     try:
         return convertToDask.dfdsaved.get_partition(idx)
     except:
@@ -34,7 +33,7 @@ def getDF(astock):
 getDF.partition_mapping = dict()
 
 def convertToDask(save=True):
-    path = z.getPath("delme")
+    path = z.getPath("delme2")
     print ("reading")
     dfd = dd.read_csv('{}/*.csv'.format(path), include_path_column = True)
     dfd = dfd.drop(['Volume', 'Adj Close', 'High','Low'], axis=1)
@@ -49,7 +48,7 @@ def convertToDask(save=True):
 #        temp = temp.groupby(['Date']).agg(lambda x: \
 #            tuple(x)).applymap(list).reset_index().set_index(['Date'])
 
-        newpath = z.getPath("dump")
+#        newpath = z.getPath("dump")
 #        dfd.to_csv(newpath)
         print ("creating rolling data")
         createRollingData(dfd)
@@ -102,7 +101,6 @@ getHighLowStocks.ret = dict()
 
 def createRollingData(dfd):
     for indx in range(dfd.npartitions):
-#        computed = dfd['path'].get_partition(indx).compute()
         computed = dfd.get_partition(indx).compute()
         name = computed.path[0]
 
@@ -122,12 +120,11 @@ def createRollingData(dfd):
         computed.to_csv(path)
         getDF.partition_mapping[name] = indx
 
-    z.setp(getDF.partition_mapping, "partition_mapping")
-    processCalculatedData()
+#    z.setp(getDF.partition_mapping, "partition_mapping")
+#    processCalculatedData()
 
 def getModes():
-#    return ['C3', 'C6', 'C12', 'C30', 'S30', 'S12','A4', "Change"]
-    return ['C3']
+    return ['C3', 'C6', 'C12', 'C30', 'S30', 'S12','A4', "Change"]
 
 def setDFD():
     global dfd
@@ -171,7 +168,7 @@ def processCalculatedData():
     global dfd
     setDFD()
     types = getModes()
-    dfd = dfd.drop(['Unnamed: 0'], axis=1)
+#    dfd = dfd.drop(['Unnamed: 0'], axis=1)
 #    print("dfd: {}".format( dfd.columns))
     for atype in types:
         print("atype : {}".format( atype ))
@@ -198,12 +195,13 @@ def processCalculatedData():
 
 if __name__ == '__main__':
 #    start = time.time()
-#    convertToDask()
+    convertToDask()
 #    processCalculatedData()
 #    end = time.time()
 #    print ("Took %f ms" % ((end - start) * 1000.0))
 
-#    bar =  getHighLowStocks("2000-01-18", 2, "C3")
+    bar =  getHighLowStocks("2000-01-18", 2, "C3")
+    print("bar : {}".format( bar ))
 #    print (getHighLowStocks("2019-01-18", 2))
     print (getCsvValue("2000-01-18", "BA", "Close"))
 #    print (getCsvValue("2000-01-18", "BA", "Open", days_before=3))

@@ -34,6 +34,8 @@ collector = dict()
 
 def buySellSim(args):
     droppage, start, end, mode = args[0], args[1], args[2], args[3]
+    buySellSim.transcript = list()
+
     miniport = dict()
     spend = original
     sub = dates[start:end]
@@ -46,7 +48,7 @@ def buySellSim(args):
             continue
 
         if stocks_owned < tracks:
-            buyme = generate_list.getBuyStocks(idxdate, mode)
+            buyme = generate_list.getSortedStocks(idxdate, mode)
             for item in buyme:
                 astock = item[0]
                 if astock not in miniport and stocks_owned < tracks:
@@ -59,33 +61,31 @@ def buySellSim(args):
             try:
                 spend = sell(spend, idxdate, droppage, miniport)
             except:
-                try:
-                    nextdate = sub[idx+1]
-                    spend = sell(spend, nextdate, droppage, miniport)
-                except Exception as e:
-                    print ('port: '+ str(e))
-                    print("why not sell miniport:")
-                    print(miniport)
-                    print("nextdate : {}".format( nextdate ))
-                    raise SystemExit
+                pass
 
     try:
-        port_value = portvalue(idxdate, miniport)
-    except:
-        try:
-            nextdate = sub[idx+1]
-            port_value = portvalue(nextdate)
-        except Exception as e:
-            print ('port: '+ str(e))
-            print("nextdate : {}".format( nextdate ))
-            raise SystemExit
+        port_change, port_value = getPortValue(idxdate, miniport)
+    except Exception as e:
+        print ('problem getting cprices: '+ str(e))
+        return
 
-    collector[droppage, mode] = port_value
+    collector[droppage, mode] = port_change
+    msg = "finish on {} change {} value {}".format(idxdate, port_change, port_value)
+    setTranscript(msg, droppage, mode)
+
+def setTranscript(msg, droppage = None, mode = None):
+
+    buySellSim.transcript.append(msg)
+    if droppage:
+        path = z.getPath("transcript/{}_{}".format(droppage, mode))
+        with open(path, "w") as f:
+            f.write("\n".join(buySellSim.transcript))
+
 
 def getCollector():
     return collector
 
-def portvalue(cdate, miniport):
+def getPortValue(cdate, miniport):
     total = 0
     for astock in miniport:
         cprice = z.getPrice(astock, cdate)
@@ -96,7 +96,7 @@ def portvalue(cdate, miniport):
         else:
             total += item[1]
 
-    return round(total/(tracks*original),3)
+    return round(total/(len(miniport)*original),3), round(total,4)
 
 def sell(spend, cdate, droppage, miniport):
     sold = None
@@ -113,6 +113,9 @@ def sell(spend, cdate, droppage, miniport):
 
         cvalue = (cprice * item[0])-fee
         if (cvalue/item[1]) < droppage and cvalue > minthresh:
+
+            setTranscript("sold {} @ {} on {}".format(astock, cprice, cdate))
+
             spend += cvalue
             sells.append(astock)
         else:
@@ -130,21 +133,21 @@ def buySomething(cdate, astock, spend, idxdate):
     try:
         cprice = z.getPrice(astock, cdate)
         if not cprice:
-            print("no price cdate: {} {} ".format( cdate, astock))
-            print("idxdate: {}".format( idxdate))
+#            print("no price cdate: {} {} ".format( cdate, astock))
+#            print("idxdate: {}".format( idxdate))
             return None
         count = round((spend-fee)/cprice,3)
 
         if spend == 0 or spend-fee <= 0:
             print("spend : {}".format( spend ))
             print("astock: {}".format( astock))
-            print("df : {}".format(len(df)))
             raise SystemExit
 
     except Exception as e:
         print ('failedBuys: '+ str(e))
         print("astock: {}".format( astock))
-        print("df : {}".format(len( df)))
+
+    setTranscript("bought {} @ {} on {}".format(astock, cprice, cdate))
     return [count, spend-fee]
 
 def calcPortfolio(droppage, alist, mode):
