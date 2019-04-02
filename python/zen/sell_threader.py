@@ -14,8 +14,6 @@ dates = z.getp("dates")
 interval = 7
 num_days = len(dates)
 etfsource = "IUSG"
-#generate_list.getBuyStocks.stocks = z.getStocks(etfsource)
-#stocks.sort()
 
 ayear = 252
 years = 3
@@ -50,7 +48,7 @@ def buySellSim(args):
         if stocks_owned < tracks:
             buyme = generate_list.getSortedStocks(idxdate, mode)
             for item in buyme:
-                astock = item[0]
+                astock = item[1]
                 if astock not in miniport and stocks_owned < tracks:
                     something = buySomething(sub[idx+1], 
                             astock, spend, idxdate)
@@ -74,13 +72,15 @@ def buySellSim(args):
     setTranscript(msg, droppage, mode)
 
 def setTranscript(msg, droppage = None, mode = None):
+    if not setTranscript.enabled:
+        return
 
     buySellSim.transcript.append(msg)
     if droppage:
         path = z.getPath("transcript/{}_{}".format(droppage, mode))
         with open(path, "w") as f:
             f.write("\n".join(buySellSim.transcript))
-
+setTranscript.enabled = True
 
 def getCollector():
     return collector
@@ -88,7 +88,7 @@ def getCollector():
 def getPortValue(cdate, miniport):
     total = 0
     for astock in miniport:
-        cprice = z.getPrice(astock, cdate)
+        cprice = generate_list.getPrice(astock, cdate)
         item = miniport[astock]
         if cprice:
             cvalue = round((cprice * item[0])-fee,3)
@@ -103,7 +103,7 @@ def sell(spend, cdate, droppage, miniport):
     sells = []
     for astock,item in miniport.items():
         try:
-            cprice = z.getPrice(astock, cdate)
+            cprice = generate_list.getPrice(astock, cdate)
         except Exception as e:
             print("astock: {}".format( astock))
             continue
@@ -131,7 +131,7 @@ def sell(spend, cdate, droppage, miniport):
 
 def buySomething(cdate, astock, spend, idxdate):
     try:
-        cprice = z.getPrice(astock, cdate)
+        cprice = generate_list.getPrice(astock, cdate)
         if not cprice:
 #            print("no price cdate: {} {} ".format( cdate, astock))
 #            print("idxdate: {}".format( idxdate))
@@ -145,9 +145,10 @@ def buySomething(cdate, astock, spend, idxdate):
 
     except Exception as e:
         print ('failedBuys: '+ str(e))
+        print("cdate: {}".format( cdate))
         print("astock: {}".format( astock))
 
-    setTranscript("bought {} @ {} on {}".format(astock, cprice, cdate))
+#    setTranscript("bought {} @ {} on {}".format(astock, cprice, cdate))
     return [count, spend-fee]
 
 def calcPortfolio(droppage, alist, mode):

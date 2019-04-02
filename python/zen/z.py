@@ -65,15 +65,18 @@ def saveCsvCache( csv_pkl_name, etf = None ):
     getCsv.savedReads["SPY"] = getCsv("SPY", save=False)
     setp(getCsv.savedReads, csv_pkl_name)
 
-def getStocks(etf = None, dev=False, reset = False, simple = False, preload = False):
+def getStocks(etf = None, dev=False, reset = False, 
+        simple = False, preload = False):
+
+    if dev or getStocks.devoverride:
+        if preload:
+            getCsv.savedReads = getp("devdf")
+        return ["SPY", "BA", "C", "KO", "AMD"]
+
     if not reset:
         try: return getStocks.ret
         except: pass
 
-    if dev:
-        if preload:
-            getCsv.savedReads = getp("devdf")
-        return ["SPY", "BA", "C", "KO", "AMD"]
 
     if preload:
         df = getCsv("SPY")
@@ -113,6 +116,7 @@ def getStocks(etf = None, dev=False, reset = False, simple = False, preload = Fa
             getStocks.ret = getStocks.etfs[etf]
         return getStocks.ret
 getStocks.etfs = None
+getStocks.devoverride = False
 #print (getStocks("IUSG") - getStocks("ITOT"))
 #print (len(getStocks("IUSG|IVV")))
 

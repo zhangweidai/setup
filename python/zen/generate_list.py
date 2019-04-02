@@ -124,7 +124,7 @@ keeping = 4
 discardlocation = int(keeping/2)
 inputf_dict = dict()
 import csv
-def process(astock, col, datesdict):
+def process(astock, col, saveprices, datesdict):
     path = z.getPath("calculated/{}.csv".format(astock))
     inputf_dict[astock] = csv.DictReader(open(path))
     inputf = inputf_dict[astock]
@@ -135,6 +135,12 @@ def process(astock, col, datesdict):
             val = float(row[col])
         except Exception as e:
             continue
+
+        if saveprices:
+            openp = float(row['Open'])
+            closep = float(row['Close'])
+            setSortedDict.prices[cdate][astock] = [openp, closep]
+
         try:
             datesdict[cdate].add((val, astock))
         except:
@@ -145,34 +151,32 @@ def process(astock, col, datesdict):
 
 from collections import defaultdict
 def setSortedDict():
-    stocks = z.getStocks(dev=True, reset=True)
+    stocks = z.getStocks()
     setSortedDict.sorteddict = defaultdict(dict)
-    for mode in dask_help.getModes():
+    for i,mode in enumerate(dask_help.getModes()):
         print("mode : {}".format( mode ))
         for astock in stocks:
-            process(astock, mode, setSortedDict.sorteddict[mode])
+            process(astock, mode, bool(i==0), 
+                    setSortedDict.sorteddict[mode])
 setSortedDict.sorteddict = None
+setSortedDict.prices = defaultdict(dict)
 
 def getSortedStocks(date, mode):
-    if setSortedDict.sorteddict is None:
-        setSortedDict()
-    print("setSortedDict: {}".format( len(setSortedDict.sorteddict)))
-    raise SystemExit
     return setSortedDict.sorteddict[mode][date]
 
+def getPrice(astock, date, value = 1):
+    try:
+        return setSortedDict.prices[date][astock][value]
+    except Exception as e:
+        print("date: {}".format( date))
+        print("astock: {}".format( astock))
+        print ('problemGetPrices: '+ str(e))
+        return None
+
 if __name__ == '__main__':
+    z.getStocks.devoverride = True
     setSortedDict()
-    print(setSortedDict.sorteddict['Change'])
-    print(len(setSortedDict.sorteddict))
-
-#    dates = z.getp("dates")
-#    num_days = len(dates)
-#    print("num_days : {}".format( num_days ))
-#    etfsource = "IUSG"
-#    getBuyStocks.stocks = z.getStocks(etfsource)
-#    print(getBuyStocks("2019-03-27", mode="lowlow"))
-#    print(getBuyStocks("2019-03-28", mode="special1", howmany=4))
-#    print(getBuyStocks("2019-03-28", mode="special2", howmany=4))
-#    print(getBuyStocks("2019-03-28", mode="lowlow", howmany=4))
-#    print(getBuyStocks("2019-03-27", mode="special2", howmany=4))
-
+    print(setSortedDict.prices['2019-03-26']['AMD'])
+    print(getPrice( 'AMD', '2019-03-26'))
+#    print(setSortedDict.sorteddict['Change'])
+#    print(len(setSortedDict.sorteddict))
