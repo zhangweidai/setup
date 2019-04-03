@@ -18,7 +18,7 @@ def getAdded():
 def percentage(factor):
     return "{:.2%}".format(factor-1)
 
-@lru_cache(maxsize=5)
+@lru_cache(maxsize=8)
 def getp(name):
     try:
         path = getPath("pkl/{}.pkl".format(name))
@@ -68,15 +68,18 @@ def saveCsvCache( csv_pkl_name, etf = None ):
 def getStocks(etf = None, dev=False, reset = False, 
         simple = False, preload = False):
 
-    if dev or getStocks.devoverride:
+    if dev or getStocks.devoverride == True:
         if preload:
             getCsv.savedReads = getp("devdf")
-        return ["SPY", "BA", "C", "KO", "AMD"]
+        return ["OLLI", "UA"]
+#        return ["SPY", "BA", "C", "KO", "AMD"]
 
     if not reset:
         try: return getStocks.ret
         except: pass
 
+    if getStocks.devoverride:
+        etf = getStocks.devoverride
 
     if preload:
         df = getCsv("SPY")
@@ -216,7 +219,10 @@ def clearFromEtfDics(items = None):
     setp(etfs, "etfdict")
 
 def delStock(astock, save=False):
-    delStock.items.append(astock)
+    if type(astock) is list:
+        delStock.items = delStock.items + astock
+    else:
+        delStock.items.append(astock)
     if save:
         removeFromStocks(delStock.items)
         clearFromEtfDics(delStock.items)

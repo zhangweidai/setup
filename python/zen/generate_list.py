@@ -3,6 +3,13 @@ import operator
 from random import sample
 import dask_help
 
+from collections import OrderedDict
+from sortedcontainers import SortedSet
+keeping = 12
+discardlocation = int(keeping/2)
+import csv
+
+
 def getScore(idxstart, df):
     minid = 10
     realstart = idxstart-15
@@ -34,112 +41,20 @@ def getScore(idxstart, df):
 
     return s1,s2
 
-#    return round(dips+change,3)
-#    return round(dips+change,3)
-
-def getBuyStocks2(idxdate, mode, howmany = 5):
-    return z.getEtfList()
-
-def getBuyStocks(idxdate, mode, howmany = 2):
-    thedayl=dict()
-    thedayll=dict()
-    thedays1=dict()
-    thedays2=dict()
-    for astock in getBuyStocks.stocks:
-        df = z.getCsv(astock)
-        if df is None:
-            print("problem astock: {}".format( astock))
-            continue
-
-        df_dates = df["Date"].tolist() 
-        try:
-            starti = df_dates.index(idxdate)
-            if not starti:
-                continue
-        except Exception as e:
-#            print ('port: '+ str(e))
-#            print("astock: {}".format( astock))
-            continue
-
-        try:
-            close = df.at[starti,"Close"]
-            if close < 2:
-                continue
-        except Exception as e:
-            print ('port: '+ str(e))
-            print("idxdate: {}".format( idxdate))
-            print("starti: {}".format( starti))
-            print("df: {}".format(len( df)))
-            print("df_dates: {}".format(len( df_dates)))
-            exit()
-
-        try:
-            opened = df.at[starti-3,"Open"]
-            changel = round((close/opened) - (close/df.at[starti-8,"Open"])/2,3)
-            changell = round(close/opened,3)
-            s1,s2 = getScore(starti, df)
-        except Exception as e:
-            continue
-
-#        if changeh > 1:
-#            thedayh[astock] = round(changeh,4)
-        if changel < 1:
-            thedayl[astock] = round(changel,4)
-        if changell < 1:
-            thedayll[astock] = round(changell,4)
-
-        thedays1[astock] = s1
-        thedays2[astock] = s2
-
-    sorted_xl = sorted(thedayl.items(), key=operator.itemgetter(1))
-    sorted_xll = sorted(thedayll.items(), key=operator.itemgetter(1))
-
-    sorted_xs1 = sorted(thedays1.items(), key=operator.itemgetter(1))
-    sorted_xs2 = sorted(thedays2.items(), key=operator.itemgetter(1))
-
-    try:
-#        if mode == "high":
-#            return sample(sorted_xh[-6:],2)
-        if mode == "special1":
-            return sample(sorted_xs1[-15:],howmany)
-        elif mode == "special2":
-            return sample(sorted_xs2[-15:],howmany)
-        elif mode == "low":
-            return sample(sorted_xl[:15],howmany)
-        elif mode == "lowlow":
-            return sample(sorted_xll[:15],howmany)
-    except Exception as e:
-        print ('port: '+ str(e))
-        print("mode : {}".format( mode ))
-        print("idxdate: {}".format( idxdate))
-        return []
-
-    print ("shoudlntget here")
-    raise SystemExit
-getBuyStocks.stocks = []
-
-from collections import OrderedDict
-from sortedcontainers import SortedSet
-keeping = 4
-discardlocation = int(keeping/2)
-inputf_dict = dict()
-import csv
 def process(astock, col, saveprices, datesdict):
-    path = z.getPath("calculated/{}.csv".format(astock))
-    inputf_dict[astock] = csv.DictReader(open(path))
-    inputf = inputf_dict[astock]
+    path = z.getPath("calculated2/{}.csv".format(astock))
+    for row in csv.DictReader(open(path)):
 
-    for row in inputf:
         cdate = row['Date']
-        try:
-            val = float(row[col])
-        except Exception as e:
-            continue
-
         if saveprices:
             openp = float(row['Open'])
             closep = float(row['Close'])
             setSortedDict.prices[cdate][astock] = [openp, closep]
+
+        try:
+            val = float(row[col])
+        except Exception as e:
+            continue
 
         try:
             datesdict[cdate].add((val, astock))
@@ -150,33 +65,99 @@ def process(astock, col, saveprices, datesdict):
             datesdict[cdate].discard(datesdict[cdate][discardlocation])
 
 from collections import defaultdict
-def setSortedDict():
+def setSortedDict(usepkl=True):
+
+    prefix = ""
+    if type(z.getStocks.devoverride) == str:
+        prefix = z.getStocks.devoverride
+
+    if usepkl:
+        print("prefix: {}".format( prefix))
+        setSortedDict.sorteddict = z.getp("{}sorteddict".format(prefix))
+        setSortedDict.prices = z.getp("{}prices".format(prefix))
+        saveEtfPrices.prices = z.getp("etfprices")
+        return
+
     stocks = z.getStocks()
     setSortedDict.sorteddict = defaultdict(dict)
     for i,mode in enumerate(dask_help.getModes()):
         print("mode : {}".format( mode ))
         for astock in stocks:
-            process(astock, mode, bool(i==0), 
-                    setSortedDict.sorteddict[mode])
+            process(astock, mode, bool(i==0), setSortedDict.sorteddict[mode])
+
+    print("saving")
+    z.setp(setSortedDict.sorteddict, "{}sorteddict".format(prefix))
+    z.setp(setSortedDict.prices, "{}prices".format(prefix))
+    print("done saving")
+
 setSortedDict.sorteddict = None
 setSortedDict.prices = defaultdict(dict)
 
-def getSortedStocks(date, mode):
-    return setSortedDict.sorteddict[mode][date]
+def getSortedStocks(date, mode, howmany = 2):
+    alist = setSortedDict.sorteddict[mode][date]
+    return sample(alist,howmany)
+
+def getEtfPrice(astock, date):
+    try:
+        return saveEtfPrices.prices[date][astock]
+    except:
+        print("problem etf date: {}".format( date))
+        print("astock: {}".format( astock))
+        return None
 
 def getPrice(astock, date, value = 1):
     try:
         return setSortedDict.prices[date][astock][value]
     except Exception as e:
+        if astock in z.getEtfList():
+            try:
+                return saveEtfPrices.prices[date][astock]
+            except:
+                pass
+            return None
+
+        if len(setSortedDict.prices) == 1:
+            setSortedDict()
+            return setSortedDict.prices[date][astock][value]
+
         print("date: {}".format( date))
         print("astock: {}".format( astock))
         print ('problemGetPrices: '+ str(e))
         return None
 
+def saveEtfPrices():
+    for astock in z.getEtfList():
+        path = z.getPath("historical/{}.csv".format(astock))
+        for row in csv.DictReader(open(path)):
+            cdate = row['Date']
+            saveEtfPrices.prices[cdate][astock] = float(row['Close'])
+    z.setp(saveEtfPrices.prices, "etfprices")
+saveEtfPrices.prices = defaultdict(dict)
+
+# ALGN, HPE
 if __name__ == '__main__':
-    z.getStocks.devoverride = True
-    setSortedDict()
-    print(setSortedDict.prices['2019-03-26']['AMD'])
-    print(getPrice( 'AMD', '2019-03-26'))
-#    print(setSortedDict.sorteddict['Change'])
-#    print(len(setSortedDict.sorteddict))
+    saveEtfPrices()
+#    z.getStocks.devoverride = "ITOT"
+#    setSortedDict(usepkl = False)
+
+#    z.getStocks.devoverride = "IJH"
+#    setSortedDict(usepkl = False)
+
+#    z.getStocks.devoverride = "IJR"
+#    setSortedDict(usepkl = False)
+    date = '2001-02-01'
+    astock = 'IVV'
+    print(getPrice(astock, date))
+#    mode = 'C3'
+#
+#    alist = setSortedDict.sorteddict[mode]
+#    print(alist )
+
+#    setSortedDict.sorteddict = None
+#    setSortedDict.prices = defaultdict(dict)
+#
+#    z.getStocks.devoverride = "IVV"
+#    setSortedDict(usepkl=False)
+
+#    print(getSortedStocks(date, mode))
+#    print(getPrice(astock, date))

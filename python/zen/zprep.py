@@ -103,11 +103,53 @@ def updateStocks():
             print (str(e))
             raise SystemExit
             pass
-#    z.setp(latest, "lastValues")
 
-print("downloaded: {}".format( downloaded))
-updateStocks()
-print(notadded)
+def getMissingStockList():
+    import csv
+    missing_list = list()
+    dates = set(z.getp("dates"))
+    stocks = z.getStocks()
+
+    if "OLLI" in stocks:
+        print ("so far so good")
+    else:
+        print ("so far so huh")
+
+    for astock in stocks:
+        path = z.getPath("calculated2/{}.csv".format(astock))
+        inputf = csv.DictReader(open(path))
+        firstdate = None
+        myset = set()
+        for row in inputf:
+            date = row['Date']
+            myset.add(date)
+            if not firstdate:
+                firstdate = date
+
+        missing = (dates-myset)
+
+        if not missing:
+            continue
+
+        missing = sorted(missing)
+
+        for item in missing: 
+            if firstdate < item:
+                print("firstdate : {}".format( firstdate ))
+                print("item: {}".format( item))
+                print("astock: {}".format( astock))
+                missing_list.append(astock)
+                break
+    z.setp(missing_list, "missing_list")
+    print(missing_list)
+
+#    z.setp(latest, "lastValues")
+if __name__ == '__main__':
+    z.getStocks.devoverride = "ITOT"
+    getMissingStockList()
+#print("downloaded: {}".format( downloaded))
+#updateStocks()
+#print(notadded)
 #setStockDays()
 
 

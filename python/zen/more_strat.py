@@ -10,9 +10,11 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 
 sell_threader.setTranscript.enabled = False
-z.getStocks.devoverride = True
-generate_list.setSortedDict()
 
+z.getStocks.devoverride = "IVV"
+generate_list.setSortedDict()
+use_q = True
+testpoints = 100
 # The threader thread pulls an worker from the queue and processes it
 def threader():
     while True:
@@ -30,15 +32,17 @@ for x in range(7):
 
 dates = z.getp("dates")
 num_days = len(dates)
-years = 3
+years = 2
 ayear = 252
 duration = int (years * ayear)
 print("num_days : {}".format( num_days ))
-use_q = True
+played = 0
 def calcPortfolio(droppage, mode):
-    for tries in range(10):
-        start = random.randrange(num_days-duration)
+    global played
+    for tries in range(testpoints):
+        start = random.randrange(133, num_days-duration)
         end = start + duration
+        played += 1
         if use_q:
             q.put([droppage, start, end, mode])
         else:
@@ -48,7 +52,7 @@ def getColors():
     return ["blue", "red", "green", "black", 'cyan', 'brown', 
             'orange', 'pink']
 
-ylist = [i/100 for i in range(76,92,4)]
+ylist = [i/100 for i in range(86,96,1)]
 for droppage in ylist:
     for mode in dask_help.getModes():
         calcPortfolio(droppage, mode=mode)
@@ -62,17 +66,29 @@ for droppage in ylist:
         modeidx = dask_help.getModes().index(mode)
         color = getColors()[modeidx]
         tupp = (droppage, mode)
-        value = collector[tupp]
+        value = z.avg(collector[tupp])
 
         avgdropdict[droppage].append(value)
         avgmodedict[mode].append(value)
 
-#        plt.scatter(droppage, collector[tupp], color=color)
+        plt.scatter(droppage, value, color=color)
 
+etfavg = list()
 for akey,alist in avgmodedict.items():
-    print("modes: {} {} ".format( akey, z.avg(alist)))
+    avg = z.avg(alist)
+    print("modes: {} {} ".format( akey, avg))
+    etfavg.append(avg)
+
 for akey,alist in avgdropdict.items():
-    print("drops: {} {} ".format( akey, z.avg(alist)))
+    avg = z.avg(alist)
+    print("modes: {} {} ".format( akey, avg))
+    etfavg.append(avg)
+
+print("etfavg: {}".format( z.avg(etfavg)))
+print("etf winrate: {}".format(round(sell_threader.getEtfWins() / played,3)))
+
+#z.setp(avgdropdict, "{}avgdropdict".format(z.getStocks.devoverride))
+#z.setp(avgmodedict, "{}avgmodedict".format(z.getStocks.devoverride))
 
 path = z.getPath("plots/test_special.png")
 plt.savefig(path)

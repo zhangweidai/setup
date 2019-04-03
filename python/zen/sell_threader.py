@@ -7,6 +7,7 @@ from random import sample
 import numpy as np
 import generate_list
 from collections import defaultdict
+from filelock import FileLock
 
 z.listen()
 
@@ -16,7 +17,7 @@ num_days = len(dates)
 etfsource = "IUSG"
 
 ayear = 252
-years = 3
+years = 2
 duration = int (years * ayear)
 
 seed = random.randrange(sys.maxsize)
@@ -24,24 +25,28 @@ rng = random.Random(seed)
 
 tracks = 25
 original = 1000
-spend = original
+#spend = original
 minthresh = 350 
 fee = 5
 
-collector = dict()
-
+collector = defaultdict(list)
+#allowStocks = z.getStocks()
+etfwins = 0
 def buySellSim(args):
+    global etfwins
     droppage, start, end, mode = args[0], args[1], args[2], args[3]
     buySellSim.transcript = list()
 
     miniport = dict()
     spend = original
     sub = dates[start:end]
+    startd = sub[0]
+    setTranscript("start on {}".format(startd))
     for idx, idxdate in enumerate(sub):
 
         stocks_owned = len(miniport)
 
-        delay = 3 if stocks_owned >= tracks else 1
+        delay = 2 if stocks_owned >= tracks else 1
         if idx % int(interval*delay) or idx == 0:
             continue
 
@@ -50,6 +55,13 @@ def buySellSim(args):
             for item in buyme:
                 astock = item[1]
                 if astock not in miniport and stocks_owned < tracks:
+
+#                    if astock not in allowStocks:
+#                        print("astock : {}".format( astock ))
+#                        print("idxdate : {}".format( idxdate ))
+#                        print("mode: {}".format( mode))
+#                        exit()
+
                     something = buySomething(sub[idx+1], 
                             astock, spend, idxdate)
                     if something:
@@ -57,18 +69,32 @@ def buySellSim(args):
                         stocks_owned = len(miniport)
         else:
             try:
-                spend = sell(spend, idxdate, droppage, miniport)
+                spend, soldc = sell(spend, idxdate, droppage, miniport)
             except:
                 pass
 
     try:
-        port_change, port_value = getPortValue(idxdate, miniport)
+        port_change, port_value = getPortValue(idxdate, miniport, spend)
+        etfChange = generate_list.getEtfPrice("IVV", idxdate) / \
+                generate_list.getEtfPrice("IVV", startd)
+
     except Exception as e:
         print ('problem getting cprices: '+ str(e))
         return
 
-    collector[droppage, mode] = port_change
-    msg = "finish on {} change {} value {}".format(idxdate, port_change, port_value)
+    with FileLock("sell_threader.lck"):
+        if etfChange > port_change:
+            etfwins += 1
+        else:
+            if etfChange < .7:
+                print("etfChange : {}".format( etfChange ))
+                print("startd: {}".format( startd))
+                print("idxdate: {}".format( idxdate))
+                exit()
+        collector[droppage, mode].append(port_change)
+
+    msg = "finish on {} change {} value {}".format(idxdate, 
+        port_change, port_value)
     setTranscript(msg, droppage, mode)
 
 def setTranscript(msg, droppage = None, mode = None):
@@ -78,14 +104,19 @@ def setTranscript(msg, droppage = None, mode = None):
     buySellSim.transcript.append(msg)
     if droppage:
         path = z.getPath("transcript/{}_{}".format(droppage, mode))
+        print("path: {}".format( path))
         with open(path, "w") as f:
             f.write("\n".join(buySellSim.transcript))
 setTranscript.enabled = True
 
+def getEtfWins():
+    global etfwins
+    return etfwins
+
 def getCollector():
     return collector
 
-def getPortValue(cdate, miniport):
+def getPortValue(cdate, miniport, spend = 0):
     total = 0
     for astock in miniport:
         cprice = generate_list.getPrice(astock, cdate)
@@ -96,6 +127,9 @@ def getPortValue(cdate, miniport):
         else:
             total += item[1]
 
+    added = (((tracks - 1) - len(miniport)) * spend)
+    if added > 0:
+        total = total + added
     return round(total/(len(miniport)*original),3), round(total,4)
 
 def sell(spend, cdate, droppage, miniport):
@@ -112,7 +146,7 @@ def sell(spend, cdate, droppage, miniport):
             continue
 
         cvalue = (cprice * item[0])-fee
-        if (cvalue/item[1]) < droppage and cvalue > minthresh:
+        if (cvalue/item[1]) < droppage and cvalue > minthresh and len(sells) <= 5:
 
             setTranscript("sold {} @ {} on {}".format(astock, cprice, cdate))
 
@@ -126,8 +160,11 @@ def sell(spend, cdate, droppage, miniport):
         spend = round(spend/len(sells),2)
         for sell in sells:
             del miniport[sell]
-        return spend
-    return 0
+        return spend, len(sells)
+    else:
+        port_change, port_value = getPortValue(cdate, miniport)
+        setTranscript("cvalue {} {}".format(port_change, port_value))
+    return 0, len(sells)
 
 def buySomething(cdate, astock, spend, idxdate):
     try:
@@ -141,14 +178,15 @@ def buySomething(cdate, astock, spend, idxdate):
         if spend == 0 or spend-fee <= 0:
             print("spend : {}".format( spend ))
             print("astock: {}".format( astock))
-            raise SystemExit
+            return
 
     except Exception as e:
         print ('failedBuys: '+ str(e))
         print("cdate: {}".format( cdate))
         print("astock: {}".format( astock))
+        return
 
-#    setTranscript("bought {} @ {} on {}".format(astock, cprice, cdate))
+    setTranscript("bought {} @ {} on {}".format(astock, cprice, cdate))
     return [count, spend-fee]
 
 def calcPortfolio(droppage, alist, mode):
@@ -226,4 +264,21 @@ def getSpread():
         print(ddlist)
 
 
+if __name__ == '__main__':
+    z.getStocks.devoverride = "IVV"
+    generate_list.setSortedDict()
+    buySellSim([.7, 1800, 1800 + 500, "S12"])
+    buySellSim([.8, 1800, 1800 + 500, "S12"])
+    buySellSim([.9, 1800, 1800 + 500, "S12"])
+    buySellSim([.9, 1800, 1800 + 500, "S12"])
+    buySellSim([.1, 1800, 1800 + 500, "S12"])
+    buySellSim([.2, 1800, 1800 + 500, "S12"])
+    buySellSim([.3, 1800, 1800 + 500, "S12"])
+    buySellSim([.4, 1800, 1800 + 500, "S12"])
+    buySellSim([.7, 1800, 1800 + 500, "S12"])
+    buySellSim([.7, 1800, 1800 + 500, "S12"])
+    buySellSim([.7, 1800, 1800 + 500, "S12"])
+    buySellSim([.7, 1800, 1800 + 500, "S12"])
+    buySellSim([.7, 1800, 1800 + 500, "S12"])
+    print(collector)
 #getSpread()

@@ -54,5 +54,5 @@ def createRollingData(dfd):
         computed.to_csv(path)
 
 if __name__ == '__main__':
-    z.getStocks.devoverride = True
+#    z.getStocks.devoverride = True
     convertToDask()

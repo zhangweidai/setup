@@ -1,70 +1,33 @@
 import timeit
 import util
-
-#import debug
-#debug.dipScore.mode = 2
-#print(debug.dipScore())
-#debug.dipScore.mode = 2
-#print(debug.dipScore())
-#raise SystemExit
-
-#df = util.getCsv("BA")
-#interval  = 15
-#start  = 1005
-#end  = 1030
-def igest_2():
-    for i in df.index:
-        if i < start or i > end:
-            continue
-#        if i % interval:
-#            continue
-        val = df['Date'].iloc[-1]
-        val = df['Close'].iloc[-1]
-        val = df['Open'].iloc[-1]
-        val = df['Low'].iloc[-1]
-        val = df['High'].iloc[-1]
-import zprep
-import z
-def doit(stocks):
-    for astock in stocks:
-        pass
-
-#stocks = z.getStocks()
-def doitg():
-    global stocks
-    for astock in stocks:
-        pass
-import csv
-def process2(astock, col, date):
-    if process2.inputf is None:
-        path = z.getPath("delme2/{}.csv".format(astock))
-        process2.inputf = csv.DictReader(open(path))
-    for row in process2.inputf:
-        if row['Date'] == date:
-            return row[col]
-process2.inputf = None
-def process(astock, col, date):
-    path = z.getPath("delme2/{}.csv".format(astock))
-    inputf = csv.DictReader(open(path))
-    for row in inputf:
-        if row['Date'] == date:
-            return row[col]
-#        print("row : {}".format( row[col] ))
-#        print("col: {}".format( col))
-#        myset[row[col]] = row["Date"]
-
-import test
 from collections import OrderedDict
 
-def Test1():
-    dates = OrderedDict()
-    for astock in test.stocks:
-        test.process(astock, "Open", dates, True)
+import generate_list
+import z
+#z.getStocks.devoverride = True
+#print(generate_list.getPrice('AMD', '2019-03-26'))
+#print(z.getPrice('AMD', '2019-03-26'))
+from collections import defaultdict
 
+#setSortedDict.sorteddict = None
+#setSortedDict.prices = defaultdict(dict)
+
+z.getStocks.devoverride = "IVV"
+
+def Test1():
+    generate_list.setSortedDict.sorteddict = None
+    generate_list.setSortedDict.prices = defaultdict(dict)
+    generate_list.setSortedDict(usepkl = False)
+
+#Test1()
+#print (generate_list.getPrice('AMD', '2019-03-26'))
 def Test2():
-    dates = OrderedDict()
-    for astock in test.stocks:
-        test.process(astock, "Open", dates, False)
+    z.getp("sorteddict")
+    z.getp("prices")
+
+#Test2()
+#print (generate_list.getPrice('AMD', '2019-03-26'))
+#raise SystemExit
 
 #print("process2: {}".format(process("BA", "Open", "2000-01-18")))
 #raise SystemExit
@@ -239,7 +202,7 @@ if __name__ == '__main__':
         names.append(method)
         answer = timeit.timeit("{}()".format(method), 
                     setup="from __main__ import {}".format(method),
-                    number=400)
+                    number=3)
         times.append(answer)
         print (round(answer,4))
 
