@@ -9,7 +9,6 @@ keeping = 12
 discardlocation = int(keeping/2)
 import csv
 
-
 def getScore(idxstart, df):
     minid = 10
     realstart = idxstart-15
@@ -96,6 +95,7 @@ setSortedDict.prices = defaultdict(dict)
 def getSortedStocks(date, mode, howmany = 2):
     alist = setSortedDict.sorteddict[mode][date]
     return sample(alist,howmany)
+#    return [alist[0], alist[1]]
 
 def getEtfPrice(astock, date):
     try:
@@ -136,18 +136,18 @@ saveEtfPrices.prices = defaultdict(dict)
 
 # ALGN, HPE
 if __name__ == '__main__':
-    saveEtfPrices()
-#    z.getStocks.devoverride = "ITOT"
-#    setSortedDict(usepkl = False)
+#    saveEtfPrices()
+    z.getStocks.devoverride = "ITOT"
+    setSortedDict(usepkl = False)
 
 #    z.getStocks.devoverride = "IJH"
 #    setSortedDict(usepkl = False)
 
 #    z.getStocks.devoverride = "IJR"
 #    setSortedDict(usepkl = False)
-    date = '2001-02-01'
-    astock = 'IVV'
-    print(getPrice(astock, date))
+#    date = '2001-02-01'
+#    astock = 'IVV'
+#    print(getPrice(astock, date))
 #    mode = 'C3'
 #
 #    alist = setSortedDict.sorteddict[mode]

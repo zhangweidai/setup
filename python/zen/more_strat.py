@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 
 sell_threader.setTranscript.enabled = False
 
-z.getStocks.devoverride = "IVV"
+z.getStocks.devoverride = "IUSG"
 generate_list.setSortedDict()
 use_q = True
-testpoints = 100
+testpoints = 200
 # The threader thread pulls an worker from the queue and processes it
 def threader():
     while True:
@@ -32,7 +32,9 @@ for x in range(7):
 
 dates = z.getp("dates")
 num_days = len(dates)
-years = 2
+sell_threader.buySellSim.tracks = 12
+years = 3
+
 ayear = 252
 duration = int (years * ayear)
 print("num_days : {}".format( num_days ))
@@ -52,7 +54,7 @@ def getColors():
     return ["blue", "red", "green", "black", 'cyan', 'brown', 
             'orange', 'pink']
 
-ylist = [i/100 for i in range(86,96,1)]
+ylist = [i/100 for i in range(76,96,2)]
 for droppage in ylist:
     for mode in dask_help.getModes():
         calcPortfolio(droppage, mode=mode)
@@ -86,6 +88,7 @@ for akey,alist in avgdropdict.items():
 
 print("etfavg: {}".format( z.avg(etfavg)))
 print("etf winrate: {}".format(round(sell_threader.getEtfWins() / played,3)))
+print("played: {}".format( played))
 
 #z.setp(avgdropdict, "{}avgdropdict".format(z.getStocks.devoverride))
 #z.setp(avgmodedict, "{}avgmodedict".format(z.getStocks.devoverride))

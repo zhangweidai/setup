@@ -51,9 +51,14 @@ def updateCsv(astock):
     t = os.path.getmtime(path)
     csvdate = datetime.datetime.fromtimestamp(t)
     csvday = csvdate.day
-    csvdate = str(csvdate).split(" ")[0]
+    csvmonth = csvdate.month
     ttoday = datetime.date.today().day
-    if csvday >= ttoday:
+    tmonth = datetime.date.today().month
+    if csvday >= ttoday and tmonth == csvmonth:
+#        print("csvmonth : {}".format( csvmonth ))
+#        print("ttoday: {}".format( ttoday))
+#        print("csvday : {}".format( csvday ))
+#        z.breaker(3)
         return
 
     df = z.getCsv(astock)
@@ -96,6 +101,7 @@ def updateStocks():
     util.saveProcessedFromYahoo.download = True
 #    stocks = z.getStocks()
     stocks = z.getStocks()
+    print("stocks : {}".format( len(stocks) ))
     for astock in stocks:
         try:
             updateCsv(astock)
@@ -109,11 +115,6 @@ def getMissingStockList():
     missing_list = list()
     dates = set(z.getp("dates"))
     stocks = z.getStocks()
-
-    if "OLLI" in stocks:
-        print ("so far so good")
-    else:
-        print ("so far so huh")
 
     for astock in stocks:
         path = z.getPath("calculated2/{}.csv".format(astock))
@@ -145,10 +146,10 @@ def getMissingStockList():
 
 #    z.setp(latest, "lastValues")
 if __name__ == '__main__':
-    z.getStocks.devoverride = "ITOT"
-    getMissingStockList()
+#    z.getStocks.devoverride = "ITOT"
+#    getMissingStockList()
 #print("downloaded: {}".format( downloaded))
-#updateStocks()
+    updateStocks()
 #print(notadded)
 #setStockDays()
 
