@@ -563,6 +563,8 @@ removed = []
 def getRemovedStocks():
     return removed
 
+import z
+from datetime import date, timedelta
 def saveProcessedFromYahoo(astock, add=False):
     if not saveProcessedFromYahoo.download:
         return
@@ -574,15 +576,19 @@ def saveProcessedFromYahoo(astock, add=False):
         pass
 
     global removed
-    path = getCsv(astock, asPath = True)
-    if os.path.exists(path):
+    path = z.getCsv(astock, asPath = True)
+    if os.path.exists(path) and z.getCsv.csvdir != "csv":
         return
 
     if not astock.isalpha():
         return
 
     df = None
+
     saveStartDate = "2000-01-05"
+    if z.getCsv.csvdir == "csv":
+        saveStartDate = date.today() - timedelta(days=60)
+
     try:
         df = pdr.get_data_yahoo([astock], start=saveStartDate)
     except Exception as e:
@@ -1184,7 +1190,7 @@ def getRangeScore(astock, sub=False):
     return round(probupsum * percsum, 3)
 
 def getConsider():
-    return ["FF", "ACB", "BABA", "CRM", "ABT", "GM"]
+    return ["FF", "ACB", "BABA", "CRM", "ABT", "GM", "YUM"]
 
 def getConsider2():
     return {"Janus": ["PAGS","ZTS", "CSGP"]}

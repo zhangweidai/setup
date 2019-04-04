@@ -19,15 +19,15 @@ def percentage(factor):
     return "{:.2%}".format(factor-1)
 
 @lru_cache(maxsize=8)
-def getp(name):
+def getp(name, override="pkl"):
     try:
-        path = getPath("pkl/{}.pkl".format(name))
+        path = getPath("{}/{}.pkl".format(override, name))
         return pickle.load(open(path, "rb"))
     except:
         return None
 
-def setp(data, name):
-    path = getPath("pkl/{}.pkl".format(name))
+def setp(data, name, override="pkl"):
+    path = getPath("{}/{}.pkl".format(override, name))
     if os.path.exists(path):
         os.remove(path)
     pickle.dump(data, open(path, "wb"))
@@ -126,10 +126,9 @@ getStocks.devoverride = False
 import dask.dataframe as dd
 util = None
 def getCsv(astock, asPath=False, save=True):
-    csvdir = "historical"
 
     if asPath:
-        return getPath("{}/{}.csv".format(csvdir, astock))
+        return getPath("{}/{}.csv".format(getCsv.csvdir, astock))
 
     try:
         if save:
@@ -139,7 +138,7 @@ def getCsv(astock, asPath=False, save=True):
 
     df = None
     try:
-        path = getPath("{}/{}.csv".format(csvdir, astock), allowmake = False)
+        path = getPath("{}/{}.csv".format(getCsv.csvdir, astock), allowmake = False)
         df = pandas.read_csv(path)
         if df is None:
             return None
@@ -171,6 +170,7 @@ def getCsv(astock, asPath=False, save=True):
     if save:
         getCsv.savedReads[astock] = df
     return df
+getCsv.csvdir = "historical"
 getCsv.savedReads = dict()
 getCsv.download = True
 

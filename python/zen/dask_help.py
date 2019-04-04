@@ -13,11 +13,10 @@ def getName(path):
     return os.path.splitext(os.path.basename(path))[0]
 
 def convertToDask():
-    directory = "historical"
-    if z.getStocks.devoverride:
-        directory = "delme"
+#    if z.getStocks.devoverride:
+#        directory = "delme"
 
-    path = z.getPath(directory)
+    path = z.getPath(convertToDask.directory)
     print ("reading")
     dfd = dd.read_csv('{}/*.csv'.format(path), include_path_column = True)
     dfd = dfd.drop(['Volume', 'Adj Close', 'High','Low'], axis=1)
@@ -26,8 +25,10 @@ def convertToDask():
     dfd['Change'] = dfd.Close/dfd.Open
     dfd['Change'] = dfd['Change'].map(lambda x: round(x,4))
     createRollingData(dfd)
+convertToDask.directory = "historical"
 
 def getModes():
+#    return ['Change']
     return ['C3', 'C6', 'C12', 'C30', 'S30', 'S12','A4', "Change"]
 
 def createRollingData(dfd):
@@ -50,9 +51,12 @@ def createRollingData(dfd):
             .map(lambda x: round(x,4))
 
         name = computed.path[0]
-        path = z.getPath("calculated/{}.csv".format(name))
+        path = z.getPath("{}/{}.csv".format(createRollingData.dir, name))
         computed.to_csv(path)
+createRollingData.dir = "calculated"
 
 if __name__ == '__main__':
 #    z.getStocks.devoverride = True
+    convertToDask.directory = "historical"
+    createRollingData.dir = "historicalCalculated"
     convertToDask()

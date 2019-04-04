@@ -33,7 +33,7 @@ collector = defaultdict(list)
 etfwins = 0
 def buySellSim(args):
     global etfwins
-    droppage, start, end, mode = args[0], args[1], args[2], args[3]
+    droppage, start, end, mode, price = args[0], args[1], args[2], args[3], args[4]
     buySellSim.transcript = list()
 
     miniport = dict()
@@ -50,20 +50,28 @@ def buySellSim(args):
             continue
 
         if stocks_owned < buySellSim.tracks:
-            buyme = generate_list.getSortedStocks(idxdate, mode)
+
+            buyme = None
+            if generate_list.getSortedStocks.get == "price":
+                buyme = generate_list.getPricedStocks(idxdate, price)
+            else:
+                buyme = generate_list.getSortedStocks(idxdate, mode,
+                   howmany=5)
+
+            if not buyme :
+                continue
+
             for item in buyme:
                 astock = item[1]
+                myprice = None
+                if generate_list.getSortedStocks.get == "price":
+                    myprice = item[0]
                 if astock not in miniport and stocks_owned < \
                     buySellSim.tracks:
 
-#                    if astock not in allowStocks:
-#                        print("astock : {}".format( astock ))
-#                        print("idxdate : {}".format( idxdate ))
-#                        print("mode: {}".format( mode))
-#                        exit()
-
                     something = buySomething(sub[idx+1], 
-                            astock, spend, idxdate)
+                            astock, spend, idxdate, myprice)
+
                     if something:
                         miniport[astock] = something
                         stocks_owned = len(miniport)
@@ -89,7 +97,8 @@ def buySellSim(args):
     with FileLock("sell_threader.lck"):
         if etfChange > port_change:
             etfwins += 1
-        collector[droppage, mode].append(port_change)
+        collector[(droppage, mode, price)].append(port_change)
+#        print("port_change: {}".format( port_change))
 
     msg = "finish on {} change {} value {}".format(idxdate, 
         port_change, port_value)
@@ -170,11 +179,14 @@ def sell(spend, cdate, droppage, miniport):
 
     return 0, len(sells)
 
-def buySomething(cdate, astock, spend, idxdate):
+def buySomething(cdate, astock, spend, idxdate, myprice = None):
     try:
-        cprice = generate_list.getPrice(astock, cdate)
-        if not cprice:
-            return None
+        if myprice:
+            cprice = myprice
+        else:
+            cprice = generate_list.getPrice(astock, cdate)
+            if not cprice:
+                return None
 
         count = round((spend-fee)/cprice,3)
 
@@ -269,7 +281,7 @@ def getSpread():
 if __name__ == '__main__':
     z.getStocks.devoverride = "IVV"
     generate_list.setSortedDict()
-    buySellSim([.95, 1800, 1800 + 100, "S12"])
+    buySellSim([.95, 1800, 1800 + 100, "S12", 0])
     print("etfwins : {}".format( etfwins ))
     print(collector)
 #getSpread()

@@ -1,6 +1,62 @@
 from util import *
 import urllib.request, json
 from bs4 import BeautifulSoup
+import z
+
+def getMarketCapPage(astock):
+    addy = "https://finance.yahoo.com/quote/{}/key-statistics?p={}".format(\
+            astock, astock)
+    decoded = None
+    try:
+        with urllib.request.urlopen(addy) as url:
+            decoded = BeautifulSoup(url.read(), 'html.parser').get_text()
+#                    from_encoding=url.info().getparam('charset')).prettify()
+    except:
+        try:
+            with urllib.request.urlopen(addy) as url:
+                decoded = BeautifulSoup(url.read(), 'html.parser').get_text()
+        except Exception as e:
+            print ('Failed1: '+ str(e))
+            return None
+
+    return decoded.split("\n")
+
+def parsePage(astock, getme = "sharesOutstanding"):
+    lines = getMarketCapPage(astock)
+    z.setp(lines,astock, override="yahoo")
+
+    symbol = ""
+    started = False
+    lookingfor = '{{"{}"'.format(astock)
+    for line in lines:
+        line = line.strip()
+        more = line.split(":")
+        startprinting = False
+        nextone = False
+        for i,aline in enumerate(more):
+
+            if lookingfor in aline:
+                nextone = True
+            elif nextone and getme in aline:
+                return more[i+2].split(",")[0]
+
+def saveOutstanding():
+    stocks = z.getStocks("IUSG")
+    dictionary = dict()
+    for astock in stocks:
+        try:
+            dictionary[astock] = parsePage(astock)
+        except:
+            continue
+    z.setp(dictionary, "outstanding")
+def other():
+    dictionary = z.getp("outstanding")
+    path = z.getPath("analysis/outstanding.csv")
+    with open(path, 'w') as f:
+        for key, value in dictionary.items():
+            value = round(value/1_000_000_000, 4)
+
+            f.write("{},{},{}\n".format(key, value))
 
 def getDividendSchedule(month, date):
     addy = "https://www.nasdaq.com/dividend-stocks/dividend-calendar.aspx?date=2019-{}-{}".format(month, date)

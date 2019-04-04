@@ -55,10 +55,6 @@ def updateCsv(astock):
     ttoday = datetime.date.today().day
     tmonth = datetime.date.today().month
     if csvday >= ttoday and tmonth == csvmonth:
-#        print("csvmonth : {}".format( csvmonth ))
-#        print("ttoday: {}".format( ttoday))
-#        print("csvday : {}".format( csvday ))
-#        z.breaker(3)
         return
 
     df = z.getCsv(astock)
@@ -97,9 +93,23 @@ def updateCsv(astock):
         notadded.append(astock)
 
 
-def updateStocks():
+def updateHistory():
     util.saveProcessedFromYahoo.download = True
 #    stocks = z.getStocks()
+    stocks = z.getStocks()
+    print("stocks : {}".format( len(stocks) ))
+    for astock in stocks:
+        try:
+            updateCsv(astock)
+        except Exception as e:
+            print (str(e))
+            raise SystemExit
+            pass
+
+def updateBuyListSource():
+    util.saveProcessedFromYahoo.download = True
+    z.getCsv.csvdir = "csv"
+    z.getStocks.devoverride = "IUSG"
     stocks = z.getStocks()
     print("stocks : {}".format( len(stocks) ))
     for astock in stocks:
@@ -144,12 +154,58 @@ def getMissingStockList():
     z.setp(missing_list, "missing_list")
     print(missing_list)
 
+cheaplist = list()
+pricelist = list()
+import generate_list
+def genBuyList():
+    util.saveProcessedFromYahoo.download = True
+#    stocks = z.getStocks()
+    z.getStocks.devoverride = "IUSG"
+    z.getCsv.csvdir = "csv"
+    generate_list.setSortedDict(prices_only=True)
+#    yesterday = str(datetime.date.today() - datetime.timedelta(days=1))
+    yesterday = "2019-03-27"
+    stocks = z.getStocks()
+    print("stocks : {}".format( len(stocks) ))
+    for astock in stocks:
+#        try:
+#            price = generate_list.getPrice(astock, yesterday)
+#            if price > 10 and price < 20:
+#                price2 = generate_list.getPrice(astock, "2017-01-11")
+#                price3 = generate_list.getPrice(astock, "2016-01-11")
+#                if price < price2 and price > price3:
+#                    price3 = generate_list.getPrice(astock, "2018-01-11")
+#                    if price > price3:
+#                        price3 = generate_list.getPrice(astock, "2019-02-22")
+#                        if price3 > price:
+#                            pricelist.append((price, astock))
+#        except:
+#            pass
+#        continue
+        try:
+            util.saveProcessedFromYahoo(astock)
+        except Exception as e:
+            print (str(e))
+            raise SystemExit
+            pass
+#    import matplotlib.pyplot as plt
+#    sorted_xl = sorted(pricelist)
+#    print(sorted_xl[-10:] )
+#    print(sorted_xl[:10])
+#    print(len(sorted_xl))
+#
+#    for i,item in enumerate(sorted_xl):
+#        plt.scatter(i, item[0])
+#    plt.show()
+
 #    z.setp(latest, "lastValues")
 if __name__ == '__main__':
+    updateBuyListSource()
 #    z.getStocks.devoverride = "ITOT"
 #    getMissingStockList()
 #print("downloaded: {}".format( downloaded))
-    updateStocks()
+#    genBuyList()
+#    updateHistory()
 #print(notadded)
 #setStockDays()
 
