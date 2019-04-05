@@ -37,7 +37,7 @@ def getDataFromYahoo(astock):
 latest = dict()
 downloaded = list()
 notadded = list()
-def updateCsv(astock):
+def updateCsv(astock, updateForBuy = False):
     global latest
     path = z.getCsv(astock, asPath=True)
     if not os.path.exists(path):
@@ -162,9 +162,7 @@ def genBuyList():
 #    stocks = z.getStocks()
     z.getStocks.devoverride = "IUSG"
     z.getCsv.csvdir = "csv"
-    generate_list.setSortedDict(prices_only=True)
-#    yesterday = str(datetime.date.today() - datetime.timedelta(days=1))
-    yesterday = "2019-03-27"
+#    generate_list.setSortedDict()
     stocks = z.getStocks()
     print("stocks : {}".format( len(stocks) ))
     for astock in stocks:
@@ -199,14 +197,25 @@ def genBuyList():
 #    plt.show()
 
 #    z.setp(latest, "lastValues")
-if __name__ == '__main__':
-    updateBuyListSource()
+#    updateBuyListSource()
 #    z.getStocks.devoverride = "ITOT"
 #    getMissingStockList()
 #print("downloaded: {}".format( downloaded))
-#    genBuyList()
 #    updateHistory()
 #print(notadded)
 #setStockDays()
+#def saveLatestPrices():
+#    getStocks.devoverride = None
+#    stocks = z.getStocks()
+
+if __name__ == '__main__':
+    import sys
+    try:
+        if len(sys.argv) > 1:
+            if sys.argv[1] == "buy":
+                genBuyList()
+    except Exception as e:
+        print (str(e))
+        pass
 
 

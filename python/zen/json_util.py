@@ -22,7 +22,7 @@ def getMarketCapPage(astock):
     return decoded.split("\n")
 
 billion = 1000000000
-def parsePage(astock, dateformc, live=False):
+def parsePage(astock, live=True):
 
     if live:
         live = getMarketCapPage(astock)
@@ -32,7 +32,7 @@ def parsePage(astock, dateformc, live=False):
 #        path = z.getPath("yahoo/{}".format(astock))
 #        with open(path,"r") as f:
 #            live = f.readlines()
-    lastprice = z.getPrice(astock, dateformc, orlatest=True)
+    lastprice = z.getPrice(astock)
     started = False
     lookingfor = '{{"{}"'.format(astock)
     for line in live:
@@ -50,26 +50,26 @@ def parsePage(astock, dateformc, live=False):
                 cap2 = round(shares * lastprice, 5)
             elif nextone and "marketCap" in aline:
                 cap = round(int(more[i+2].split(",")[0])/billion,5)
-                return (shares, cap, cap2)
+                change = round(cap2/cap, 5)
+                return (shares, cap, cap2, change)
 
 
 def saveOutstanding():
 
     import generate_list
     z.getStocks.devoverride = "IUSG"
-    generate_list.setSortedDict(prices_only=True)
-#    stocks = z.getStocks("IUSG")
     dictionary = dict()
-    dateformc = z.getLatestDate(etf="IUSG", final="")
-    for astock in ["KO"]:
+    stocks = z.getStocks("IUSG")
+    for astock in stocks:
         try:
-            dictionary[astock] = parsePage(astock, dateformc)
+            dictionary[astock] = parsePage(astock, live=False)
         except Exception as e:
             print ('saveFailed: '+ str(e))
             print ("Not FIND :" + astock)
             continue
     z.setp(dictionary, "outstanding")
     print(dictionary)
+    other()
 
 #saveOutstanding()
 #raise SystemExit
@@ -79,9 +79,7 @@ def other():
     path = z.getPath("analysis/outstanding.csv")
     with open(path, 'w') as f:
         for key, value in dictionary.items():
-            value = round(value/billion, 4)
-
-            f.write("{},{},{}\n".format(key, value))
+            f.write("{},{},{},{},{}\n".format(key, value[0], value[1], value[2], value[3]))
 
 def getDividendSchedule(month, date):
     addy = "https://www.nasdaq.com/dividend-stocks/dividend-calendar.aspx?date=2019-{}-{}".format(month, date)

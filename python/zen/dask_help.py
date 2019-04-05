@@ -66,8 +66,21 @@ def createRollingData(dfd):
         computed.to_csv(path)
 createRollingData.dir = "calculated"
 
+#if __name__ == '__main__':
+##    z.getStocks.devoverride = True
+#    convertToDask.directory = "historical"
+#    createRollingData.dir = "historicalCalculated"
+#    convertToDask()
+
 if __name__ == '__main__':
-#    z.getStocks.devoverride = True
-    convertToDask.directory = "historical"
-    createRollingData.dir = "historicalCalculated"
-    convertToDask()
+    import sys
+    try:
+        if len(sys.argv) > 1:
+            if sys.argv[1] == "buy":
+                convertToDask.directory = "csv"
+                createRollingData.dir = "csvCalculated"
+                convertToDask()
+    except Exception as e:
+        print (str(e))
+        pass
+

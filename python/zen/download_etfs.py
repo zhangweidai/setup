@@ -53,12 +53,12 @@ def doit():
 #    alls = util.getp("alletfs")
 #    company = util.getp("company")
 #    etfdict = util.getp("etfdict")
-    etfdict = z.getPath("pkl/etfdict.pkl")
+    etfpath = z.getPath("pkl/etfdict.pkl")
     from shutil import copyfile
-    copyfile(etfdict, z.getPath("pkl/etfdict_back.pkl"))
+    copyfile(etfpath, z.getPath("pkl/etfdict_back.pkl"))
 
     dels = util.getp("deletes")
-    for i,etf in enumerate(z.getEtfList()):
+    for i,etf in enumerate(z.getEtfList(forEtfs=True)):
         print("i: {}".format( i))
         try:
             code = getCode(i, etf)
@@ -89,7 +89,7 @@ def doit():
 
 def getCsvsFiles():
     holds = []
-    path = util.getPath('temp')
+    path = util.getPath('holdings/{}.csv'.format()
     listOfFiles = os.listdir(path)
     for entry in listOfFiles:  
         holds.append("{}/{}".format(path,entry))
@@ -127,21 +127,27 @@ def cleanFiles():
 def diffISharesEtfs():
     latest = z.getp("etfdict")
     previous = z.getp("etfdict_back")
+    dels = util.getp("deletes")
     if not latest or not previous:
         print ("missing data")
         return
     allthesame = True
     for key,value in latest.items():
         diff = value ^ previous[key]
+        print("value : {}".format( len(value)))
+        print("value2 : {}".format( len(previous[key])))
+        print("key: {}".format( key))
         if diff:
-            print("key: {}".format( key))
-            print(diff )
+#            print("key: {}".format( key))
+            print(len(diff))
             allthesame = False
             for adiff in diff:
-                if adiff in value:
-                    print("adiff : missing in previous {}".format( adiff ))
-                else
-                    print("adiff : missing now {}".format( adiff ))
+                if adiff in dels:
+                    continue
+#                if adiff in value:
+#                    print("adiff : missing in previous {}".format( adiff ))
+#                else:
+#                    print("adiff : missing now {}".format( adiff ))
     if allthesame:
         print ("all the same")
 

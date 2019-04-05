@@ -1257,7 +1257,7 @@ def listen():
     signal.signal(signal.SIGUSR1, debug)  # Register handler
 
 def getConsider():
-    return ["FF", "ACB", "BABA", "CRM", "ABT", "GM", "YUM", "ZEN", "BNS", "WPG"]
+    return ["FF", "ACB", "BABA", "CRM", "ABT", "GM", "YUM", "ZEN", "BNS", "WPG", "PAGS", "ZTS", "CSGP"]
 
 def getConsider2():
     return {"Janus": ["PAGS","ZTS", "CSGP"]}

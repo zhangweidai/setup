@@ -254,7 +254,9 @@ def debug(sig, frame):
 def listen():
     signal.signal(signal.SIGUSR1, debug)  # Register handler
 
-def getEtfList():
+def getEtfList(forEtfs = False):
+    if forEtfs:
+        return [ "ITOT" , "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV"]
     return [ "IUSG", "IJH", "IJR", "IVV", "ITOT" ]
 #    , "USMV"
 #    ]
