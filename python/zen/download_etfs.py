@@ -50,17 +50,20 @@ import time
 def doit():
     global alls, company, etfdict
 
-    alls = util.getp("alletfs")
-    company = util.getp("company")
-    etfdict = util.getp("etfdict")
-#
+#    alls = util.getp("alletfs")
+#    company = util.getp("company")
+#    etfdict = util.getp("etfdict")
+    etfdict = z.getPath("pkl/etfdict.pkl")
+    from shutil import copyfile
+    copyfile(etfdict, z.getPath("pkl/etfdict_back.pkl"))
+
     dels = util.getp("deletes")
     for i,etf in enumerate(z.getEtfList()):
         print("i: {}".format( i))
         try:
             code = getCode(i, etf)
         except Exception as e:
-            print ("download")
+            print ("problem with download")
             print (str(e))
             continue
 
@@ -120,7 +123,31 @@ def cleanFiles():
         with open(afile, "r") as f:
             lines = f.readlines()
         cleanLines(lines)
-doit()
+
+def diffISharesEtfs():
+    latest = z.getp("etfdict")
+    previous = z.getp("etfdict_back")
+    if not latest or not previous:
+        print ("missing data")
+        return
+    allthesame = True
+    for key,value in latest.items():
+        diff = value ^ previous[key]
+        if diff:
+            print("key: {}".format( key))
+            print(diff )
+            allthesame = False
+            for adiff in diff:
+                if adiff in value:
+                    print("adiff : missing in previous {}".format( adiff ))
+                else
+                    print("adiff : missing now {}".format( adiff ))
+    if allthesame:
+        print ("all the same")
+
+if __name__ == '__main__':
+    doit()
+    diffISharesEtfs()
 #cleanFiles()
 #huh = util.getp("alletfs")
 

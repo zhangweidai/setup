@@ -71,8 +71,8 @@ def getStocks(etf = None, dev=False, reset = False,
     if dev or getStocks.devoverride == True:
         if preload:
             getCsv.savedReads = getp("devdf")
-        return ["OLLI", "UA"]
-#        return ["SPY", "BA", "C", "KO", "AMD"]
+#        return ["OLLI", "UA"]
+        return ["SPY", "BA", "C", "KO", "AMD"]
 
     if not reset:
         try: return getStocks.ret
@@ -173,18 +173,26 @@ def getCsv(astock, asPath=False, save=True):
 getCsv.csvdir = "historical"
 getCsv.savedReads = dict()
 getCsv.download = True
+def getLatestDate(etf="IUSG", final=""):
+    import datetime
+    path = getPath("pkl/{}prices{}.pkl".format(etf, final))
+    t = os.path.getmtime(path)
+    pdate = str(datetime.datetime.fromtimestamp(t)).split(" ")[0]
+    return pdate
 
-def getPrice(astock, idx=-1):
-    df = getCsv(astock)
-    if type(idx) == int:
-        return round(df.at[idx,"Close"],3)
-    try:
-        idx = list(df["Date"]).index(idx)
-    except Exception as e:
-        getPrice.noprice.append(astock)
-        return None
-    return round(df.at[idx,"Close"],3)
-getPrice.noprice = list()
+import generate_list
+def getPrice(*kwargs, **kwarg2s):
+    return generate_list.getPrice(*kwargs, **kwarg2s)
+#    df = getCsv(astock)
+#    if type(idx) == int:
+#        return round(df.at[idx,"Close"],3)
+#    try:
+#        idx = list(df["Date"]).index(idx)
+#    except Exception as e:
+#        getPrice.noprice.append(astock)
+#        return None
+#    return round(df.at[idx,"Close"],3)
+#getPrice.noprice = list()
 
 #    items = [ "ROKA", "CRDB", "LGFB", "CBSA", "MPO", "LGFA", "CRDA", 
 def removeFromStocks(itemd):
@@ -247,7 +255,10 @@ def listen():
     signal.signal(signal.SIGUSR1, debug)  # Register handler
 
 def getEtfList():
-    return ["ITOT", "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV"]
+    return [ "IUSG", "IJH", "IJR", "IVV", "ITOT" ]
+#    , "USMV"
+#    ]
+#    "IWB", 
 
 def avg(lists):
     return round(sum(lists)/len(lists),3)

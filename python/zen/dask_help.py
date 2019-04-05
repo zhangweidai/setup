@@ -19,7 +19,7 @@ def convertToDask():
     path = z.getPath(convertToDask.directory)
     print ("reading")
     dfd = dd.read_csv('{}/*.csv'.format(path), include_path_column = True)
-    dfd = dfd.drop(['Volume', 'Adj Close', 'High','Low'], axis=1)
+    dfd = dfd.drop(['Adj Close', 'High', 'Low'], axis=1)
     dfd['path'] = dfd['path'].map(lambda x: getName(x))
 
     dfd['Change'] = dfd.Close/dfd.Open
@@ -28,8 +28,10 @@ def convertToDask():
 convertToDask.directory = "historical"
 
 def getModes():
-#    return ['Change']
-    return ['C3', 'C6', 'C12', 'C30', 'S30', 'S12','A4', "Change"]
+    if getModes.override:
+        return getModes.override
+    return ['C3', 'C6', 'C12', 'C30', 'S30', 'S12','A4', "Change", "Volume"]
+getModes.override = None
 
 def createRollingData(dfd):
     print (dfd.npartitions)
@@ -39,15 +41,24 @@ def createRollingData(dfd):
 
         computed['C3'] = (computed.Close/computed.Open.shift(3))\
             .map(lambda x: round(x,4))
+
         computed['C6'] = (computed.Close/computed.Open.shift(6))\
             .map(lambda x: round(x,4))
+
         computed['C12'] = (computed.Close/computed.Open.shift(12))\
             .map(lambda x: round(x,4))
+
         computed['C30'] = (computed.Close/computed.Open.shift(30))\
             .map(lambda x: round(x,4))
+
         computed['S12'] = (computed.C12/computed.C3).map(lambda x: round(x,4))
+
         computed['S30'] = (computed.C30/computed.C6).map(lambda x: round(x,4))
+
         computed['A4'] = computed.Change.rolling(4).mean()\
+            .map(lambda x: round(x,4))
+
+        computed['Volume'] = computed.Volume.rolling(5).mean()\
             .map(lambda x: round(x,4))
 
         name = computed.path[0]

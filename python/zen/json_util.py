@@ -21,40 +21,65 @@ def getMarketCapPage(astock):
 
     return decoded.split("\n")
 
-def parsePage(astock, getme = "sharesOutstanding"):
-    lines = getMarketCapPage(astock)
-    z.setp(lines,astock, override="yahoo")
+billion = 1000000000
+def parsePage(astock, dateformc, live=False):
 
-    symbol = ""
+    if live:
+        live = getMarketCapPage(astock)
+        z.setp(live, astock, override="yahoo")
+    else:
+        live = z.getp(astock, override="yahoo")
+#        path = z.getPath("yahoo/{}".format(astock))
+#        with open(path,"r") as f:
+#            live = f.readlines()
+    lastprice = z.getPrice(astock, dateformc, orlatest=True)
     started = False
     lookingfor = '{{"{}"'.format(astock)
-    for line in lines:
+    for line in live:
         line = line.strip()
         more = line.split(":")
         startprinting = False
-        nextone = False
+        nextone = True
+        shares = None
+        cap2 = None
         for i,aline in enumerate(more):
-
             if lookingfor in aline:
                 nextone = True
-            elif nextone and getme in aline:
-                return more[i+2].split(",")[0]
+            elif nextone and "sharesOutstanding" in aline:
+                shares = round(int(more[i+2].split(",")[0])/billion,5)
+                cap2 = round(shares * lastprice, 5)
+            elif nextone and "marketCap" in aline:
+                cap = round(int(more[i+2].split(",")[0])/billion,5)
+                return (shares, cap, cap2)
+
 
 def saveOutstanding():
-    stocks = z.getStocks("IUSG")
+
+    import generate_list
+    z.getStocks.devoverride = "IUSG"
+    generate_list.setSortedDict(prices_only=True)
+#    stocks = z.getStocks("IUSG")
     dictionary = dict()
-    for astock in stocks:
+    dateformc = z.getLatestDate(etf="IUSG", final="")
+    for astock in ["KO"]:
         try:
-            dictionary[astock] = parsePage(astock)
-        except:
+            dictionary[astock] = parsePage(astock, dateformc)
+        except Exception as e:
+            print ('saveFailed: '+ str(e))
+            print ("Not FIND :" + astock)
             continue
     z.setp(dictionary, "outstanding")
+    print(dictionary)
+
+#saveOutstanding()
+#raise SystemExit
+
 def other():
     dictionary = z.getp("outstanding")
     path = z.getPath("analysis/outstanding.csv")
     with open(path, 'w') as f:
         for key, value in dictionary.items():
-            value = round(value/1_000_000_000, 4)
+            value = round(value/billion, 4)
 
             f.write("{},{},{}\n".format(key, value))
 
@@ -126,7 +151,10 @@ def saveDivs():
                 continue
 
             date = str(i).zfill(2)
-            lines = getDividendSchedule(month, date)
+            try:
+                lines = getDividendSchedule(month, date)
+            except:
+                continue
             if lines:
                 parseDividendHtml(lines)
 
@@ -222,4 +250,5 @@ def updateJsonCompany(astock):
 #        f.write("{},{},{}\n".format(astock, dividend, name))
     return name
 
-
+if __name__ == '__main__':
+    saveOutstanding()

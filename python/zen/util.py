@@ -1189,11 +1189,6 @@ def getRangeScore(astock, sub=False):
         return round(probupsum,3), round(percsum,3)
     return round(probupsum * percsum, 3)
 
-def getConsider():
-    return ["FF", "ACB", "BABA", "CRM", "ABT", "GM", "YUM"]
-
-def getConsider2():
-    return {"Janus": ["PAGS","ZTS", "CSGP"]}
 
 #####
 # Cleanse code of items() and use iteritems()
@@ -1260,6 +1255,13 @@ def debug(sig, frame):
 
 def listen():
     signal.signal(signal.SIGUSR1, debug)  # Register handler
+
+def getConsider():
+    return ["FF", "ACB", "BABA", "CRM", "ABT", "GM", "YUM", "ZEN", "BNS", "WPG"]
+
+def getConsider2():
+    return {"Janus": ["PAGS","ZTS", "CSGP"]}
+
 
 calcPortfolio.latest = None
 #df = getCsv("BA")

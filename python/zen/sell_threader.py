@@ -4,7 +4,6 @@ import operator
 import random
 import sys
 from random import sample
-import numpy as np
 import generate_list
 from collections import defaultdict
 from filelock import FileLock
@@ -55,8 +54,8 @@ def buySellSim(args):
             if generate_list.getSortedStocks.get == "price":
                 buyme = generate_list.getPricedStocks(idxdate, price)
             else:
-                buyme = generate_list.getSortedStocks(idxdate, mode,
-                   howmany=5)
+                buyme = generate_list.getSortedStocks(idxdate, mode, \
+                                                      howmany=4)
 
             if not buyme :
                 continue
@@ -67,10 +66,15 @@ def buySellSim(args):
                 if generate_list.getSortedStocks.get == "price":
                     myprice = item[0]
                 if astock not in miniport and stocks_owned < \
-                    buySellSim.tracks:
+                                              buySellSim.tracks:
 
-                    something = buySomething(sub[idx+1], 
-                            astock, spend, idxdate, myprice)
+                    try:
+                        something = buySomething(sub[idx+1], 
+                                astock, spend, idxdate, myprice)
+                    except:
+                        print('problem')
+                        print(args)
+                        continue
 
                     if something:
                         miniport[astock] = something
@@ -215,13 +219,9 @@ def calcPortfolio(droppage, alist, mode):
     changes.remove(max(changes))
     changes.remove(max(changes))
 
-    vari = np.var(changes)
     average = round(sum(changes)/len(changes),3)
     alist.append(average)
     
-#    return vari, average
-#calcPortfolio()
-
 def getSpread():
 #    x1list = list()
 #    x2list = list()
@@ -277,11 +277,10 @@ def getSpread():
         print(dlist)
         print(ddlist)
 
-
 if __name__ == '__main__':
     z.getStocks.devoverride = "IVV"
     generate_list.setSortedDict()
-    buySellSim([.95, 1800, 1800 + 100, "S12", 0])
+    buySellSim([.85, 1800, 1800 + 100, "Volume", -1])
     print("etfwins : {}".format( etfwins ))
     print(collector)
 #getSpread()

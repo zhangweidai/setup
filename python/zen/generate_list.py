@@ -64,15 +64,17 @@ def process(astock, col, saveprices, datesdict):
             datesdict[cdate].discard(datesdict[cdate][discardlocation])
 
 from collections import defaultdict
-def setSortedDict(usepkl=True, prices_only=False):
+def setSortedDict(usepkl=True, prices_only=False, etf = None):
 
     prefix = ""
     final = setSortedDict.final
+    if etf:
+        prefix = etf
     if type(z.getStocks.devoverride) == str:
         prefix = z.getStocks.devoverride
 
     if usepkl:
-        print("prefix: {}".format( prefix))
+        print("setSortedDict: {}".format(prefix))
         setSortedDict.prices = z.getp("{}prices{}".format(prefix, 
                                                           final))
         saveEtfPrices.prices = z.getp("etfprices")
@@ -84,6 +86,7 @@ def setSortedDict(usepkl=True, prices_only=False):
 
     stocks = z.getStocks()
     setSortedDict.sorteddict = defaultdict(dict)
+    setSortedDict.prices = defaultdict(dict)
     for i,mode in enumerate(dask_help.getModes()):
         print("mode : {}".format( mode ))
         for astock in stocks:
@@ -148,25 +151,33 @@ def getPricedStocks(idxdate, price):
     return None
 #    raise SystemExit
 
-def getPrice(astock, date, value = 1):
+def getPrice(astock, date, value = 1, orlatest = False):
     try:
         return setSortedDict.prices[date][astock][value]
     except Exception as e:
-        if astock in z.getEtfList():
-            try:
-                return saveEtfPrices.prices[date][astock]
-            except:
-                pass
-            return None
+        pass
+    if astock in z.getEtfList():
+        try:
+            return saveEtfPrices.prices[date][astock]
+        except:
+            pass
+        return None
 
+    try:
         if len(setSortedDict.prices) == 1:
             setSortedDict(prices_only = True)
             return setSortedDict.prices[date][astock][value]
+    except:
+        pass
 
-#        print("date: {}".format( date))
-#        print("astock: {}".format( astock))
-#        print ('problemGetPrices: '+ str(e))
-        return None
+    if orlatest:
+        try:
+            dates = z.getp("dates")
+            return setSortedDict.prices[dates[-1]][astock][value]
+        except:
+            pass
+
+    return None
 
 #z.getStocks.devoverride = "ITOT"
 #print (getPricedStocks("2017-01-11", 3))
@@ -181,27 +192,35 @@ def saveEtfPrices():
     z.setp(saveEtfPrices.prices, "etfprices")
 saveEtfPrices.prices = defaultdict(dict)
 
-# ALGN, HPE
-if __name__ == '__main__':
-    import datetime
-#    saveEtfPrices()
-#    z.getStocks.devoverride = "ITOT"
-#    setSortedDict(usepkl = False)
+def regenerateHistorical():
+    dask_help.convertToDask.directory = "historical"
+    dask_help.createRollingData.dir = "historicalCalculated"
 
-    dask_help.convertToDask.directory = "csv"
-    dask_help.createRollingData.dir = "csvCalculated"
-    setSortedDict.final = "Final"
+    for etf in z.getEtfList():
+        print("etf : {}".format( etf ))
+        z.getStocks.devoverride = etf
+        z.getStocks(reset=True)
+        setSortedDict(usepkl = False)
+
+if __name__ == '__main__':
+#    regenerateHistorical()
+
+    getSortedStocks.get = "low"
+#    yesterday = str(datetime.date.today() - datetime.timedelta(days=1))
+#    print("yesterday : {}".format( yesterday ))
+#    for i,mode in enumerate(dask_help.getModes()):
+#        alist = getSortedStocks(yesterday, mode, getall=True)
+#        for item in alist:
+#            astock = item[1]
+#            value = getPrice(astock, yesterday)
+#            if value < 30:
+#                print("{} at {}".format(astock, value))
     z.getStocks.devoverride = "IUSG"
     setSortedDict()
-    getSortedStocks.get = "both"
-    yesterday = str(datetime.date.today() - datetime.timedelta(days=1))
-    print("yesterday : {}".format( yesterday ))
-    for i,mode in enumerate(dask_help.getModes()):
-        alist = getSortedStocks(yesterday, mode, getall=True)
-        for item in alist:
-            astock = item[1]
-            value = getPrice(astock, yesterday)
-            if value < 30:
-                print("{} at {}".format(astock, value))
-#    alist = getSortedStocks("2019-04-02", "C30", getall = True)
-#    print(alist )
+    alist = getSortedStocks("2019-03-06", "Volume", howmany = 2)
+    print(alist)
+
+    getSortedStocks.get = "high"
+    setSortedDict()
+    alist = getSortedStocks("2019-03-06", "Volume", howmany = 2)
+    print(alist)
