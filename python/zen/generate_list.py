@@ -70,6 +70,7 @@ def process(astock, col, saveprices, datesdict, yesterday):
 import datetime
 from collections import defaultdict
 def setSortedDict(usepkl=True, prices_only=False, etf = None):
+    print ('setting sorted dict')
 
     prefix = ""
     final = setSortedDict.final
@@ -90,6 +91,8 @@ def setSortedDict(usepkl=True, prices_only=False, etf = None):
         return
 
     stocks = z.getStocks()
+    print("stocks : {}".format( len(stocks)))
+    raise SystemExit
     setSortedDict.sorteddict = defaultdict(dict)
     setSortedDict.prices = defaultdict(dict)
 
@@ -215,6 +218,26 @@ getPrice.latest = dict()
 #z.getStocks.devoverride = "ITOT"
 #print (getPricedStocks("2017-01-11", 3))
 #raise SystemExit
+def getProbSale(astock):
+#    for astock in z.getEtfList():
+    path = z.getPath("{}/{}.csv".format(dask_help.convertToDask.directory, astock))
+    count = 0
+    downs = 0
+    avgl = list()
+    avgd = list()
+    for row in csv.DictReader(open(path)):
+        opend = float(row['Open'])
+        close = float(row['Close'])
+        change = close/opend
+        if change < 1:
+            downs += 1
+            avgd.append(change)
+        count += 1
+        avgl.append(change)
+    avgret = z.avg(avgl)
+    avgd = z.avg(avgd)
+    change = round(downs/count,3)
+    return avgret, change, z.percentage(avgd)
 
 def saveEtfPrices():
     for astock in z.getEtfList():
@@ -245,22 +268,25 @@ def setVolumeRanking():
 setVolumeRanking.latestvoldic = None
 
 def whatAboutThese(volumelist, count = 30, lowprice = False):
+    print(" {0:<6} {1:<4} $ {2:<7} {3:<7} {4:<7} {5:<7}".format("stock", "vol", "price", "avgC", "probD", "avgD"))
     for i,value in enumerate(volumelist):
         stock = value
         vrank = i+1
         try:
             if type(value) is tuple:
                 stock = value[1]
-            else:
                 vrank = getVolumeRanking(stock)
 
-            price = getPrice(stock)
+            price = round(getPrice(stock),2)
             if lowprice and price > 50:
                 continue
-            print("value : {0:<6} {1:<3} $ {2}".format(stock, vrank, price))
+            avgC, probD, avgD = getProbSale(stock)
+            print(" {0:<6} {1:<4} $ {2:<7} {3:<7} {4:<7} {5:<7}".format(stock, \
+                                   vrank, price, avgC, probD, avgD))
             if i > count:
                 break
-        except:
+
+        except Exception as e:
             continue
 
 def getVolumeRanking(astock = None):
@@ -276,9 +302,14 @@ def getVolumeRanking(astock = None):
 
 if __name__ == '__main__':
     import util
-    whatAboutThese(util.getConsider())
+    dask_help.convertToDask.directory = "csv"
+#    print (getProbSale("BA"))
+#    raise SystemExit
+    whatAboutThese(z.getConsider())
+    raise SystemExit
 #    getVolumeRanking(30)
     import sys
+    import zprep
     try:
         if len(sys.argv) > 1:
             if sys.argv[1] == "query":
@@ -288,46 +319,25 @@ if __name__ == '__main__':
                 yesterday = str(datetime.date.today() - datetime.timedelta(days=1))
                 today = str(datetime.date.today())
                 for mode in dask_help.getModes():
-                    print("{:*^30}".format( mode ))
+                    print("\nmode : {}".format( mode ))
                     stocks = (getSortedStocks(yesterday, mode, getall=True))
-                    for astock in stocks:
-                        number = astock[0]
-                        astock = astock[1]
-                        vrank = getVolumeRanking(astock)
-                        price = getPrice(astock)
-                        if price < 50 or vrank < 100:
-                            print("{0:<6} {1:<10} {2:<5} $ {3:<6}".format(astock, number, vrank, price))
+                    whatAboutThese(stocks)
 
-            if sys.argv[1] == "buy":
+            if sys.argv[1] == "buy" or sys.argv[1] == 'gbuy':
                 dask_help.convertToDask.directory = "csv"
                 dask_help.createRollingData.dir = "csvCalculated"
-                setSortedDict.final = "Final"
                 z.getStocks.devoverride = "IUSG"
+                z.getStocks.extras = True
+                if sys.argv[1] == 'gbuy':
+                    try:
+                        zprep.genBuyList()
+                        dask_help.convertToDask()
+                    except Exception as e:
+                        print (str(e))
+                        exit()
+                setSortedDict.final = "Final"
                 setSortedDict(usepkl = False)
                 z.setp(volumelist, "latestvolume")
     except Exception as e:
         print (str(e))
         pass
-
-#    regenerateHistorical()
-
-#    getSortedStocks.get = "low"
-#    yesterday = str(datetime.date.today() - datetime.timedelta(days=1))
-#    print("yesterday : {}".format( yesterday ))
-#    for i,mode in enumerate(dask_help.getModes()):
-#        alist = getSortedStocks(yesterday, mode, getall=True)
-#        for item in alist:
-#            astock = item[1]
-#            value = getPrice(astock, yesterday)
-#            if value < 30:
-#                print("{} at {}".format(astock, value))
-#    z.getStocks.devoverride = "IUSG"
-#    setSortedDict()
-#    alist = getSortedStocks("2019-03-06", "Volume", howmany = 2)
-#    print(alist)
-#
-#    getSortedStocks.get = "high"
-#    setSortedDict()
-#    alist = getSortedStocks("2019-03-06", "Volume", howmany = 2)
-#    print(alist)
-

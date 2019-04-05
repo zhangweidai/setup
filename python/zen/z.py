@@ -117,11 +117,18 @@ def getStocks(etf = None, dev=False, reset = False,
                     getStocks.etfs[tokens[1]]
         else:
             getStocks.ret = getStocks.etfs[etf]
+
+        if getStocks.extras:
+            getStocks.ret = getStocks.ret | set(getConsider())
+
         return getStocks.ret
+
 getStocks.etfs = None
 getStocks.devoverride = False
+getStocks.extras = False
 #print (getStocks("IUSG") - getStocks("ITOT"))
 #print (len(getStocks("IUSG|IVV")))
+#raise SystemExit
 
 import dask.dataframe as dd
 util = None
@@ -281,6 +288,13 @@ def breaker(count):
         breaker.count -= 1
         print("breaker: {}".format(breaker.count))
 breaker.count = None
+
+def getConsider():
+    return ["FF", "ACB", "BABA", "CRM", "ABT", "GM", "YUM", "ZEN", "BNS", "WPG", "PAGS", "ZTS", "CSGP"]
+
+def getConsider2():
+    return {"Janus": ["PAGS","ZTS", "CSGP"]}
+
 #removeFromStocks(getCorruptStocks())
 if __name__ == '__main__':
     import sys
