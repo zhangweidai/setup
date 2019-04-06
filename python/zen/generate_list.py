@@ -215,6 +215,21 @@ def getPrice(astock, date = None, value = 1, orlatest = False):
     return None
 getPrice.latest = dict()
 
+def getDropScore(astock):
+    df = z.getCsv(astock)
+    start = "2018-07-11"
+    days = 64
+    dates = df["Date"].tolist()
+    starti = dates.index(start)
+    minc = 10
+    for idx in range(starti, len(dates)-days):
+        close = df.at[idx + days,"Close"]
+        opend = df.at[idx,"Open"]
+        change = close/opend
+        if change < minc:
+            minc = change
+    return z.percentage(minc)
+
 #z.getStocks.devoverride = "ITOT"
 #print (getPricedStocks("2017-01-11", 3))
 #raise SystemExit
@@ -281,8 +296,9 @@ def whatAboutThese(volumelist, count = 30, lowprice = False):
             if lowprice and price > 50:
                 continue
             avgC, probD, avgD = getProbSale(stock)
+            dropScore = getDropScore(astock)
             print(" {0:<6} {1:<4} $ {2:<7} {3:<7} {4:<7} {5:<7}".format(stock, \
-                                   vrank, price, avgC, probD, avgD))
+                                   vrank, price, avgC, probD, avgD, dropScore))
             if i > count:
                 break
 
@@ -305,8 +321,8 @@ if __name__ == '__main__':
     dask_help.convertToDask.directory = "csv"
 #    print (getProbSale("BA"))
 #    raise SystemExit
-    whatAboutThese(z.getConsider())
-    raise SystemExit
+#    whatAboutThese(z.getConsider())
+#    raise SystemExit
 #    getVolumeRanking(30)
     import sys
     import zprep
