@@ -153,7 +153,7 @@ if has("win32")
     set undodir=~\Documents\undo
     let MRU_File="C:\\Users\\Peter\\.vim_mru_files"
 else
-    let MRU_File="/mnt/c/Users/Peter/.vim_mru_files"
+    let MRU_File="/home/zoe/.vim_mru_files"
 "    let MRU_File=expand("~/.vim_mru_files")
     set undodir=~/.undo
 endif

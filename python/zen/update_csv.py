@@ -88,7 +88,8 @@ def updateStocks(yahoo_date):
     z.setp(latest, "lastValues")
     z.setp(problem, "problematicUpdateStocks")
     print (problem)
-updateStocks()
+
+#updateStocks()
 
 #if pulled:
 #    z.saveJsonData(stocks, "ijh")

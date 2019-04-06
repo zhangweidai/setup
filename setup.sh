@@ -1,13 +1,13 @@
 # setup
-sudo add-apt-repository ppa:jonathonf/vim
+#sudo add-apt-repository ppa:jonathonf/vim
 sudo apt-get update
 
 sudo apt-get install xclip
 sudo apt-get install silversearcher-ag
 sudo apt install exuberant-ctags
-sudo apt install vim
+#sudo apt install vim
 
-sudo apt install git
+#sudo apt install git
 sudo apt install gitk
 
 
