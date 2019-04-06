@@ -3,6 +3,7 @@ import update_csv
 import os
 import z
 import csv
+import datetime
 import fix_yahoo_finance as yf
 
 from pandas_datareader import data as pdr
@@ -24,15 +25,30 @@ def getDataFromYahoo(astock, cdate):
             df.at[idx, label] = round(df.at[idx, label], 3)
     return df
 
+latest = list()
 parentdir = util.getPath("historical")
 listOfFiles = os.listdir(parentdir)
 for entry in listOfFiles:
     astock = os.path.splitext(entry)[0]
     path = "{}/{}".format(parentdir,entry)
-    print("path : {}".format( path ))
+
+    t = os.path.getmtime(path)
+    csvdate = datetime.datetime.fromtimestamp(t)
+    csvday = csvdate.day
+    csvmonth = csvdate.month
+    ttoday = datetime.date.today().day
+    tmonth = datetime.date.today().month
+    if csvday >= ttoday and tmonth == csvmonth:
+#        print("skipping path : {}".format( path ))
+        continue
+
     for row in csv.DictReader(open(path)):
         cdate = row['Date']
 
+    if cdate != "2019-04-05":
+        latest.append(astock)
+
+    continue
     df = getDataFromYahoo(astock, cdate)
     if df is None:
         continue
@@ -54,7 +70,9 @@ for entry in listOfFiles:
             f.write("{},{},{},{},{},{},{}\n".format(\
                         cdate, opend, high, low, closed, adj, vol))
 
-            latest[astock] = closed 
+print("latest: {}".format( latest))
+print("latest: {}".format( len(latest)))
+#            latest[astock] = closed 
 
-z.setp(latest, "latestprices")
+#z.setp(latest, "latestprices")
 

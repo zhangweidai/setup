@@ -210,6 +210,8 @@ def removeFromStocks(itemd):
     for item in itemd:
         try:
             stocks.remove(item)
+            path = getPath("historical/{}.csv".format(item))
+            os.remove(path)
         except:
             pass
         dels.add(item)
@@ -234,15 +236,22 @@ def clearFromEtfDics(items = None):
     setp(etfs, "etfdict")
 
 def delStock(astock, save=False):
-    if type(astock) is list:
+    if type(astock) is set:
+        delStock.items = delStock.items + list(astock)
+    elif type(astock) is list:
         delStock.items = delStock.items + astock
     else:
         delStock.items.append(astock)
+        path = getPath("historical/{}.csv".format(astock))
+        os.remove(path)
+
     if save:
         removeFromStocks(delStock.items)
         clearFromEtfDics(delStock.items)
-
 delStock.items = []
+
+#delStock(getp("deletes"), save=True)
+#raise SystemExit
 #delStock("JWA", save=True)
 
 import code, traceback, signal
