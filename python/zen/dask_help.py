@@ -73,6 +73,31 @@ createRollingData.dir = "calculated"
 #    convertToDask()
 
 if __name__ == '__main__':
+    import csv
+    z.getStocks.devoverride = "IUSG"
+    z.getStocks.extras = True
+    stocks = z.getStocks()
+    howmany = 10
+    dates = z.getp("dates")
+    starti = dates[-1 * howmany]
+
+    for astock in stocks:
+        path = z.getPath("historical/{}.csv".format(astock))
+        tpath = z.getPath("csv/{}.csv".format(astock))
+
+        with open(tpath, "w") as f:
+            starting = False
+            for row in csv.DictReader(open(path)):
+                if row['Date'] == starti:
+                    starting = True
+    
+                if starting:
+                    f.write("{},{},{},{}".format(date,
+                                opend,close,vol)
+                    print("row : {}".format( row ))
+
+        raise SystemExit    
+
     import sys
     try:
         if len(sys.argv) > 1:
