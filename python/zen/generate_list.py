@@ -40,9 +40,7 @@ def getScore(idxstart, df):
 
     return s1,s2
 
-volumelist = SortedSet()
-def process(astock, col, saveprices, datesdict, yesterday):
-    global volumelist
+def process(astock, col, saveprices, datesdict):
     path = z.getPath("{}/{}.csv".format(dask_help.createRollingData.dir, astock))
     for row in csv.DictReader(open(path)):
 
@@ -59,8 +57,6 @@ def process(astock, col, saveprices, datesdict, yesterday):
 
         try:
             datesdict[cdate].add((val, astock))
-            if col == "Volume" and cdate == yesterday:
-                volumelist.add((val, astock))
         except:
             datesdict[cdate] = SortedSet([(val, astock)])
 
@@ -76,44 +72,45 @@ def setSortedDict(usepkl=True, prices_only=False, etf = None):
     final = setSortedDict.final
     if etf:
         prefix = etf
+
     if type(z.getStocks.devoverride) == str:
         prefix = z.getStocks.devoverride
 
     if usepkl:
-        print("setSortedDict: {}".format(prefix))
-        setSortedDict.prices = z.getp("{}prices{}".format(prefix, 
-                                                          final))
+        setSortedDict.prices = z.getp("{}prices{}".format(prefix, final))
         saveEtfPrices.prices = z.getp("etfprices")
         if prices_only:
             return
-        setSortedDict.sorteddict = z.getp("{}sorteddict{}".format(
-            prefix, final))
-        return
+        load = "{}sorteddict{}".format(prefix, final)
+        print("loading sorteddict : {}".format( load ))
+        setSortedDict.sorteddict = z.getp(load)
+        if setSortedDict.sorteddict:
+            return
 
-    stocks = z.getStocks()
-    print("stocks : {}".format( len(stocks)))
-    raise SystemExit
+    stocks = z.getStocks(reset=True)
     setSortedDict.sorteddict = defaultdict(dict)
     setSortedDict.prices = defaultdict(dict)
-
-    yesterday = str(datetime.date.today() - datetime.timedelta(days=1))
 
     for i,mode in enumerate(dask_help.getModes()):
         print("mode : {}".format( mode ))
         for astock in stocks:
-            process(astock, mode, bool(i==0), setSortedDict.sorteddict[mode], yesterday)
+            process(astock, mode, bool(i==0), setSortedDict.sorteddict[mode])
 
     print("saving")
     z.setp(setSortedDict.sorteddict, "{}sorteddict{}".format(prefix, final))
     z.setp(setSortedDict.prices, "{}prices{}".format(prefix, final))
     print("done saving")
-
 setSortedDict.final = ""
 setSortedDict.sorteddict = None
 setSortedDict.prices = defaultdict(dict)
 
 def getSortedStocks(date, mode, howmany = 2, getall = False):
-    alist = setSortedDict.sorteddict[mode][date]
+    try:
+        alist = setSortedDict.sorteddict[mode][date]
+    except:
+        setSortedDict(usepkl=True, etf=z.getStocks.devoverride)
+        alist = setSortedDict.sorteddict[mode][date]
+
     if getall:
         return alist
     if getSortedStocks.get == "both":
@@ -123,7 +120,6 @@ def getSortedStocks(date, mode, howmany = 2, getall = False):
     if getSortedStocks.get == "low":
         return sample(alist[:discardlocation],howmany)
 getSortedStocks.get = "both"
-#    return [alist[0], alist[1]]
 
 def getEtfPrice(astock, date):
     try:
@@ -162,17 +158,19 @@ def getPricedStocks(idxdate, price):
     return None
 #    raise SystemExit
 
-def getLatestPrices():
+def getLatestPrices(astock):
     try:
         getPrice.latest = z.getp("latestprices")
-        if getPrice.latest:
+        if getPrice.latest and astock in getPrice.latest:
             return
     except:
         pass
 #    z.getStocks.devoverride = None
-    stocks = z.getStocks("IUSG")
+    stocks = z.getStocks("ITOT")
+    print ("regenerating latest prices")
+    getPrice.latest = dict()
     for astock in stocks:
-        path = z.getPath("csv/{}.csv".format(astock))
+        path = z.getPath("historical/{}.csv".format(astock))
         for row in csv.DictReader(open(path)):
             pass
         getPrice.latest[astock] = float(row['Close'])
@@ -183,7 +181,7 @@ def getPrice(astock, date = None, value = 1, orlatest = False):
         try:
             return getPrice.latest[astock]
         except:
-            getLatestPrices()
+            getLatestPrices(astock)
             return getPrice.latest[astock]
         return None
 
@@ -213,10 +211,13 @@ def getPrice(astock, date = None, value = 1, orlatest = False):
             pass
 
     return None
+
 getPrice.latest = dict()
 
-def getDropScore(astock):
+def getDropScore(astock, percent = True):
     df = z.getCsv(astock)
+    if df is None:
+        print("astock: {}".format( astock))
     start = "2018-07-11"
     days = 64
     dates = df["Date"].tolist()
@@ -228,7 +229,9 @@ def getDropScore(astock):
         change = close/opend
         if change < minc:
             minc = change
-    return z.percentage(minc)
+    if percent:
+        return z.percentage(minc)
+    return round(minc,4)
 
 #z.getStocks.devoverride = "ITOT"
 #print (getPricedStocks("2017-01-11", 3))
@@ -272,71 +275,183 @@ def regenerateHistorical():
         z.getStocks.devoverride = etf
         z.getStocks(reset=True)
         setSortedDict(usepkl = False)
+    print ("you can now use more_strat with setSortedDict")
 
+def setDropRanking():
+    label = ""
+    if type(z.getStocks.devoverride) is str:
+        label = z.getStocks.devoverride
+    latestdrop = z.getp("{}latestdrop".format(label))
+
+    setDropRanking.latestdropdic = dict()
+    for i,item in enumerate(latestdrop):
+        setDropRanking.latestdropdic[item[1]] = i
+    z.setp(setDropRanking.latestdropdic, "{}latestdropdic".format(label))
+setDropRanking.latestdropdic = None
 
 def setVolumeRanking():
-    volumelist = z.getp("latestvolume")
-    setVolumeRanking.latestvoldic = dict()
-    for i,item in enumerate(volumelist):
-        setVolumeRanking.latestvoldic[item[1]] = i
-    z.setp(setVolumeRanking.latestvoldic, "latestvolumedic")
-setVolumeRanking.latestvoldic = None
+    label = ""
+    if type(z.getStocks.devoverride) is str:
+        label = z.getStocks.devoverride
+    latestvolume = z.getp("{}latestvolume".format(label))
 
-def whatAboutThese(volumelist, count = 30, lowprice = False):
-    print(" {0:<6} {1:<4} $ {2:<7} {3:<7} {4:<7} {5:<7}".format("stock", "vol", "price", "avgC", "probD", "avgD"))
-    for i,value in enumerate(volumelist):
-        stock = value
+    setVolumeRanking.latestvolumedic = dict()
+    for i,item in enumerate(latestvolume):
+        setVolumeRanking.latestvolumedic[item[1]] = i
+    z.setp(setVolumeRanking.latestvolumedic, "{}latestvolumedic".format(label))
+setVolumeRanking.latestvolumedic = None
+
+def whatAboutThese(stocks, count = 30, lowprice = False):
+    print(" {0:<6} {1:<4} $ {2:<7} {3:<7} {4:<7} {5:<7} {6:<5}".format(\
+                "stock", "vol", "price", "avgC", "probD", "avgD", "drop"))
+    for i,value in enumerate(stocks):
+        astock = value
         vrank = i+1
         try:
             if type(value) is tuple:
-                stock = value[1]
-                vrank = getVolumeRanking(stock)
+                astock = value[1]
+                vrank = getVolumeRanking(astock)
 
-            price = round(getPrice(stock),2)
+            price = round(getPrice(astock),2)
             if lowprice and price > 50:
                 continue
-            avgC, probD, avgD = getProbSale(stock)
-            dropScore = getDropScore(astock)
-            print(" {0:<6} {1:<4} $ {2:<7} {3:<7} {4:<7} {5:<7}".format(stock, \
+            try:
+                avgC, probD, avgD = getProbSale(astock)
+#                print("astock: {}".format( astock))
+#                raise SystemExit
+                dropScore = getDropScore(astock)
+            except Exception as e:
+                print (z.trace(e))
+                print("astock: {}".format( astock))
+                raise SystemExit
+#                continue
+
+            print(" {0:<6} {1:<4} $ {2:<7} {3:<7} {4:<7} {5:<7} {6:<5}".format(astock, \
                                    vrank, price, avgC, probD, avgD, dropScore))
+
             if i > count:
                 break
 
         except Exception as e:
+            print (z.trace(e))
+            raise SystemExit
             continue
 
-def getVolumeRanking(astock = None):
+def getDropRanking(astock = None):
+    label = ""
+    if type(z.getStocks.devoverride) is str:
+        label = z.getStocks.devoverride
+
     if type(astock) is str: 
         try:
-            return setVolumeRanking.latestvoldic[astock]
+            return setDropRanking.latestdropdic[astock]
         except:
-            setVolumeRanking.latestvoldic = z.getp("latestvolumedic")
-        return setVolumeRanking.latestvoldic[astock]
+            setDropRanking.latestdropdic = z.getp("{}latestdropdic".format(label))
+            try:
+                return setDropRanking.latestdropdic[astock]
+            except:
+                setDropRanking()
+            return setdropRanking.latestdropdic[astock]
+
     elif type(astock) is int:
-        volumelist = z.getp("latestvolume")
-        whatAboutThese(volumelist, count=astock)
+        latestdrop = z.getp("{}latestdrop".format(label))
+        whatAboutThese(latestdrop, count=astock)
+
+
+def getVolumeRanking(astock = None):
+    label = ""
+    if type(z.getStocks.devoverride) is str:
+        label = z.getStocks.devoverride
+
+    if type(astock) is str: 
+        try:
+            return setVolumeRanking.latestvolumedic[astock]
+        except:
+            print ("getting volumedic for {}".format(label))
+            setVolumeRanking.latestvolumedic = z.getp("{}latestvolumedic".format(label))
+            try:
+                return setVolumeRanking.latestvolumedic[astock]
+            except:
+                setVolumeRanking()
+            return setVolumeRanking.latestvolumedic[astock]
+
+    elif type(astock) is int:
+        latestvolume = z.getp("{}latestvolume".format(label))
+        whatAboutThese(latestvolume, count=astock)
+
+
+def longlists(etf, date):
+    z.getStocks.extras = (etf == "IUSG")
+    stocks = z.getStocks(etf, reset=True)
+
+    latestvolume = SortedSet()
+    latestdrop = SortedSet()
+
+    for astock in stocks:
+        path = z.getPath("{}/{}.csv".format(dask_help.createRollingData.dir, astock))
+        for row in csv.DictReader(open(path)):
+            cdate = row['Date']
+            if cdate == date:
+
+                try:
+                    val = float(row['Volume'])
+                except Exception as e:
+                    print (str(e))
+                    print("astock : {}".format( astock ))
+                    print("cdate : {}".format( cdate ))
+                    continue
+
+                latestvolume.add((val, astock))
+                try:
+                    latestdrop.add((getDropScore(astock, percent = False), astock))
+                except:
+                    continue
+
+    print ("saved latestvolume")
+    z.setp(latestvolume, "{}latestvolume".format(etf))
+    z.setp(latestdrop, "{}latestdrop".format(etf))
+
+def yesterday():
+    return str(datetime.date.today() - datetime.timedelta(days=2))
 
 if __name__ == '__main__':
+
     import util
     dask_help.convertToDask.directory = "csv"
-#    print (getProbSale("BA"))
-#    raise SystemExit
-#    whatAboutThese(z.getConsider())
-#    raise SystemExit
-#    getVolumeRanking(30)
     import sys
     import zprep
     try:
         if len(sys.argv) > 1:
-            if sys.argv[1] == "query":
+            # show drop ranking
+            if sys.argv[1] == "dropranking":
                 z.getStocks.devoverride = "IUSG"
-                setSortedDict.final = "Final"
+                setDropRanking()
+                latestdrop = z.getp("{}latestdrop".format(z.getStocks.devoverride))
+                print(latestdrop[-10:])
+                print(latestdrop[:10])
+
+            if sys.argv[1] == "volumeranking":
+                z.getStocks.devoverride = "IUSG"
+                latestvolume = z.getp("{}latestvolume".format(z.getStocks.devoverride))
+                print(latestvolume[-10:])
+                print(latestvolume[:10])
+
+            # what to buy tomorrow
+            if sys.argv[1] == "query":
+                z.getStocks.devoverride = "ITOT"
+                z.getStocks.extras = z.getStocks.devoverride == "IUSG"
                 setSortedDict(usepkl = True)
-                yesterday = str(datetime.date.today() - datetime.timedelta(days=1))
-                today = str(datetime.date.today())
-                for mode in dask_help.getModes():
+
+                modes = dask_help.getModes()
+                try:
+                    if sys.argv[2]:
+                        modes = [sys.argv[2]]
+                except:
+                    pass
+
+                for mode in modes:
                     print("\nmode : {}".format( mode ))
-                    stocks = (getSortedStocks(yesterday, mode, getall=True))
+                    stocks = getSortedStocks(yesterday(), mode, getall=True)
                     whatAboutThese(stocks)
 
             if sys.argv[1] == "buy" or sys.argv[1] == 'gbuy':
@@ -351,9 +466,31 @@ if __name__ == '__main__':
                     except Exception as e:
                         print (str(e))
                         exit()
-                setSortedDict.final = "Final"
                 setSortedDict(usepkl = False)
-                z.setp(volumelist, "latestvolume")
+
+            # generated setSortedDict
+            if sys.argv[1] == "etfs":
+                etfs = z.getEtfList()
+                try:
+                    if sys.argv[2]:
+                        etfs = [sys.argv[2].upper()]
+                except:
+                    pass
+
+                for etf in etfs:
+                    print("etf : {}".format( etf ))
+                    z.getStocks.extras = (etf == "IUSG")
+                    z.getStocks.devoverride = etf
+                    setSortedDict(etf=etf, usepkl = False)
+
+            if sys.argv[1] == "longlists":
+                for etf in z.getEtfList():
+                    print("etf : {}".format( etf ))
+                    z.getStocks.devoverride = etf
+                    longlists(etf, yesterday())
+                    setVolumeRanking()
+
+
     except Exception as e:
         print (str(e))
         pass

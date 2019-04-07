@@ -10,8 +10,8 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 
 sell_threader.setTranscript.enabled = False
-sell_threader.buySellSim.tracks = 8
-dask_help.getModes.override = ["Volume"]
+sell_threader.buySellSim.tracks = 20
+#dask_help.getModes.override = ["Volume"]
 
 z.getStocks.devoverride = "IUSG"
 generate_list.getSortedStocks.get = "low"
@@ -19,14 +19,13 @@ generate_list.getSortedStocks.get = "low"
 use_q = True
 testpoints = 600
 print("testpoints : {}".format( testpoints ))
-years = 1.4
+years = 2
 
 # The threader thread pulls an worker from the queue and processes it
 def threader():
     while True:
         sell_threader.buySellSim(q.get())
         q.task_done()
-
 
 dates = z.getp("dates")
 num_days = len(dates)
@@ -37,7 +36,9 @@ duration = int (years * ayear)
 starti = num_days-(duration*2)
 endi = num_days-duration
 startd = dates[starti]
+print("startd : {}".format( startd ))
 endd = dates[endi]
+print("endd : {}".format( endd ))
 
 prices_only = False
 if generate_list.getSortedStocks.get == "price":

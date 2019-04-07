@@ -93,6 +93,20 @@ def updateCsv(astock, updateForBuy = False):
         notadded.append(astock)
 
 
+def downloadMissingHistory(astock = None):
+    import update_history
+    stocks = [astock]
+    if not astock:
+        stocks = z.getStocks("ITOT")
+
+    for astock in stocks:
+        path = z.getPath("historical/{}.csv".format(astock))
+        if os.path.exists(path):
+            continue
+        df = update_history.getDataFromYahoo(astock, "2000-01-05")
+        print("written path : {}".format( path ))
+        df.to_csv(path)
+
 def updateHistory():
     util.saveProcessedFromYahoo.download = True
 #    stocks = z.getStocks()

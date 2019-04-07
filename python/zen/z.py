@@ -126,6 +126,7 @@ def getStocks(etf = None, dev=False, reset = False,
 getStocks.etfs = None
 getStocks.devoverride = False
 getStocks.extras = False
+
 #print (getStocks("IUSG") - getStocks("ITOT"))
 #print (len(getStocks("IUSG|IVV")))
 #raise SystemExit
@@ -298,8 +299,14 @@ def breaker(count):
         print("breaker: {}".format(breaker.count))
 breaker.count = None
 
+def trace(e):
+    import traceback
+    print (traceback.format_exc())
+    print (str(e))
+
 def getConsider():
-    return ["FF", "ACB", "BABA", "CRM", "ABT", "GM", "YUM", "ZEN", "BNS", "WPG", "PAGS", "ZTS", "CSGP"]
+    return ["FF", "ACB", "BABA", "CRM", "ABT", "GM", "YUM", "ZEN", "BNS", "WPG", \
+        "PAGS", "ZTS", "CSGP", "CGNX", "EW", "VMC", "ASML", "AGN", "HRS"]
 
 def getConsider2():
     return {"Janus": ["PAGS","ZTS", "CSGP"]}

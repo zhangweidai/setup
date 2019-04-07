@@ -54,8 +54,11 @@ def doit():
 #    company = util.getp("company")
 #    etfdict = util.getp("etfdict")
     etfpath = z.getPath("pkl/etfdict.pkl")
-    from shutil import copyfile
-    copyfile(etfpath, z.getPath("pkl/etfdict_back.pkl"))
+    try:
+        from shutil import copyfile
+        copyfile(etfpath, z.getPath("pkl/etfdict_back.pkl"))
+    except:
+        pass
 
     dels = util.getp("deletes")
     for i,etf in enumerate(z.getEtfList(forEtfs=True)):
@@ -89,7 +92,7 @@ def doit():
 
 def getCsvsFiles():
     holds = []
-    path = util.getPath('holdings/{}.csv'.format()
+    path = util.getPath('holdings/{}.csv'.format())
     listOfFiles = os.listdir(path)
     for entry in listOfFiles:  
         holds.append("{}/{}".format(path,entry))
@@ -153,7 +156,7 @@ def diffISharesEtfs():
 
 if __name__ == '__main__':
     doit()
-    diffISharesEtfs()
+#    diffISharesEtfs()
 #cleanFiles()
 #huh = util.getp("alletfs")
 
