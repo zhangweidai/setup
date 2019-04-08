@@ -10,16 +10,16 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 
 sell_threader.setTranscript.enabled = False
-sell_threader.buySellSim.tracks = 20
+sell_threader.buySellSim.tracks = 26
 #dask_help.getModes.override = ["Volume"]
 
-z.getStocks.devoverride = "IUSG"
+z.getStocks.devoverride = "ITOT"
 generate_list.getSortedStocks.get = "low"
 
 use_q = True
-testpoints = 600
+testpoints = 350
 print("testpoints : {}".format( testpoints ))
-years = 2
+years = 4 
 
 # The threader thread pulls an worker from the queue and processes it
 def threader():
@@ -33,7 +33,7 @@ num_days = len(dates)
 ayear = 252
 duration = int (years * ayear)
 
-starti = num_days-(duration*2)
+starti = num_days-(duration*4)
 endi = num_days-duration
 startd = dates[starti]
 print("startd : {}".format( startd ))
@@ -43,7 +43,8 @@ print("endd : {}".format( endd ))
 prices_only = False
 if generate_list.getSortedStocks.get == "price":
     prices_only = True
-generate_list.setSortedDict(prices_only = prices_only)
+
+generate_list.setSortedDict()
 
 q = Queue()
 for x in range(7):
@@ -53,24 +54,24 @@ for x in range(7):
 
 print("num_days : {} - {} {}".format( num_days, startd, endd ))
 played = 0
-def calcPortfolio(droppage, mode, price):
+def calcPortfolio(droppage, mode, price, typed = None):
     global played
     for tries in range(testpoints):
         start = random.randrange(starti, endi)
         end = start + duration
         played += 1
         if use_q:
-            q.put([droppage, start, end, mode, price])
+            q.put([droppage, start, end, mode, price, typed])
         else:
             sell_threader.buySellSim([droppage, start, end, 
-                    mode, price])
+                    mode, price, typed])
 
 def getColors():
     return ["blue", "red", "green", "black", 'cyan', 'brown', 
-            'orange', 'pink', 'magenta', 'olive']
+            'orange', 'pink', 'magenta', 'olive', "indigo", "teal", "silver"]
 
-ylist = [i/100 for i in range(76,96,2)]
-
+ylist = [i/100 for i in range(50,96,4)]
+numy = len(ylist)
 price = -1
 pricelist = [price]
 if generate_list.getSortedStocks.get == "price":
@@ -82,8 +83,9 @@ if generate_list.getSortedStocks.get == "price":
 
 else:
     for droppage in ylist:
-        for mode in dask_help.getModes():
-            calcPortfolio(droppage, mode=mode, price=price)
+        for typed in ["low", "high", "both"]:
+            for mode in dask_help.getModes():
+                calcPortfolio(droppage, mode=mode, price=price, typed=typed)
 q.join()
 
 collector = sell_threader.getCollector()
@@ -113,25 +115,28 @@ if generate_list.getSortedStocks.get == "price":
                 pass
 else:
     for droppage in ylist:
-        for mode in dask_help.getModes():
-    
-            modeidx = dask_help.getModes().index(mode)
-            color = getColors()[modeidx]
-            tupp = (droppage, mode, price)
-            try:
-                value = z.avg(collector[tupp])
-            except:
-                print("tupp : {}".format( tupp ))
-                continue
-    
-            avgdropdict[droppage].append(value)
-            avgmodedict[mode].append(value)
-            avgpricedict[price].append(value)
-    
-            try:
-                plt.scatter(droppage, value, color=color)
-            except:
-                pass
+        for typed in ["low", "high", "both"]:
+            generate_list.getSortedStocks.get = typed
+            for mode in dask_help.getModes():
+                modeidx = dask_help.getModes().index(mode)
+                color = getColors()[modeidx]
+                modestr = "{}/{}".format(mode, typed)
+                tupp = (droppage, modestr, price)
+                try:
+                    value = z.avg(collector[tupp])
+                except Exception as e:
+                    print("1tupp : {}".format( tupp ))
+                    z.trace(e)
+                    raise SystemExit
+                    continue
+                avgdropdict[droppage].append(value)
+                avgmodedict[modestr].append(value)
+                avgpricedict[price].append(value)
+        
+                try:
+                    plt.scatter(droppage, value, color=color)
+                except:
+                    pass
     
 etfavg = list()
 for akey,alist in avgmodedict.items():
@@ -148,17 +153,22 @@ for akey,alist in avgpricedict.items():
 
 #print(generate_list.getSortedStocks.get)
 avgetf = z.avg(etfavg)
+
+print (z.getStocks.devoverride)
 print("this etf avg: {}".format( avgetf))
 
+etfcollector = sell_threader.getEtfCollector()
+etfcollectort = sell_threader.getEtfCollectorT()
 for akey,alist in avgmodedict.items():
     avg = z.avg(alist)
-    if avg > avgetf:
-        print("modes: {} {} ".format( akey, avg))
+    etfvalue = etfcollector[akey]
+    etft = etfcollectort[akey]
+#    print("modes: {0:<12} {1:<8} {2:<7}".format( akey, avg, round(etfvalue/(numy*testpoints), 3)))
+    print("modes: {0:<12} {1:<8} {2:<7}".format( akey, avg, round(etfvalue/etft,3) ))
 
 for akey,alist in avgdropdict.items():
     avg = z.avg(alist)
-    if avg > avgetf:
-        print("drop: {} {} ".format( akey, avg))
+    print("drop: {} {} ".format( akey, avg))
 
 for akey,alist in avgpricedict.items():
     avg = z.avg(alist)
@@ -167,6 +177,8 @@ for akey,alist in avgpricedict.items():
 
 print("general etf winrate: {}".format(round(sell_threader.getEtfWins() / played,3)))
 print (sell_threader.buySellSim.tracks)
+print("years : {}".format( years ))
+print("testpoints : {}".format( testpoints ))
 
 #z.setp(avgdropdict, "{}avgdropdict".format(z.getStocks.devoverride))
 #z.setp(avgmodedict, "{}avgmodedict".format(z.getStocks.devoverride))

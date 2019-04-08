@@ -25,7 +25,7 @@ def getDataFromYahoo(astock):
         try:
             data = pdr.get_data_yahoo([astock], start=str(startdate.isoformat())) 
         except Exception as e:
-            print (str(e))
+            z.trace(e)
             print("astock: {}".format( astock))
             return None
     
@@ -116,7 +116,7 @@ def updateHistory():
         try:
             updateCsv(astock)
         except Exception as e:
-            print (str(e))
+            z.trace(e)
             raise SystemExit
             pass
 
@@ -130,7 +130,7 @@ def updateBuyListSource():
         try:
             updateCsv(astock)
         except Exception as e:
-            print (str(e))
+            z.trace(e)
             raise SystemExit
             pass
 
@@ -197,7 +197,7 @@ def genBuyList():
         try:
             util.saveProcessedFromYahoo(astock)
         except Exception as e:
-            print (str(e))
+            z.trace(e)
             raise SystemExit
             pass
 #    import matplotlib.pyplot as plt
@@ -229,7 +229,7 @@ if __name__ == '__main__':
             if sys.argv[1] == "buy":
                 genBuyList()
     except Exception as e:
-        print (str(e))
+        z.trace(e)
         pass
 
 

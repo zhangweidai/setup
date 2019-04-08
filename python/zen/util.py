@@ -273,7 +273,7 @@ def getScoreFromCsv(astock):
                 df = pandas.read_csv(path)
             except:
                 print ("getScoreFromCsv")
-                print (str(e))
+                z.trace(e)
                 return None
     ret = df.loc[df[unnamed] == astock]["Score"].to_string()
     ret = " ".join(list(filter(None, ret.split(' ')))[1:])
@@ -305,7 +305,7 @@ def getCompanyName(astock):
         ret = " ".join(list(filter(None, ret.split(' ')))[1:])
     except Exception as e:
         print ("cname")
-        print (str(e))
+        z.trace(e)
         if astock in getFromHoldings():
             return "ETF"
         return None
@@ -538,7 +538,7 @@ def setWhatToBuy(column, ascending = True):
             setWhatToBuy.fromfile = getp("buyfile")
     except Exception as e:
         print ("setWhatToBuy")
-        print (str(e))
+        z.trace(e)
     if not column:
         getStocks.fromCsv = None
         return
@@ -564,6 +564,26 @@ def getRemovedStocks():
     return removed
 
 import z
+def getLivePrice(astock):
+#    try :
+#        df = z.getp("temp")
+#        return float(df['price'])
+#    except:
+#        pass
+#    return
+#    z.setp(df, "temp")
+    df = pdr.get_quote_yahoo([astock])
+#    print(df)
+#    for i,row in df.iterrows():
+#        print("row : {}".format( row ))
+#    print(df.keys())
+#    print(df['price'])
+#    z.setp(df, "temp")
+    return df['price']
+
+import generate_list
+def getLiveChange(astock):
+    return z.percentage(float(getLivePrice(astock) / generate_list.getPrice(astock)))
 from datetime import date, timedelta
 def saveProcessedFromYahoo(astock, add=False):
     if not saveProcessedFromYahoo.download:
@@ -592,11 +612,11 @@ def saveProcessedFromYahoo(astock, add=False):
     try:
         df = pdr.get_data_yahoo([astock], start=saveStartDate)
     except Exception as e:
-        print (str(e))
+        z.trace(e)
         try:
             df = pdr.get_data_yahoo([astock], start=saveStartDate)
         except Exception as e:
-            print (str(e))
+            z.trace(e)
 
     if df is None:
 #        delStock(astock)
@@ -885,7 +905,7 @@ def getCsv(astock, asPath=False, save=True):
                     if df is None:
                         return None
             except Exception as e:
-                print (str(e))
+                z.trace(e)
                 print ("problem with {}".format(astock))
                 return None
     if save:

@@ -28,7 +28,7 @@ def getCode(i, etf):
                 return (getSymbol(aline))
             except Exception as e:
                 print ("download")
-                print (str(e))
+                z.trace(e)
                 with open(etf,"w") as f:
                     f.writelines(lines)
 
@@ -67,7 +67,7 @@ def doit():
             code = getCode(i, etf)
         except Exception as e:
             print ("problem with download")
-            print (str(e))
+            z.trace(e)
             continue
 
         print("code : {}".format( code ))

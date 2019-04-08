@@ -9,7 +9,7 @@ for astock in stocks:
     try:
         util.saveProcessedFromYahoo(astock)
     except Exception as e:
-        print (str(e))
+        z.trace(e)
         print ("problem with {}".format(astock))
         continue
 removed = util.getRemovedStocks()

@@ -16,7 +16,7 @@ def getDataFromYahoo(astock, cdate):
         try:
             df = pdr.get_data_yahoo([astock], start=cdate)
         except Exception as e:
-            print (str(e))
+            z.trace(e)
             raise SystemExit
             return None
     
@@ -88,7 +88,7 @@ if __name__ == '__main__':
         else:
             update()
     except Exception as e:
-        print (str(e))
+        z.trace(e)
         pass
 
     

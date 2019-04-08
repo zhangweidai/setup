@@ -22,7 +22,7 @@ def getDataFromYahoo(astock):
         try:
             data = pdr.get_data_yahoo([astock], start=str(startdate.isoformat())) 
         except Exception as e:
-            print (str(e))
+            z.trace(e)
             raise SystemExit
             return None
     

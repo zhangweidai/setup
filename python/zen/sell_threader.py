@@ -28,11 +28,13 @@ minthresh = 350
 fee = 5
 
 collector = defaultdict(list)
+etfcollector = defaultdict(int)
+etfcollectort = defaultdict(int)
 #allowStocks = z.getStocks()
 etfwins = 0
 def buySellSim(args):
     global etfwins
-    droppage, start, end, mode, price = args[0], args[1], args[2], args[3], args[4]
+    droppage, start, end, mode, price, typed = args[0], args[1], args[2], args[3], args[4], args[5]
     buySellSim.transcript = list()
 
     miniport = dict()
@@ -40,12 +42,13 @@ def buySellSim(args):
     sub = dates[start:end]
     startd = sub[0]
     setTranscript("start on {}".format(startd))
-    for idx, idxdate in enumerate(sub):
+    maxl = len(sub)-2
+    for idx, idxdate in enumerate(sub, start=1):
 
         stocks_owned = len(miniport)
 
         delay = 2 if stocks_owned >= buySellSim.tracks else 1
-        if idx % int(interval*delay) or idx == 0:
+        if idx % int(interval*delay) or idx >= maxl:
             continue
 
         if stocks_owned < buySellSim.tracks:
@@ -54,8 +57,7 @@ def buySellSim(args):
             if generate_list.getSortedStocks.get == "price":
                 buyme = generate_list.getPricedStocks(idxdate, price)
             else:
-                buyme = generate_list.getSortedStocks(idxdate, mode, \
-                                                      howmany=4)
+                buyme = generate_list.getSortedStocks(idxdate, mode, howmany=4, typed=typed)
 
             if not buyme :
                 continue
@@ -71,9 +73,13 @@ def buySellSim(args):
                     try:
                         something = buySomething(sub[idx+1], 
                                 astock, spend, idxdate, myprice)
-                    except:
+                    except Exception as e:
+                        print("sub: {}".format( len(sub)))
+                        print("idx: {}".format( idx))
                         print('problem')
                         print(args)
+                        z.trace(e)
+                        raise SystemExit
                         continue
 
                     if something:
@@ -85,29 +91,40 @@ def buySellSim(args):
             except:
                 pass
 
-        port_change, port_value = getPortValue(idxdate, miniport)
+        port_change, port_value = getPortValue(idxdate, miniport, spend)
         setTranscript("\tcvalue {} {} on {} ".format(port_change, 
                     port_value, idxdate))
 
     try:
         port_change, port_value = getPortValue(idxdate, miniport, spend)
-        etfChange = generate_list.getEtfPrice("IVV", idxdate) / \
-                generate_list.getEtfPrice("IVV", startd)
-
+        etfChange = generate_list.getEtfPrice("SPY", idxdate) / \
+                generate_list.getEtfPrice("SPY", startd)
     except Exception as e:
         print ('problem getting cprices: '+ str(e))
         return
 
     with FileLock("sell_threader.lck"):
+
+        msg = "etf change {}".format(etfChange)
+        setTranscript(msg)
+
+        modestr = "{}/{}".format(mode, typed)
         if etfChange > port_change:
             etfwins += 1
-        collector[(droppage, mode, price)].append(port_change)
+            etfcollector[modestr] += 1
+        etfcollectort[modestr] += 1
+
+        tupp = (droppage, modestr, price)
+        if not etfwins % 100:
+            print (tupp)
+
+        collector[tupp].append(port_change)
 #        print("port_change: {}".format( port_change))
 
     msg = "finish on {} change {} value {}".format(idxdate, 
         port_change, port_value)
     setTranscript(msg, droppage, mode)
-buySellSim.tracks = 4
+buySellSim.tracks = 16
 
 def setTranscript(msg, droppage = None, mode = None):
     if not setTranscript.enabled:
@@ -127,6 +144,10 @@ def getEtfWins():
 
 def getCollector():
     return collector
+def getEtfCollector():
+    return etfcollector
+def getEtfCollectorT():
+    return etfcollectort
 
 def getPortValue(cdate, miniport, spend = 0):
     total = 0
@@ -135,6 +156,7 @@ def getPortValue(cdate, miniport, spend = 0):
         item = miniport[astock]
         if cprice:
             cvalue = round((cprice * item[0])-fee,3)
+            setTranscript("\t\t{} @ {}".format(astock, cprice))
             total += cvalue
         else:
             print ("this a problem")
@@ -155,7 +177,7 @@ def sell(spend, cdate, droppage, miniport):
         try:
             cprice = generate_list.getPrice(astock, cdate)
         except Exception as e:
-            print("astock: {}".format( astock))
+            print("selling problem astock: {}".format( astock))
             continue
 
         if not cprice:
@@ -278,9 +300,11 @@ def getSpread():
         print(ddlist)
 
 if __name__ == '__main__':
-    z.getStocks.devoverride = "IVV"
+    z.getStocks.devoverride = "IUSG"
+    generate_list.getSortedStocks.get = "low"
     generate_list.setSortedDict()
-    buySellSim([.85, 1800, 1800 + 100, "Volume", -1])
+    buySellSim([.76, 3919, 4473, "P12", -1, "low"])
+#    buySellSim([.76, 1800, 1800 + 400, "Volume", -1])
     print("etfwins : {}".format( etfwins ))
     print(collector)
 #getSpread()

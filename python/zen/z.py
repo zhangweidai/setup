@@ -172,7 +172,7 @@ def getCsv(astock, asPath=False, save=True):
                         return None
 
             except Exception as e:
-                print (str(e))
+                trace(e)
                 print ("problem with {}".format(astock))
                 return None
     if save:
@@ -244,8 +244,10 @@ def delStock(astock, save=False):
     else:
         delStock.items.append(astock)
         path = getPath("historical/{}.csv".format(astock))
-        os.remove(path)
-
+        try:
+            os.remove(path)
+        except:
+            pass
     if save:
         removeFromStocks(delStock.items)
         clearFromEtfDics(delStock.items)
@@ -321,6 +323,6 @@ if __name__ == '__main__':
                 print("astock : {}".format( astock ))
                 delStock(astock, True)
     except Exception as e:
-        print (str(e))
+        trace(e)
         pass
 

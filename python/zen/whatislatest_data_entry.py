@@ -27,6 +27,6 @@ except Exception as e:
 #        data = pdr.get_data_yahoo([lookup], start=startdate, end=str(tday))
 #        print (data.tail())
 #    except Exception as e:
-#        print (str(e))
+#        z.trace(e)
 
 #saveData(data)
