@@ -15,7 +15,14 @@ def getAdded():
     ret.add("SPY")
     return ret
 
+
+def offline():
+    return offline.off
+offline.off = True
+
 def percentage(factor):
+    if type(factor) is str:
+        return factor
     return "{:.2%}".format(factor-1)
 
 @lru_cache(maxsize=8)

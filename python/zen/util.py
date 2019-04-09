@@ -583,7 +583,13 @@ def getLivePrice(astock):
 
 import generate_list
 def getLiveChange(astock):
-    return z.percentage(float(getLivePrice(astock) / generate_list.getPrice(astock)))
+    if z.offline():
+#        getLiveChange.dev += 1
+#        return getLiveChange.dev / 8
+        return None
+    return float(getLivePrice(astock) / generate_list.getPrice(astock))
+getLiveChange.dev = 1
+
 from datetime import date, timedelta
 def saveProcessedFromYahoo(astock, add=False):
     if not saveProcessedFromYahoo.download:

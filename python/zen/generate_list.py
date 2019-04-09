@@ -107,17 +107,19 @@ setSortedDict.final = ""
 setSortedDict.sorteddict = None
 setSortedDict.prices = defaultdict(dict)
 
-def getSortedStocks(date, mode, howmany = 2, getall = False, typed=None):
+def getSortedStocks(date, mode, howmany = 2, 
+        getall = False, typed=None, reportprob = True):
     if not typed:
         typed = getSortedStocks.get
     try:
         alist = setSortedDict.sorteddict[mode][date]
     except Exception as e:
-        print("dates: {}".format(len(setSortedDict.sorteddict[mode])))
-        print("date: {}".format( date))
-        print("mode: {}".format( mode))
-        z.trace(e)
-        raise SystemExit
+        if reportprob:
+            print("dates: {}".format(len(setSortedDict.sorteddict[mode])))
+            print("date: {}".format( date))
+            print("mode: {}".format( mode))
+            z.trace(e)
+            raise SystemExit
 #        setSortedDict(usepkl=True, etf=z.getStocks.devoverride)
 #        alist = setSortedDict.sorteddict[mode][date]
 
@@ -267,20 +269,26 @@ def getProbSale(astock):
     count = 0
     downs = 0
     avgl = list()
-    avgd = list()
+    avgD = list()
+    firstopen = None
     for row in csv.DictReader(open(path)):
         opend = float(row['Open'])
+
+        if not firstopen:
+            firstopen = opend
+
         close = float(row['Close'])
         change = close/opend
         if change < 1:
             downs += 1
-            avgd.append(change)
+            avgD.append(change)
         count += 1
         avgl.append(change)
-    avgret = z.avg(avgl)
-    avgd = z.avg(avgd)
-    change = round(downs/count,3)
-    return avgret, change, z.percentage(avgd)
+
+    avgC = z.avg(avgl)
+    avgD = z.avg(avgD)
+    probD = round(downs/count,2)
+    return avgC, probD, avgD, z.percentage(close/firstopen)
 
 def saveEtfPrices():
     saveEtfPrices.prices = defaultdict(dict)
@@ -327,9 +335,34 @@ def setVolumeRanking():
     z.setp(setVolumeRanking.latestvolumedic, "{}latestvolumedic".format(label))
 setVolumeRanking.latestvolumedic = None
 
+def poolQuery():
+    z.getStocks.devoverride = "IUSG"
+    setSortedDict(usepkl = True)
+    modes = dask_help.getModes()
+    dates = z.getp("dates")
+#    dic = defaultdict(set)
+    for mode in modes:
+        print("\nmode : {}".format( mode ))
+        cmode = set()
+        for date in dates:
+            try:
+                stocks = getSortedStocks(date, mode, 
+                    typed = "low", getall=True, reportprob=False)
+            except:
+                continue
+            for astock in stocks:
+                cmode.add(astock[1])
+        print (len(cmode))
+        
+
+
+def getCol():
+    #        stock   vol   $price  avgC   probD  avgD   drop  change live
+    return " {0:<5} {1:<4}  {2:>7} {3:>7} {4:<4} {5:>7} {6:>7} {7:>7} {8:>5}"
 def whatAboutThese(stocks, count = 40, lowprice = False):
-    print(" {0:<6} {1:<4} $ {2:<7} {3:<7} {4:<7} {5:<7} {6:<5} {7:<5}".format(\
-                "stock", "vol", "price", "avgC", "probD", "avgD", "drop", "live"))
+    print(getCol().format("stock", "vol", "price", "avgC", "probD", "avgD ", "drop ", "change ", "live"))
+
+    sorts = SortedSet()
     for i,value in enumerate(stocks):
         astock = value
         vrank = i+1
@@ -342,15 +375,14 @@ def whatAboutThese(stocks, count = 40, lowprice = False):
             if lowprice and price > 50:
                 continue
             try:
-                avgC, probD, avgD = getProbSale(astock)
+                avgC, probD, avgD, change = getProbSale(astock)
             except Exception as e:
                 print (z.trace(e))
                 print("astock: {}".format( astock))
                 raise SystemExit
                 continue
-
             try:
-                dropScore = getDropScore(astock)
+                dropScore = getDropScore(astock, percent=False)
                 if not dropScore:
                     continue
             except Exception as e:
@@ -359,19 +391,37 @@ def whatAboutThese(stocks, count = 40, lowprice = False):
             live = "NA"
             try:
                 live = util.getLiveChange(astock)
+                if not live:
+                    live = "NA"
             except Exception as e:
                 pass
 
-            print(" {0:<6} {1:<4} $ {2:<7} {3:<7} {4:<7} {5:<7} {6:<5} {7:<5}".format(astock, \
-                                   vrank, price, avgC, probD, avgD, dropScore, live))
+            value = getDisplaySortValue(probD,avgC,avgD,
+                    live, price, dropScore, astock)
 
-            if i > count:
-                break
+            msg = getCol().format(astock, vrank, price, 
+                    z.percentage(avgC), 
+                    probD, 
+                    z.percentage(avgD),
+                    z.percentage(dropScore),
+                    change,
+                    z.percentage(live))
+            sorts.add((value,msg))
 
         except Exception as e:
             print (z.trace(e))
             raise SystemExit
             continue
+
+    for astock in reversed(sorts):
+        print(astock[1])
+
+import math
+def getDisplaySortValue(probD,avgC,avgD,live,price, dropScore, astock):
+    if live == "NA":
+        live = 1
+    ret = round((((avgC**math.e + dropScore) / (live*avgD*probD))),2)
+    return ret
 
 def getDropRanking(astock = None):
     label = ""
@@ -403,7 +453,6 @@ def getVolumeRanking(astock = None):
         try:
             return setVolumeRanking.latestvolumedic[astock]
         except:
-            print ("getting volumedic for {}".format(label))
             setVolumeRanking.latestvolumedic = z.getp("{}latestvolumedic".format(label))
             try:
                 return setVolumeRanking.latestvolumedic[astock]
@@ -415,7 +464,7 @@ def getVolumeRanking(astock = None):
         latestvolume = z.getp("{}latestvolume".format(label))
         whatAboutThese(latestvolume, count=astock)
 
-
+import os
 def longlists(etf, date):
     z.getStocks.extras = (etf == "IUSG")
     stocks = z.getStocks(etf, reset=True)
@@ -425,7 +474,13 @@ def longlists(etf, date):
 
     for astock in stocks:
         path = z.getPath("{}/{}.csv".format(dask_help.createRollingData.dir, astock))
+
+        if not os.path.exists(path):
+            print("problem with : {}".format( path ))
+            continue
+
         for row in csv.DictReader(open(path)):
+
             cdate = row['Date']
             if cdate == date:
 
@@ -450,9 +505,70 @@ def longlists(etf, date):
 def yesterday():
     return str(datetime.date.today() - datetime.timedelta(days=3))
 
+def queryh(args):
+    setSortedDict(usepkl = True)
+    for mode in modes:
+        print("\nmode : {}".format( mode ))
+        stocks = getSortedStocks(args.date, mode, getall=True, typed="low")
+        whatAboutThese(stocks)
+
+def buyl(args):
+    dask_help.convertToDask.directory = "csv"
+    dask_help.createRollingData.dir = "csvCalculated"
+
+    setSortedDict.final = "w_extra"
+    if z.getStocks.devoverride == "IUSG":
+        z.getStocks.extras = True
+
+    if sys.argv[1] == 'gbuy':
+        try:
+            dask_help.historicalToCsv()
+            setSortedDict(usepkl = False)
+        except Exception as e:
+            z.trace(e)
+            exit()
+    else:
+        setSortedDict(usepkl = True)
+
+    for mode in modes:
+        print("\nmode : {}".format( mode ))
+        stocks = getSortedStocks(args.date, mode, getall=True, typed="low")
+        whatAboutThese(stocks)
+
+def etfsf(args):
+    etfs = z.getEtfList()
+    try:
+        if sys.argv[2]:
+            etfs = [sys.argv[2].upper()]
+    except:
+        pass
+
+    for etf in etfs:
+        print("etf : {}".format( etf ))
+        z.getStocks.devoverride = etf
+        setSortedDict(etf=etf, usepkl = False)
+
+def longlists(args):
+    try:
+        for etf in z.getEtfList():
+            print("etf : {}".format( etf ))
+            z.getStocks.devoverride = etf
+            longlists(etf, yesterday())
+            setVolumeRanking()
+    except Exception as e:
+        z.trace(e)
+        print (colored("Maybe run dask_help.py history", "green"))
+
 if __name__ == '__main__':
     import argparse
     import sys
+    import util
+    import zprep
+    from termcolor import colored
+
+#    poolQuery()
+#    raise SystemExit
+    z.offline.off = True
 
     parser = argparse.ArgumentParser()
     parser.add_argument('main')
@@ -460,6 +576,10 @@ if __name__ == '__main__':
     parser.add_argument('--etf', default="IUSG")
     parser.add_argument('--date', default=yesterday())
     args = parser.parse_args()
+    if sys.argv[1][0] == "l":
+        args = z.getp("lastArgs_forGenerate_list")
+    else:
+        z.setp(args, "lastArgs_forGenerate_list")
 
     z.getStocks.devoverride = args.etf.upper()
 
@@ -471,9 +591,7 @@ if __name__ == '__main__':
  
     print("date : {}".format( args.date ))
 
-    import util
     dask_help.convertToDask.directory = "csv"
-    import zprep
     try:
         if len(sys.argv) > 1:
             # show drop ranking
@@ -490,59 +608,18 @@ if __name__ == '__main__':
 
             # what to buy tomorrow
             if sys.argv[1] == "query":
-                setSortedDict(usepkl = True)
-
-                for mode in modes:
-                    print("\nmode : {}".format( mode ))
-                    stocks = getSortedStocks(args.date, mode, getall=True)
-                    whatAboutThese(stocks)
+                queryh(args)
 
             # generate buy list which is ISUG + EXTRAS
             if sys.argv[1] == "buy" or sys.argv[1] == 'gbuy':
-                dask_help.convertToDask.directory = "csv"
-                dask_help.createRollingData.dir = "csvCalculated"
-
-                setSortedDict.final = "w_extra"
-                if z.getStocks.devoverride == "IUSG":
-                    z.getStocks.extras = True
-
-                if sys.argv[1] == 'gbuy':
-                    try:
-                        dask_help.historicalToCsv()
-                        setSortedDict(usepkl = False)
-                    except Exception as e:
-                        z.trace(e)
-                        exit()
-                else:
-                    setSortedDict(usepkl = True)
-
-                for mode in modes:
-                    print("\nmode : {}".format( mode ))
-                    stocks = getSortedStocks(args.date, mode, getall=True, typed="low")
-                    whatAboutThese(stocks)
-
+                buyl(args)
 
             # generated setSortedDict
             if sys.argv[1] == "etfs":
-                etfs = z.getEtfList()
-                try:
-                    if sys.argv[2]:
-                        etfs = [sys.argv[2].upper()]
-                except:
-                    pass
-
-                for etf in etfs:
-                    print("etf : {}".format( etf ))
-                    z.getStocks.devoverride = etf
-                    setSortedDict(etf=etf, usepkl = False)
+                etfsf(args)
 
             if sys.argv[1] == "longlists":
-                for etf in z.getEtfList():
-                    print("etf : {}".format( etf ))
-                    z.getStocks.devoverride = etf
-                    longlists(etf, yesterday())
-                    setVolumeRanking()
-
+                longlists(args)
 
     except Exception as e:
         z.trace(e)
