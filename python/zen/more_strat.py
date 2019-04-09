@@ -10,16 +10,16 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 
 sell_threader.setTranscript.enabled = False
-sell_threader.buySellSim.tracks = 26
+sell_threader.buySellSim.tracks = 30
 #dask_help.getModes.override = ["Volume"]
 
 z.getStocks.devoverride = "ITOT"
 zen.getSortedStocks.get = "low"
 
 use_q = True
-testpoints = 350
+testpoints = 140
 print("testpoints : {}".format( testpoints ))
-years = 4 
+years = 2
 
 # The threader thread pulls an worker from the queue and processes it
 def threader():
@@ -70,7 +70,7 @@ def getColors():
     return ["blue", "red", "green", "black", 'cyan', 'brown', 
             'orange', 'pink', 'magenta', 'olive', "indigo", "teal", "silver"]
 
-ylist = [i/100 for i in range(50,96,4)]
+ylist = [i/100 for i in range(60,90,5)]
 numy = len(ylist)
 price = -1
 pricelist = [price]

@@ -1,6 +1,7 @@
 import z 
 import operator
 from random import sample
+import util
 import dask_help
 
 from collections import OrderedDict
@@ -190,23 +191,43 @@ def getLatestPrices(astock):
     except:
         pass
 #    z.getStocks.devoverride = None
+    if getLatestPrices.done:
+        return
+    getLatestPrices.done = True
+
     stocks = z.getStocks(reset=True)
     print ("regenerating latest prices")
     getPrice.latest = dict()
     for astock in stocks:
-        path = z.getPath("historical/{}.csv".format(astock))
+
+        path = z.getPath("csv/{}.csv".format(astock))
+
+        if not os.path.exists(path):
+            print("astock: {}".format( astock))
+            try:
+                dask_help.historicalToCsv(astock)
+            except Exception as e:
+                continue
+
+        if not os.path.exists(path):
+            continue
+
         for row in csv.DictReader(open(path)):
             pass
         getPrice.latest[astock] = float(row['Close'])
     z.setp(getPrice.latest, "latestprices")
+getLatestPrices.done = False            
 
 def getPrice(astock, date = None, value = 1, orlatest = False):
     if not date:
         try:
             return getPrice.latest[astock]
         except:
-            getLatestPrices(astock)
-            return getPrice.latest[astock]
+            try:
+                getLatestPrices(astock)
+                return getPrice.latest[astock]
+            except:
+                pass
         return None
 
 #    print("astock: {}".format( astock))
@@ -265,12 +286,19 @@ def getDropScore(astock, percent = True):
 #raise SystemExit
 def getProbSale(astock):
 #    for astock in z.getEtfList():
-    path = z.getPath("{}/{}.csv".format(dask_help.convertToDask.directory, astock))
+    path = z.getPath("csv/{}.csv".format(astock))
     count = 0
     downs = 0
     avgl = list()
     avgD = list()
+    avgG = list()
     firstopen = None
+    if not os.path.exists(path):
+        dask_help.historicalToCsv(astock)
+
+    if not os.path.exists(path):
+        raise SystemExit
+
     for row in csv.DictReader(open(path)):
         opend = float(row['Open'])
 
@@ -282,13 +310,18 @@ def getProbSale(astock):
         if change < 1:
             downs += 1
             avgD.append(change)
+        else:
+            avgG.append(change)
         count += 1
         avgl.append(change)
 
+    if not avgl:
+        return
     avgC = z.avg(avgl)
     avgD = z.avg(avgD)
+    avgG = z.avg(avgG)
     probD = round(downs/count,2)
-    return avgC, probD, avgD, z.percentage(close/firstopen)
+    return avgC, probD, avgD, avgG, z.percentage(close/firstopen)
 
 def saveEtfPrices():
     saveEtfPrices.prices = defaultdict(dict)
@@ -357,12 +390,13 @@ def poolQuery():
 
 
 def getCol():
-    #        stock   vol   $price  avgC   probD  avgD   drop  change live
-    return " {0:<5} {1:<4}  {2:>7} {3:>7} {4:<4} {5:>7} {6:>7} {7:>7} {8:>5}"
-def whatAboutThese(stocks, count = 40, lowprice = False):
-    print(getCol().format("stock", "vol", "price", "avgC", "probD", "avgD ", "drop ", "change ", "live"))
+    #        stock   vol   $price  avgC   probD  avgD   drop  change live etfs
+    return " {0:<5} {1:<4}  {2:>7} {3:>7} {4:<4} {5:>7} {6:>7} {7:>7} {8:>7} {9:>7} {10:3}"
+def whatAboutThese(stocks, count = 40, lowprice = False, sell=False):
+    print(getCol().format("stock", "vol", "price", "avgC", "probD", "avgD ", "avgG" ,"drop ", "change ", "live ", "etf"))
 
     sorts = SortedSet()
+    sells = list()
     for i,value in enumerate(stocks):
         astock = value
         vrank = i+1
@@ -371,15 +405,19 @@ def whatAboutThese(stocks, count = 40, lowprice = False):
                 astock = value[1]
                 vrank = getVolumeRanking(astock)
 
-            price = round(getPrice(astock),2)
-            if lowprice and price > 50:
-                continue
             try:
-                avgC, probD, avgD, change = getProbSale(astock)
+                price = round(getPrice(astock),2)
+            except:
+                print("no astock: {}".format( astock))
+                continue
+
+            cprice = price
+            try:
+                avgC, probD, avgD, avgG, change = getProbSale(astock)
             except Exception as e:
-                print (z.trace(e))
+#                print (z.trace(e))
                 print("astock: {}".format( astock))
-                raise SystemExit
+#                raise SystemExit
                 continue
             try:
                 dropScore = getDropScore(astock, percent=False)
@@ -393,25 +431,40 @@ def whatAboutThese(stocks, count = 40, lowprice = False):
                 live = util.getLiveChange(astock)
                 if not live:
                     live = "NA"
+                else:
+                    cprice = live * price
             except Exception as e:
                 pass
 
+            if sell:
+                basis = portfolio.getBasis(astock)
+                if (cprice / basis) < .8:
+                    sells.append(astock)
+
             value = getDisplaySortValue(probD,avgC,avgD,
                     live, price, dropScore, astock)
+
+            etfc = util.getEtfQualifications(astock, count=True)
 
             msg = getCol().format(astock, vrank, price, 
                     z.percentage(avgC), 
                     probD, 
                     z.percentage(avgD),
+                    z.percentage(avgG),
                     z.percentage(dropScore),
                     change,
-                    z.percentage(live))
+                    z.percentage(live),
+                    etfc)
             sorts.add((value,msg))
 
         except Exception as e:
             print (z.trace(e))
             raise SystemExit
             continue
+
+    if sell:
+        print("sells")
+        print(sells)
 
     for astock in reversed(sorts):
         print(astock[1])
@@ -420,7 +473,7 @@ import math
 def getDisplaySortValue(probD,avgC,avgD,live,price, dropScore, astock):
     if live == "NA":
         live = 1
-    ret = round((((avgC**math.e + dropScore) / (live*avgD*probD))),2)
+    ret = round((((avgC**math.e + dropScore) / (live+avgD+probD))),2)
     return ret
 
 def getDropRanking(astock = None):
@@ -503,7 +556,7 @@ def longlists(etf, date):
     z.setp(latestdrop, "{}latestdrop".format(etf))
 
 def yesterday():
-    return str(datetime.date.today() - datetime.timedelta(days=3))
+    return str(datetime.date.today() - datetime.timedelta(days=4))
 
 def queryh(args):
     setSortedDict(usepkl = True)
@@ -519,8 +572,9 @@ def buyl(args):
     setSortedDict.final = "w_extra"
     if z.getStocks.devoverride == "IUSG":
         z.getStocks.extras = True
+        z.getStocks.sells = True
 
-    if sys.argv[1] == 'gbuy':
+    if args.main == 'gbuy':
         try:
             dask_help.historicalToCsv()
             setSortedDict(usepkl = False)
@@ -560,38 +614,40 @@ def longlists(args):
         print (colored("Maybe run dask_help.py history", "green"))
 
 
+import portfolio
 def generateSellPrice():
     stocks = portfolio.getPortfolio(aslist=True)
     sell_list = z.getp("sell_list")
-    for astock in stocks:
+#    for astock in stocks:
 
 
 def sells(args):
-    import portfolio
+    z.getStocks.sells = True
     stocks = portfolio.getPortfolio(aslist = True)
-    whatAboutThese(stocks)
+    whatAboutThese(stocks, sell=True)
 
 if __name__ == '__main__':
     import argparse
     import sys
-    import util
     import zprep
     from termcolor import colored
 
 #    poolQuery()
 #    raise SystemExit
-    z.offline.off = True
-
     parser = argparse.ArgumentParser()
-    parser.add_argument('main')
+    parser.add_argument('main' , nargs='?', default="buy")
     parser.add_argument('--mode', default="all")
     parser.add_argument('--etf', default="IUSG")
     parser.add_argument('--date', default=yesterday())
+    parser.add_argument('--live', default=True, action="store_false")
     args = parser.parse_args()
-    if sys.argv[1][0] == "l":
+
+    if args.main[0] == "l":
         args = z.getp("lastArgs_forGenerate_list")
     else:
         z.setp(args, "lastArgs_forGenerate_list")
+
+    z.offline.off = args.live
 
     z.getStocks.devoverride = args.etf.upper()
 
@@ -605,36 +661,37 @@ if __name__ == '__main__':
 
     dask_help.convertToDask.directory = "csv"
     try:
-        if len(sys.argv) > 1:
+        if args.main:
             # show drop ranking
-            if sys.argv[1] == "dropranking":
+            if args.main == "dropranking":
                 setDropRanking()
                 latestdrop = z.getp("{}latestdrop".format(z.getStocks.devoverride))
                 print(latestdrop[-10:])
                 print(latestdrop[:10])
 
-            if sys.argv[1] == "volumeranking":
+            if args.main == "volumeranking":
                 latestvolume = z.getp("{}latestvolume".format(z.getStocks.devoverride))
                 print(latestvolume[-10:])
                 print(latestvolume[:10])
 
             # what to buy tomorrow
-            if sys.argv[1] == "query":
+            if args.main == "query":
                 queryh(args)
 
             # generate buy list which is ISUG + EXTRAS
-            if sys.argv[1] == "buy" or sys.argv[1] == 'gbuy':
+            if args.main == "buy" or args.main == 'gbuy':
+                print ("asdfA")
                 buyl(args)
 
             # generate buy list which is ISUG + EXTRAS
-            if sys.argv[1] == "sell":
+            if args.main == "sell":
                 sells(args)
 
             # generated setSortedDict
-            if sys.argv[1] == "etfs":
+            if args.main == "etfs":
                 etfsf(args)
 
-            if sys.argv[1] == "longlists":
+            if args.main == "longlists":
                 longlists(args)
 
     except Exception as e:

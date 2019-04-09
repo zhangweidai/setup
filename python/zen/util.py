@@ -323,7 +323,7 @@ def getCompanyName(astock):
 #    if astock in getFromHoldings():
 #        return "ETF"
 #    return None
-getCompanyName.etfs = ["IVV", "IWB", "IUSG", "USMV"]
+getCompanyName.etfs = ["IVV", "IWB", "IUSG", "USMV", "IJH", "IJR"]
 
 def saveAdded(astock):
     print("astock: {}".format( astock))
@@ -921,12 +921,14 @@ getCsv.csvdir = "historical"
 getCsv.savedReads = dict()
 skipstock = []
 
-def getEtfQualifications(astock):
+def getEtfQualifications(astock, count=False):
     ret = []
     for etf in getCompanyName.etfs:
         subset = getETF(etf)
         if astock in subset: 
             ret.append(etf)
+    if count:
+        return len(ret)
     return ",".join(ret)
 
 def report(stocks, 

@@ -13,11 +13,14 @@ def getName(path):
     return os.path.splitext(os.path.basename(path))[0]
 
 dfd = None
-def convertToDask(simple = False):
+def convertToDask(simple = False, astock=None):
     global dfd
     path = z.getPath(convertToDask.directory)
     print ("reading {}".format(path))
-    dfd = dd.read_csv('{}/*.csv'.format(path), include_path_column = (not simple))
+    whichone = "*"
+    if astock:
+        whichone = astock
+    dfd = dd.read_csv('{}/{}.csv'.format(path, whichone), include_path_column = (not simple))
 
     if not simple:
         dfd = dfd.drop(['Adj Close'], axis=1)
@@ -106,9 +109,11 @@ def doone(indx):
 createRollingData.dir = "historicalCalculated"
 
 #if __name__ == '__main__':
-def historicalToCsv():
+def historicalToCsv(astock = None):
     import csv
-    stocks = z.getStocks()
+    stocks = [astock]
+    if not astock:
+        stocks = z.getStocks()
     howmany = 52
     dates = z.getp("dates")
     print("latest date : {}".format(dates[-1]))
@@ -117,20 +122,24 @@ def historicalToCsv():
     convertToDask.directory = "csv"
     createRollingData.dir = "csvCalculated"
 
-    try:
-        import shutil
-        tpath = z.getPath("csv")
-        shutil.rmtree(tpath)
-        tpath = z.getPath("csvCalculated")
-        shutil.rmtree(tpath)
-    except:
-        pass
-
+    if not astock:
+        try:
+            import shutil
+            tpath = z.getPath("csv")
+            shutil.rmtree(tpath)
+            tpath = z.getPath("csvCalculated")
+            shutil.rmtree(tpath)
+        except:
+            pass
+    
     for astock in stocks:
         path = z.getPath("historical/{}.csv".format(astock))
         tpath = z.getPath("csv/{}.csv".format(astock))
 #        if os.path.exists(tpath):
 #            continue
+
+        if not os.path.exists(path):
+            continue
 
         with open(tpath, "w") as f:
             f.write("Date,Open,Close,High,Low,Volume,path\n")
@@ -143,7 +152,7 @@ def historicalToCsv():
                 if starting:
                     f.write("{},{},{},{},{},{},{}\n".format(\
                         cdate,row['Open'],row['Close'],row['High'],row['Low'],row['Volume'],astock))
-    convertToDask(simple=True)
+    convertToDask(simple=True, astock = astock)
 
 if __name__ == '__main__':
     import sys

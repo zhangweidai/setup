@@ -126,13 +126,18 @@ def getStocks(etf = None, dev=False, reset = False,
             getStocks.ret = getStocks.etfs[etf]
 
         if getStocks.extras:
-            getStocks.ret = getStocks.ret | set(getConsider())
+            getStocks.ret |= set(getConsider())
+            if getStocks.sells:
+                import portfolio
+                bar = portfolio.getPortfolio(aslist=True)
+                getStocks.ret |= set(bar)
 
         return getStocks.ret
 
 getStocks.etfs = None
 getStocks.devoverride = False
 getStocks.extras = False
+getStocks.sells = False
 
 #print (getStocks("IUSG") - getStocks("ITOT"))
 #print (len(getStocks("IUSG|IVV")))

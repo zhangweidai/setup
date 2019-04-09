@@ -13,7 +13,6 @@ rng = random.Random(seed)
 
 spdf = util.getCsv("SPY")
 stocks = util.getStocks()
-print("stocks : {}".format( len(stocks)))
 
 totalfee = 0
 oneofeach = False
