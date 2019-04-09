@@ -4,7 +4,7 @@ import operator
 import random
 import sys
 from random import sample
-import generate_list
+import zen
 from collections import defaultdict
 from filelock import FileLock
 
@@ -54,10 +54,10 @@ def buySellSim(args):
         if stocks_owned < buySellSim.tracks:
 
             buyme = None
-            if generate_list.getSortedStocks.get == "price":
-                buyme = generate_list.getPricedStocks(idxdate, price)
+            if zen.getSortedStocks.get == "price":
+                buyme = zen.getPricedStocks(idxdate, price)
             else:
-                buyme = generate_list.getSortedStocks(idxdate, mode, howmany=4, typed=typed)
+                buyme = zen.getSortedStocks(idxdate, mode, howmany=4, typed=typed)
 
             if not buyme :
                 continue
@@ -65,7 +65,7 @@ def buySellSim(args):
             for item in buyme:
                 astock = item[1]
                 myprice = None
-                if generate_list.getSortedStocks.get == "price":
+                if zen.getSortedStocks.get == "price":
                     myprice = item[0]
                 if astock not in miniport and stocks_owned < \
                                               buySellSim.tracks:
@@ -97,8 +97,8 @@ def buySellSim(args):
 
     try:
         port_change, port_value = getPortValue(idxdate, miniport, spend)
-        etfChange = generate_list.getEtfPrice("SPY", idxdate) / \
-                generate_list.getEtfPrice("SPY", startd)
+        etfChange = zen.getEtfPrice("SPY", idxdate) / \
+                zen.getEtfPrice("SPY", startd)
     except Exception as e:
         print ('problem getting cprices: '+ str(e))
         return
@@ -152,7 +152,7 @@ def getEtfCollectorT():
 def getPortValue(cdate, miniport, spend = 0):
     total = 0
     for astock in miniport:
-        cprice = generate_list.getPrice(astock, cdate)
+        cprice = zen.getPrice(astock, cdate)
         item = miniport[astock]
         if cprice:
             cvalue = round((cprice * item[0])-fee,3)
@@ -175,7 +175,7 @@ def sell(spend, cdate, droppage, miniport):
     spend = 0
     for astock,item in miniport.items():
         try:
-            cprice = generate_list.getPrice(astock, cdate)
+            cprice = zen.getPrice(astock, cdate)
         except Exception as e:
             print("selling problem astock: {}".format( astock))
             continue
@@ -210,7 +210,7 @@ def buySomething(cdate, astock, spend, idxdate, myprice = None):
         if myprice:
             cprice = myprice
         else:
-            cprice = generate_list.getPrice(astock, cdate)
+            cprice = zen.getPrice(astock, cdate)
             if not cprice:
                 return None
 
@@ -301,8 +301,8 @@ def getSpread():
 
 if __name__ == '__main__':
     z.getStocks.devoverride = "IUSG"
-    generate_list.getSortedStocks.get = "low"
-    generate_list.setSortedDict()
+    zen.getSortedStocks.get = "low"
+    zen.setSortedDict()
     buySellSim([.76, 3919, 4473, "P12", -1, "low"])
 #    buySellSim([.76, 1800, 1800 + 400, "Volume", -1])
     print("etfwins : {}".format( etfwins ))

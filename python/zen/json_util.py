@@ -56,7 +56,7 @@ def parsePage(astock, live=True):
 
 def saveOutstanding():
 
-    import generate_list
+    import zen
     z.getStocks.devoverride = "IUSG"
     dictionary = dict()
     stocks = z.getStocks("IUSG")

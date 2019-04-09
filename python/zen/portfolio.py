@@ -38,11 +38,18 @@ def getTrainingFidelity():
         port.setdefault(sym, 0)
         port[sym] += count[i]
 
-def getPortfolio():
+def getPortfolio(aslist = False):
     global port
     getTrainingMotif()
     getTrainingFidelity()
     getRobin()
+
+    if aslist:
+        stocklist = list()
+        for astock in stocks:
+            stocklist.append(astock)    
+        return stocklist
+
     return port
 
 #account,average_price,cancel,created_at,cumulative_quantity,execution_state,extended_hours,fees,first_execution_at,id,instrument,last_transaction_at,num_of_executions,override_day_trade_checks,override_dtbp_checks,position,price,quantity,ref_id,reject_reason,response_category,settlement_date,side,state,stop_price,symbol,time_in_force,trigger,type,updated_at,url

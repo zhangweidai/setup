@@ -2,10 +2,10 @@ import timeit
 import util
 from collections import OrderedDict
 
-import generate_list
+import zen
 import z
 #z.getStocks.devoverride = True
-#print(generate_list.getPrice('AMD', '2019-03-26'))
+#print(zen.getPrice('AMD', '2019-03-26'))
 #print(z.getPrice('AMD', '2019-03-26'))
 from collections import defaultdict
 
@@ -15,18 +15,18 @@ from collections import defaultdict
 z.getStocks.devoverride = "IVV"
 
 def Test1():
-    generate_list.setSortedDict.sorteddict = None
-    generate_list.setSortedDict.prices = defaultdict(dict)
-    generate_list.setSortedDict(usepkl = False)
+    zen.setSortedDict.sorteddict = None
+    zen.setSortedDict.prices = defaultdict(dict)
+    zen.setSortedDict(usepkl = False)
 
 #Test1()
-#print (generate_list.getPrice('AMD', '2019-03-26'))
+#print (zen.getPrice('AMD', '2019-03-26'))
 def Test2():
     z.getp("sorteddict")
     z.getp("prices")
 
 #Test2()
-#print (generate_list.getPrice('AMD', '2019-03-26'))
+#print (zen.getPrice('AMD', '2019-03-26'))
 #raise SystemExit
 
 #print("process2: {}".format(process("BA", "Open", "2000-01-18")))

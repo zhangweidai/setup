@@ -170,25 +170,25 @@ def getMissingStockList():
 
 cheaplist = list()
 pricelist = list()
-import generate_list
+import zen
 def genBuyList():
     util.saveProcessedFromYahoo.download = True
 #    stocks = z.getStocks()
     z.getStocks.devoverride = "IUSG"
     z.getCsv.csvdir = "csv"
-#    generate_list.setSortedDict()
+#    zen.setSortedDict()
     stocks = z.getStocks()
     print("stocks : {}".format( len(stocks) ))
     for astock in stocks:
 #        try:
-#            price = generate_list.getPrice(astock, yesterday)
+#            price = zen.getPrice(astock, yesterday)
 #            if price > 10 and price < 20:
-#                price2 = generate_list.getPrice(astock, "2017-01-11")
-#                price3 = generate_list.getPrice(astock, "2016-01-11")
+#                price2 = zen.getPrice(astock, "2017-01-11")
+#                price3 = zen.getPrice(astock, "2016-01-11")
 #                if price < price2 and price > price3:
-#                    price3 = generate_list.getPrice(astock, "2018-01-11")
+#                    price3 = zen.getPrice(astock, "2018-01-11")
 #                    if price > price3:
-#                        price3 = generate_list.getPrice(astock, "2019-02-22")
+#                        price3 = zen.getPrice(astock, "2019-02-22")
 #                        if price3 > price:
 #                            pricelist.append((price, astock))
 #        except:

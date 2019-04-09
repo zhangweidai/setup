@@ -581,13 +581,13 @@ def getLivePrice(astock):
 #    z.setp(df, "temp")
     return df['price']
 
-import generate_list
+import zen
 def getLiveChange(astock):
     if z.offline():
 #        getLiveChange.dev += 1
 #        return getLiveChange.dev / 8
         return None
-    return float(getLivePrice(astock) / generate_list.getPrice(astock))
+    return float(getLivePrice(astock) / zen.getPrice(astock))
 getLiveChange.dev = 1
 
 from datetime import date, timedelta

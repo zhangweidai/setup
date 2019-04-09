@@ -5,7 +5,7 @@ import random
 import sys
 from random import sample
 import numpy as np
-import generate_list
+import zen
 from collections import defaultdict
 from termcolor import colored
 
@@ -16,7 +16,7 @@ interval = 7
 num_days = len(dates)
 print("num_days : {}".format( num_days ))
 etfsource = "IUSG"
-generate_list.getBuyStocks.stocks = z.getStocks(etfsource)
+zen.getBuyStocks.stocks = z.getStocks(etfsource)
 #stocks.sort()
 
 ayear = 252
@@ -45,7 +45,7 @@ def buySellSim(droppage, start, end, mode, miniport):
             continue
 
         if stocks_owned < tracks:
-            buyme = generate_list.getBuyStocks(idxdate, mode)
+            buyme = zen.getBuyStocks(idxdate, mode)
             for item in buyme:
                 astock = item[0]
                 if astock not in miniport and stocks_owned < tracks:

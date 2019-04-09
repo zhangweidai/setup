@@ -30,8 +30,8 @@ def convertToDask(simple = False):
     createRollingData()
 
     if not simple:
-        import generate_list
-        generate_list.regenerateHistorical()
+        import zen
+        zen.regenerateHistorical()
 convertToDask.directory = "historical"
 
 def getModes():

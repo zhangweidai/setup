@@ -195,9 +195,9 @@ def getLatestDate(etf="IUSG", final=""):
     pdate = str(datetime.datetime.fromtimestamp(t)).split(" ")[0]
     return pdate
 
-import generate_list
+import zen
 def getPrice(*kwargs, **kwarg2s):
-    return generate_list.getPrice(*kwargs, **kwarg2s)
+    return zen.getPrice(*kwargs, **kwarg2s)
 #    df = getCsv(astock)
 #    if type(idx) == int:
 #        return round(df.at[idx,"Close"],3)

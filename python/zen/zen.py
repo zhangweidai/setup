@@ -559,6 +559,18 @@ def longlists(args):
         z.trace(e)
         print (colored("Maybe run dask_help.py history", "green"))
 
+
+def generateSellPrice():
+    stocks = portfolio.getPortfolio(aslist=True)
+    sell_list = z.getp("sell_list")
+    for astock in stocks:
+
+
+def sells(args):
+    import portfolio
+    stocks = portfolio.getPortfolio(aslist = True)
+    whatAboutThese(stocks)
+
 if __name__ == '__main__':
     import argparse
     import sys
@@ -613,6 +625,10 @@ if __name__ == '__main__':
             # generate buy list which is ISUG + EXTRAS
             if sys.argv[1] == "buy" or sys.argv[1] == 'gbuy':
                 buyl(args)
+
+            # generate buy list which is ISUG + EXTRAS
+            if sys.argv[1] == "sell":
+                sells(args)
 
             # generated setSortedDict
             if sys.argv[1] == "etfs":

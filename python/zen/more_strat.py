@@ -4,7 +4,7 @@ import z
 import worst_duration
 import random
 import sell_threader
-import generate_list
+import zen
 import dask_help
 from collections import defaultdict
 import matplotlib.pyplot as plt
@@ -14,7 +14,7 @@ sell_threader.buySellSim.tracks = 26
 #dask_help.getModes.override = ["Volume"]
 
 z.getStocks.devoverride = "ITOT"
-generate_list.getSortedStocks.get = "low"
+zen.getSortedStocks.get = "low"
 
 use_q = True
 testpoints = 350
@@ -41,10 +41,10 @@ endd = dates[endi]
 print("endd : {}".format( endd ))
 
 prices_only = False
-if generate_list.getSortedStocks.get == "price":
+if zen.getSortedStocks.get == "price":
     prices_only = True
 
-generate_list.setSortedDict()
+zen.setSortedDict()
 
 q = Queue()
 for x in range(7):
@@ -74,7 +74,7 @@ ylist = [i/100 for i in range(50,96,4)]
 numy = len(ylist)
 price = -1
 pricelist = [price]
-if generate_list.getSortedStocks.get == "price":
+if zen.getSortedStocks.get == "price":
     pricelist = [i for i in range(4)]
 
     for droppage in ylist:
@@ -94,7 +94,7 @@ avgmodedict = defaultdict(list)
 avgpricedict = defaultdict(list)
 
 mode = "Change"
-if generate_list.getSortedStocks.get == "price":
+if zen.getSortedStocks.get == "price":
     for i,price in enumerate(pricelist):
         for droppage in ylist:
             color = getColors()[i]
@@ -116,7 +116,7 @@ if generate_list.getSortedStocks.get == "price":
 else:
     for droppage in ylist:
         for typed in ["low", "high", "both"]:
-            generate_list.getSortedStocks.get = typed
+            zen.getSortedStocks.get = typed
             for mode in dask_help.getModes():
                 modeidx = dask_help.getModes().index(mode)
                 color = getColors()[modeidx]
@@ -151,7 +151,7 @@ for akey,alist in avgpricedict.items():
     avg = z.avg(alist)
     etfavg.append(avg)
 
-#print(generate_list.getSortedStocks.get)
+#print(zen.getSortedStocks.get)
 avgetf = z.avg(etfavg)
 
 print (z.getStocks.devoverride)
