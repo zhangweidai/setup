@@ -26,9 +26,10 @@ def getTrainingMotif():
             process("../zen_dump/port/" + path)
 import z
 import csv
+
+skips = ["FNSXX", "VTRLX", "BLNK"]
 def fidelity():
     global port
-    skips = ["FNSXX", "VTRLX", "BLNK"]
     path = z.getPath("port/fidelity.csv")
     for row in csv.DictReader(open(path)):
 #        print(row )
@@ -36,7 +37,26 @@ def fidelity():
         if "*" in astock:
             continue
         if len(astock) >= 1 and astock not in skips:
-            port[astock] = row['Cost Basis Per Share'] 
+            bprice = float(row['Cost Basis Per Share'])
+            port[astock] = bprice
+            lprice = getPrice(astock)
+fidelity.allowSave = False
+
+#def fidelitySellPrice():
+#    global port
+#    path = z.getPath("port/fidelity.csv")
+#    dict
+#    for row in csv.DictReader(open(path)):
+##        print(row )
+#        astock = row['Symbol'] 
+#        if "*" in astock:
+#            continue
+#        if len(astock) >= 1 and astock not in skips:
+#            port[astock] = 
+#            bprice = float(row['Cost Basis Per Share'])
+#            lprice = getPrice(astock)
+#            if bprice
+
 
 def getTrainingFidelity():
     global port

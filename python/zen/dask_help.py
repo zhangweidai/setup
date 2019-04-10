@@ -16,7 +16,6 @@ dfd = None
 def convertToDask(simple = False, astock=None):
     global dfd
     path = z.getPath(convertToDask.directory)
-    print ("reading {}".format(path))
     whichone = "*"
     if astock:
         whichone = astock
@@ -29,6 +28,9 @@ def convertToDask(simple = False, astock=None):
     dfd['Change'] = dfd.Close/dfd.Open
     dfd['Change'] = dfd['Change'].map(lambda x: round(x,4))
 
+#    import traceback
+#    traceback.print_stack()
+#    raise SystemExit    
     print ("begin rolling")
     createRollingData()
 
@@ -109,20 +111,19 @@ def doone(indx):
 createRollingData.dir = "historicalCalculated"
 
 #if __name__ == '__main__':
-def historicalToCsv(astock = None):
+def historicalToCsv(astocka = None):
     import csv
-    stocks = [astock]
-    if not astock:
+    stocks = [astocka]
+    if not astocka:
         stocks = z.getStocks()
     howmany = 52
     dates = z.getp("dates")
-    print("latest date : {}".format(dates[-1]))
     starti = dates[-1 * howmany]
 
     convertToDask.directory = "csv"
     createRollingData.dir = "csvCalculated"
 
-    if not astock:
+    if not astocka:
         try:
             import shutil
             tpath = z.getPath("csv")
@@ -135,11 +136,15 @@ def historicalToCsv(astock = None):
     for astock in stocks:
         path = z.getPath("historical/{}.csv".format(astock))
         tpath = z.getPath("csv/{}.csv".format(astock))
-#        if os.path.exists(tpath):
-#            continue
+        if os.path.exists(tpath):
+            continue
 
         if not os.path.exists(path):
+            print ("need to download {}".format(astock))
             continue
+
+#        if not os.path.exists(path):
+#            continue
 
         with open(tpath, "w") as f:
             f.write("Date,Open,Close,High,Low,Volume,path\n")
@@ -152,7 +157,7 @@ def historicalToCsv(astock = None):
                 if starting:
                     f.write("{},{},{},{},{},{},{}\n".format(\
                         cdate,row['Open'],row['Close'],row['High'],row['Low'],row['Volume'],astock))
-    convertToDask(simple=True, astock = astock)
+    convertToDask(simple=True, astock = astocka)
 
 if __name__ == '__main__':
     import sys
@@ -160,7 +165,7 @@ if __name__ == '__main__':
         if len(sys.argv) > 1:
             if sys.argv[1] == "buy":
 
-                z.getStocks.devoverride = "IUSG"
+                z.getStocks.devoverride = "ITOT"
                 z.getStocks.extras = True
                 historicalToCsv()
 

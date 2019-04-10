@@ -16,14 +16,27 @@ def getAdded():
     return ret
 
 
-def offline():
-    return offline.off
-offline.off = True
+def online():
+    return online.online
+online.online = False
 
 def percentage(factor):
     if type(factor) is str:
         return factor
     return "{:.2%}".format(factor-1)
+
+def gyp(name):
+    try:
+        path = getPath("yahoo/{}.pkl".format(name))
+        return pickle.load(open(path, "rb"))
+    except:
+        return None
+
+def syp(data, name):
+    path = getPath("yahoo/{}.pkl".format(name))
+    if os.path.exists(path):
+        os.remove(path)
+    pickle.dump(data, open(path, "wb"))
 
 @lru_cache(maxsize=8)
 def getp(name, override="pkl"):
@@ -287,7 +300,8 @@ def listen():
 
 def getEtfList(forEtfs = False):
     if forEtfs:
-        return [ "ITOT" , "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV"]
+        return [ "IJH" ]
+#        return [ "ITOT" , "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV"]
     return [ "IUSG", "IJH", "IJR", "IVV", "ITOT" ]
 #    , "USMV"
 #    ]

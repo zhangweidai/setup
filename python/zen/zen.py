@@ -120,7 +120,7 @@ def getSortedStocks(date, mode, howmany = 2,
             print("date: {}".format( date))
             print("mode: {}".format( mode))
             z.trace(e)
-            raise SystemExit
+            return None
 #        setSortedDict(usepkl=True, etf=z.getStocks.devoverride)
 #        alist = setSortedDict.sorteddict[mode][date]
 
@@ -183,16 +183,21 @@ def getPricedStocks(idxdate, price):
     return None
 #    raise SystemExit
 
-def getLatestPrices(astock):
+def getLatestPrices(astock, force=False):
     try:
         getPrice.latest = z.getp("latestprices")
         if getPrice.latest and astock in getPrice.latest:
             return
     except:
         pass
+
+    if not force:
+        return
+
 #    z.getStocks.devoverride = None
     if getLatestPrices.done:
         return
+
     getLatestPrices.done = True
 
     stocks = z.getStocks(reset=True)
@@ -203,7 +208,6 @@ def getLatestPrices(astock):
         path = z.getPath("csv/{}.csv".format(astock))
 
         if not os.path.exists(path):
-            print("astock: {}".format( astock))
             try:
                 dask_help.historicalToCsv(astock)
             except Exception as e:
@@ -397,7 +401,11 @@ def whatAboutThese(stocks, count = 40, lowprice = False, sell=False):
 
     sorts = SortedSet()
     sells = list()
+    if not stocks:
+        return
+
     for i,value in enumerate(stocks):
+
         astock = value
         vrank = i+1
         try:
@@ -511,8 +519,11 @@ def getVolumeRanking(astock = None):
                 return setVolumeRanking.latestvolumedic[astock]
             except:
                 setVolumeRanking()
-            return setVolumeRanking.latestvolumedic[astock]
-
+            try:
+                return setVolumeRanking.latestvolumedic[astock]
+            except:
+                print("no volume data for astock: {}".format( astock))
+                pass
     elif type(astock) is int:
         latestvolume = z.getp("{}latestvolume".format(label))
         whatAboutThese(latestvolume, count=astock)
@@ -590,14 +601,14 @@ def buyl(args):
         whatAboutThese(stocks)
 
 def etfsf(args):
-    etfs = z.getEtfList()
-    try:
-        if sys.argv[2]:
-            etfs = [sys.argv[2].upper()]
-    except:
-        pass
+#    etfs = z.getEtfList()
+#    try:
+#        if sys.argv[2]:
+#            etfs = [sys.argv[2].upper()]
+#    except:
+#        pass
 
-    for etf in etfs:
+    for etf in [ z.getStocks.devoverride ]:
         print("etf : {}".format( etf ))
         z.getStocks.devoverride = etf
         setSortedDict(etf=etf, usepkl = False)
@@ -626,6 +637,115 @@ def sells(args):
     stocks = portfolio.getPortfolio(aslist = True)
     whatAboutThese(stocks, sell=True)
 
+def getEtfScore(cuttoff):
+    etfd = defaultdict(list)
+    for i in range(5,50,3):
+        etfq(i, etfd, cuttoff)
+
+    average = list()
+    for i,vals in etfd.items():
+        avg = z.avg(vals)
+        average.append(avg)
+
+    if not average:
+        print ("problem with number : {}".format(cuttoff))
+        return None
+
+    return z.avg(average)
+
+
+def getEtfScore2():
+    z.getStocks.devoverride = "ITOT"
+    stocks = z.getStocks("ITOT", reset=True)
+    sorts = SortedSet()
+    for astock in stocks:
+        try:
+            latest = getPrice(astock)
+            if not latest:
+                continue
+        except:
+            continue
+        sorts.add((latest, astock))
+
+    currentlist = list()
+    tally = dict()
+    idx = 0
+    for apair in sorts:
+        currentlist.append(apair)
+        if len(currentlist) >= 50:
+            tally[idx] = scoreList(currentlist)
+            currentlist = list()
+            idx += 1
+#    print("tally: {}".format( tally))
+    import matplotlib.pyplot as plt
+    for key, value in tally.items():
+        plt.scatter(key, value)
+        print("key: {}".format( key))
+    plt.show()
+
+def scoreList(currentlist):
+    dates = z.getp("dates")
+    ret = list()
+    for i in range(5,50,3):
+        for item in currentlist:
+            start = dates[-1 * i]
+            latest = item[0]
+            startp = getPrice(item[1], start)
+            if not startp:
+                continue
+            change = round(latest/startp,4)
+            ret.append(change)
+    return z.avg(ret)
+
+def etfq(idx, etfd, cuttoff = 40):
+    dates = z.getp("dates")
+    start = dates[-1 * idx]
+    etfchange = defaultdict(list)
+    etfups = defaultdict(int)
+    etfcount = defaultdict(int)
+    for etf in ["ITOT"]:
+        z.getStocks.devoverride = etf
+        stocks = z.getStocks(etf, reset=True)
+        for astock in stocks:
+            try:
+                latest = getPrice(astock)
+                if not latest:
+                    continue
+
+                if latest <= float(cuttoff):
+                    continue
+                startp = getPrice(astock, start)
+
+                if not startp:
+                    continue
+
+                change = round(latest/startp,4)
+            except Exception as e:
+                z.trace(e)
+                print("astock : {}".format( astock ))
+                continue
+
+            if change >= 1.0000:
+                etfups[etf] += 1
+            etfchange[etf].append(change)
+            etfcount[etf] += 1
+
+    for etf, vals in etfchange.items():
+        up = etfups[etf]
+        upc = etfcount[etf]
+        avg = z.avg(vals)
+        change = round(up/upc, 3)
+        tallied = round(avg * change,3)
+        etfd[etf].append(tallied)
+
+        if etfq.doonce:
+            etfq.doonce = False
+            print("etf: {}".format( etf))
+            print("upc : {}".format( upc ))
+
+
+#    print("number : {}".format( number ))
+
 if __name__ == '__main__':
     import argparse
     import sys
@@ -639,7 +759,7 @@ if __name__ == '__main__':
     parser.add_argument('--mode', default="all")
     parser.add_argument('--etf', default="IUSG")
     parser.add_argument('--date', default=yesterday())
-    parser.add_argument('--live', default=True, action="store_false")
+    parser.add_argument('--live', default=False, action="store_true")
     args = parser.parse_args()
 
     if args.main[0] == "l":
@@ -647,7 +767,7 @@ if __name__ == '__main__':
     else:
         z.setp(args, "lastArgs_forGenerate_list")
 
-    z.offline.off = args.live
+    z.online.online = args.live
 
     z.getStocks.devoverride = args.etf.upper()
 
@@ -694,6 +814,26 @@ if __name__ == '__main__':
             if args.main == "longlists":
                 longlists(args)
 
+            if args.main == "drops":
+                import itot_buy
+                itot_buy.sortedDropPrice()
+
+            if args.main == "etfq":
+                import matplotlib.pyplot as plt
+                ys = range(1, 462, 10)
+                xs = list()
+                for cutt in ys:
+                    print("cutt : {}".format( cutt ))
+                    etfq.doonce = True
+                    xs.append(getEtfScore(cutt))
+                plt.scatter(ys, xs)
+                plt.show()
+
+            if args.main == "etfq2":
+                import matplotlib.pyplot as plt
+                getEtfScore2()
+
+                        
     except Exception as e:
         z.trace(e)
         pass

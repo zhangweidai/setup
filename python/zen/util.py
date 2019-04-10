@@ -564,30 +564,47 @@ def getRemovedStocks():
     return removed
 
 import z
-def getLivePrice(astock):
-#    try :
-#        df = z.getp("temp")
-#        return float(df['price'])
-#    except:
-#        pass
-#    return
-#    z.setp(df, "temp")
-    df = pdr.get_quote_yahoo([astock])
-#    print(df)
-#    for i,row in df.iterrows():
-#        print("row : {}".format( row ))
-#    print(df.keys())
-#    print(df['price'])
-#    z.setp(df, "temp")
-    return df['price']
+def getLiveData(astock, key = "price", andkey = None):
+    try :
+        ret = float(getLiveData.cached[astock][key])
+        if andkey:
+            andkey = float(getLiveData.cached[astock][andkey])
+            return ret, andkey
+        return ret
+    except:
+        try :
+            if not z.online():
+                getLiveData.cached[astock] = z.gyp(astock)
+                ret = float(getLiveData.cached[astock][key])
+                if andkey:
+                    andkey = float(getLiveData.cached[astock][andkey])
+                    return ret, andkey
+                return ret
+        except:
+            pass
+    try:
+        astockdf = pdr.get_quote_yahoo([astock])
+        getLiveData.cached[astock] = astockdf
+        z.syp(astockdf, "{}".format(astock))
+
+        ret = float(getLiveData.cached[astock][key])
+        if andkey:
+            andkey = float(getLiveData.cached[astock][andkey])
+            return ret, andkey
+        return ret
+    except:
+        pass
+
+    return None
+getLiveData.cached = dict()
 
 import zen
 def getLiveChange(astock):
-    if z.offline():
+#    if not z.online():
 #        getLiveChange.dev += 1
 #        return getLiveChange.dev / 8
-        return None
-    return float(getLivePrice(astock) / zen.getPrice(astock))
+#        return None
+    return float(getLiveData(astock) / zen.getPrice(astock))
 getLiveChange.dev = 1
 
 from datetime import date, timedelta
@@ -1284,9 +1301,12 @@ def debug(sig, frame):
 def listen():
     signal.signal(signal.SIGUSR1, debug)  # Register handler
 
-
-calcPortfolio.latest = None
-#df = getCsv("BA")
-#print (pandas.Index(df["Date"]).get_loc("2018-12-28"))
-#print (list(df["Date"]).index(getStartDate()))
-#print (calcPortfolio({"BA":1}, idx = -1))
+if __name__ == '__main__':
+    astock = "BA"
+    print (getLiveData(astock))
+    print (getLiveData(astock, 'sharesOutstanding'))
+    calcPortfolio.latest = None
+    #df = getCsv("BA")
+    #print (pandas.Index(df["Date"]).get_loc("2018-12-28"))
+    #print (list(df["Date"]).index(getStartDate()))
+    #print (calcPortfolio({"BA":1}, idx = -1))
