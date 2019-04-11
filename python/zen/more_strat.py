@@ -10,16 +10,16 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 
 sell_threader.setTranscript.enabled = False
-sell_threader.buySellSim.tracks = 30
+sell_threader.buySellSim.tracks = 26
 #dask_help.getModes.override = ["Volume"]
 
 z.getStocks.devoverride = "ITOT"
 zen.getSortedStocks.get = "low"
 
 use_q = True
-testpoints = 140
+testpoints = 100
 print("testpoints : {}".format( testpoints ))
-years = 2
+years = 4
 
 # The threader thread pulls an worker from the queue and processes it
 def threader():
@@ -33,8 +33,8 @@ num_days = len(dates)
 ayear = 252
 duration = int (years * ayear)
 
-starti = num_days-(duration*4)
-endi = num_days-duration
+starti = 1000
+endi = (num_days-duration)-1
 startd = dates[starti]
 print("startd : {}".format( startd ))
 endd = dates[endi]
@@ -65,6 +65,8 @@ def calcPortfolio(droppage, mode, price, typed = None):
         else:
             sell_threader.buySellSim([droppage, start, end, 
                     mode, price, typed])
+#types = ["both"]
+types = ["low", "high", "both"]
 
 def getColors():
     return ["blue", "red", "green", "black", 'cyan', 'brown', 
@@ -83,7 +85,7 @@ if zen.getSortedStocks.get == "price":
 
 else:
     for droppage in ylist:
-        for typed in ["low", "high", "both"]:
+        for typed in types:
             for mode in dask_help.getModes():
                 calcPortfolio(droppage, mode=mode, price=price, typed=typed)
 q.join()
@@ -115,7 +117,7 @@ if zen.getSortedStocks.get == "price":
                 pass
 else:
     for droppage in ylist:
-        for typed in ["low", "high", "both"]:
+        for typed in types:
             zen.getSortedStocks.get = typed
             for mode in dask_help.getModes():
                 modeidx = dask_help.getModes().index(mode)
@@ -182,6 +184,16 @@ print("testpoints : {}".format( testpoints ))
 
 #z.setp(avgdropdict, "{}avgdropdict".format(z.getStocks.devoverride))
 #z.setp(avgmodedict, "{}avgmodedict".format(z.getStocks.devoverride))
+
+transcript, transcript2 = sell_threader.getTranscript()
+path = z.getPath("transcript/high.txt")
+print("path: {}".format( path))
+with open(path, "w") as f:
+    f.write("\n".join(transcript))
+
+path = z.getPath("transcript/low.txt")
+with open(path, "w") as f:
+    f.write("\n".join(transcript2))
 
 path = z.getPath("plots/test_special.png")
 plt.savefig(path)

@@ -20,10 +20,12 @@ def online():
     return online.online
 online.online = False
 
-def percentage(factor):
+def percentage(factor, accurate=False):
     if type(factor) is str:
         return factor
-    return "{:.2%}".format(factor-1)
+    if not accurate:
+        return "{:.2%}".format(factor-1)
+    return "{:.3%}".format(factor-1)
 
 def gyp(name):
     try:
@@ -268,11 +270,19 @@ def delStock(astock, save=False):
         delStock.items = delStock.items + astock
     else:
         delStock.items.append(astock)
+
         path = getPath("historical/{}.csv".format(astock))
         try:
             os.remove(path)
         except:
             pass
+
+        path = getPath("csv/{}.csv".format(astock))
+        try:
+            os.remove(path)
+        except:
+            pass
+
     if save:
         removeFromStocks(delStock.items)
         clearFromEtfDics(delStock.items)
@@ -300,15 +310,11 @@ def listen():
 
 def getEtfList(forEtfs = False):
     if forEtfs:
-        return [ "IJH" ]
-#        return [ "ITOT" , "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV"]
+        return [ "ITOT" , "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV"]
     return [ "IUSG", "IJH", "IJR", "IVV", "ITOT" ]
-#    , "USMV"
-#    ]
-#    "IWB", 
 
-def avg(lists):
-    return round(sum(lists)/len(lists),3)
+def avg(lists, p=4):
+    return round(sum(lists)/len(lists),p)
 
 #print(avg([2.313, 2.232, 2.358, 2.468, 2.727, 2.965, 3.262, 3.07]))
 #print(avg([1.924, 1.944, 1.986, 2.123, 2.057, 2.405, 2.807, 2.822]))
@@ -342,12 +348,24 @@ def getConsider2():
 #removeFromStocks(getCorruptStocks())
 if __name__ == '__main__':
     import sys
+    import update_history
+    import dask_help
     try:
         if len(sys.argv) > 1:
             if sys.argv[1] == "delete":
-                astock = sys.argv[2]
+                astock = sys.argv[2].upper()
                 print("astock : {}".format( astock ))
                 delStock(astock, True)
+
+            if sys.argv[1] == "download":
+                astock = sys.argv[2].upper()
+                df = update_history.getDataFromYahoo(astock, "2000-01-05")
+                if df is not None:
+                    path = getPath("historical/{}.csv".format(astock))
+                    print("written path : {}".format( path ))
+                    df.to_csv(path)
+                    
+                    dask_help.historicalToCsv(astock)
     except Exception as e:
         trace(e)
         pass

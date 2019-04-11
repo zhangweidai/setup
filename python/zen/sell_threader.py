@@ -7,14 +7,19 @@ from random import sample
 import zen
 from collections import defaultdict
 from filelock import FileLock
+from threading import Thread, Lock
 
 z.listen()
 
+mutex = Lock()
 dates = z.getp("dates")
 interval = 7
 num_days = len(dates)
 etfsource = "IUSG"
-
+highestValue = 0
+lowestValue = 10
+savedHigh = None
+savedLow = None
 ayear = 252
 years = 2
 duration = int (years * ayear)
@@ -32,16 +37,20 @@ etfcollector = defaultdict(int)
 etfcollectort = defaultdict(int)
 #allowStocks = z.getStocks()
 etfwins = 0
-def buySellSim(args):
-    global etfwins
-    droppage, start, end, mode, price, typed = args[0], args[1], args[2], args[3], args[4], args[5]
-    buySellSim.transcript = list()
+temp = z.getp("deletes")
+skips = ["MNST"]  + list(temp)
 
+def buySellSim(args):
+    global etfwins, current_transcript, highestValue, savedHigh, savedLow, lowestValue
+    droppage, start, end, mode, price, typed = args[0], args[1], args[2], args[3], args[4], args[5]
+
+    current_transcript = list()
     miniport = dict()
+
     spend = original
     sub = dates[start:end]
-    startd = sub[0]
-    setTranscript("start on {}".format(startd))
+    startd = str(sub[0])
+    current_transcript.append(setTranscript("start on {} {} {} {}".format(startd, mode, droppage, typed)))
     maxl = len(sub)-2
     for idx, idxdate in enumerate(sub, start=1):
 
@@ -67,12 +76,11 @@ def buySellSim(args):
                 myprice = None
                 if zen.getSortedStocks.get == "price":
                     myprice = item[0]
-                if astock not in miniport and stocks_owned < \
-                                              buySellSim.tracks:
+
+                if astock not in miniport and stocks_owned < buySellSim.tracks and astock not in skips:
 
                     try:
-                        something = buySomething(sub[idx+1], 
-                                astock, spend, idxdate, myprice)
+                        something = buySomething(sub[idx], astock, spend, idxdate, myprice)
                     except Exception as e:
                         print("sub: {}".format( len(sub)))
                         print("idx: {}".format( idx))
@@ -91,27 +99,24 @@ def buySellSim(args):
             except:
                 pass
 
-        port_change, port_value = getPortValue(idxdate, miniport, spend)
-        setTranscript("\tcvalue {} {} on {} ".format(port_change, 
-                    port_value, idxdate))
+        port_change, port_value = getPortValue(idxdate, miniport, current_transcript, spend)
+        current_transcript.append(setTranscript("\tcvalue {} {} on {} ".format(port_change, port_value, idxdate)))
 
     try:
-        port_change, port_value = getPortValue(idxdate, miniport, spend)
-        etfChange = zen.getEtfPrice("SPY", idxdate) / \
-                zen.getEtfPrice("SPY", startd)
+        port_change, port_value = getPortValue(idxdate, miniport, current_transcript, spend)
+        etfChange = zen.getEtfPrice("SPY", idxdate) / zen.getEtfPrice("SPY", startd)
     except Exception as e:
         print ('problem getting cprices: '+ str(e))
         return
 
-    with FileLock("sell_threader.lck"):
-
-        msg = "etf change {}".format(etfChange)
-        setTranscript(msg)
+    mutex.acquire()
+    try:
 
         modestr = "{}/{}".format(mode, typed)
         if etfChange > port_change:
             etfwins += 1
             etfcollector[modestr] += 1
+
         etfcollectort[modestr] += 1
 
         tupp = (droppage, modestr, price)
@@ -119,24 +124,44 @@ def buySellSim(args):
             print (tupp)
 
         collector[tupp].append(port_change)
-#        print("port_change: {}".format( port_change))
 
-    msg = "finish on {} change {} value {}".format(idxdate, 
-        port_change, port_value)
-    setTranscript(msg, droppage, mode)
+        if port_change < lowestValue:
+            lowestValue = port_change
+            msg = "etf change {}".format(etfChange)
+            current_transcript.append(setTranscript(msg))
+
+            msg = "finish on {} change {} value {}".format(idxdate, port_change, port_value)
+            current_transcript.append(setTranscript(msg))
+
+            savedLow = current_transcript
+
+        elif port_change > highestValue and "2009" in idxdate:
+            msg = "etf change {}".format(etfChange)
+            current_transcript.append(setTranscript(msg))
+
+            msg = "finish on {} change {} value {}".format(idxdate, port_change, port_value)
+            current_transcript.append(setTranscript(msg))
+
+            highestValue = port_change
+            savedHigh = current_transcript
+
+    finally:
+        mutex.release()
+
 buySellSim.tracks = 16
 
-def setTranscript(msg, droppage = None, mode = None):
-    if not setTranscript.enabled:
-        return
-
-    buySellSim.transcript.append(msg)
-    if droppage:
-        path = z.getPath("transcript/{}_{}".format(droppage, mode))
-        print("path: {}".format( path))
-        with open(path, "w") as f:
-            f.write("\n".join(buySellSim.transcript))
-setTranscript.enabled = True
+def setTranscript(msg):
+    return msg
+#    if not setTranscript.enabled:
+#        return
+#
+#    buySellSim.transcript.append(msg)
+#    if droppage:
+#        path = z.getPath("transcript/{}_{}".format(droppage, mode))
+#        print("path: {}".format( path))
+#        with open(path, "w") as f:
+#            f.write("\n".join(buySellSim.transcript))
+#setTranscript.enabled = True
 
 def getEtfWins():
     global etfwins
@@ -144,22 +169,26 @@ def getEtfWins():
 
 def getCollector():
     return collector
+
+def getTranscript():
+    return savedHigh, savedLow
+
 def getEtfCollector():
     return etfcollector
 def getEtfCollectorT():
     return etfcollectort
 
-def getPortValue(cdate, miniport, spend = 0):
+def getPortValue(cdate, miniport, current_transcript, spend = 0):
     total = 0
     for astock in miniport:
         cprice = zen.getPrice(astock, cdate)
         item = miniport[astock]
         if cprice:
             cvalue = round((cprice * item[0])-fee,3)
-            setTranscript("\t\t{} @ {}".format(astock, cprice))
+            current_transcript.append(setTranscript("\t\t{} @ {} {}".format(astock, cprice, cvalue)))
             total += cvalue
         else:
-            print ("this a problem")
+            print ("this a problem {} {} ".format(astock, cdate))
             total += item[1]
 
     added = (((buySellSim.tracks) - len(miniport)) * spend)
@@ -188,8 +217,8 @@ def sell(spend, cdate, droppage, miniport):
         if change < droppage and cvalue > minthresh \
                 and len(sells) <= 5:
 
-            setTranscript("sold {} @ {} on {} change {}".format(
-                        astock, cprice, cdate, change ))
+            current_transcript.append(setTranscript("sold {} @ {} on {} change {}".format(
+                        astock, cprice, cdate, change )))
 
             spend += cvalue
             sells.append(astock)
@@ -214,19 +243,22 @@ def buySomething(cdate, astock, spend, idxdate, myprice = None):
             if not cprice:
                 return None
 
+        if cprice < 5.00:
+            return None
+
         count = round((spend-fee)/cprice,3)
 
         if spend == 0 or spend-fee <= 0:
-            return
+            return None
 
     except Exception as e:
         print ('failedBuys: '+ str(e))
         print("cdate: {}".format( cdate))
         print("astock: {}".format( astock))
-        return
+        return None
 
-    setTranscript("bought {} @ {} on {} (how many {})".format(astock, \
-                cprice, cdate, count))
+    current_transcript.append(setTranscript("bought {} @ {} on {} (how many {})".format(astock, \
+                cprice, cdate, count)))
     return [count, spend-fee]
 
 def calcPortfolio(droppage, alist, mode):

@@ -28,9 +28,6 @@ def convertToDask(simple = False, astock=None):
     dfd['Change'] = dfd.Close/dfd.Open
     dfd['Change'] = dfd['Change'].map(lambda x: round(x,4))
 
-#    import traceback
-#    traceback.print_stack()
-#    raise SystemExit    
     print ("begin rolling")
     createRollingData()
 
@@ -61,7 +58,6 @@ def createRollingData():
         t.daemon = True
         t.start()
 
-    print (dfd.npartitions)
     for indx in range(dfd.npartitions):
         q.put([indx])
 
@@ -140,7 +136,7 @@ def historicalToCsv(astocka = None):
             continue
 
         if not os.path.exists(path):
-            print ("need to download {}".format(astock))
+#            print ("need to download {}".format(astock))
             continue
 
 #        if not os.path.exists(path):

@@ -26,9 +26,10 @@ def getTrainingMotif():
             process("../zen_dump/port/" + path)
 import z
 import csv
+import zen
 
 skips = ["FNSXX", "VTRLX", "BLNK"]
-def fidelity():
+def fidelity(forselling=False, updating=False):
     global port
     path = z.getPath("port/fidelity.csv")
     for row in csv.DictReader(open(path)):
@@ -37,10 +38,41 @@ def fidelity():
         if "*" in astock:
             continue
         if len(astock) >= 1 and astock not in skips:
-            bprice = float(row['Cost Basis Per Share'])
-            port[astock] = bprice
-            lprice = getPrice(astock)
+            price = float(row['Cost Basis Per Share'].strip("$"))
+#            print("cost basis price : {}".format( price ))
+            if forselling:
+                try:
+                    lastsaveprice = fidelity.lastSave[astock]
+                except:
+                    try:
+                        fidelity.lastSave = z.getp("lastsaveprice")
+                        lastsaveprice = fidelity.lastSave[astock]
+                    except:
+                        fidelity.lastSave = dict()
+                        try:
+                            lastsaveprice = max([zen.getPrice(astock), price])
+                            fidelity.lastSave[astock] = lastsaveprice
+                        except:
+                            print (zen.getPrice(astock))
+                            print("astock: {}".format( astock))
+                            print (price)
+                            print ("hsouldnt gher eher")
+                            pass
+                price = lastsaveprice
+
+            if updating:
+                using = max([zen.getPrice(astock), lastsaveprice])
+                fidelity.lastSave[astock] = using
+                port[astock] = using
+            else:
+                port[astock] = price
+
+    if updating:
+        z.setp(fidelity.lastSave, "lastsaveprice")
+
 fidelity.allowSave = False
+fidelity.lastSave = dict()
+
 
 #def fidelitySellPrice():
 #    global port
@@ -72,7 +104,7 @@ def getTrainingFidelity():
         port[sym] += count[i]
 
 def getBasis(astock):
-    return float(port[astock].strip("$"))
+    return float(port[astock])
 
 def getPortfolio(aslist = False):
     global port
@@ -97,3 +129,16 @@ def getRobin():
         port.setdefault(sym, 0)
         port[sym] += count[i]
 
+
+if __name__ == '__main__':
+    fidelity()
+    print("port: {}".format(port))
+    
+    port = dict()
+    fidelity(forselling=True, updating=True)
+    print("port: {}".format(port))
+    
+    port = dict()
+    fidelity(forselling=True)
+    print("port: {}".format(port))
+    

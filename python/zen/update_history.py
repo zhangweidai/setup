@@ -46,18 +46,18 @@ def update():
         ttoday = datetime.date.today().day
         tmonth = datetime.date.today().month
         if csvday >= ttoday and tmonth == csvmonth:
-    #        print("skipping path : {}".format( path ))
-            continue
+            return False
     
         for row in csv.DictReader(open(path)):
             cdate = row['Date']
     
-        if cdate != "2019-04-05":
-            latest.append(astock)
-    
-        continue
+#        if cdate != "2019-04-05":
+#            latest.append(astock)
+#        continue
+
         df = getDataFromYahoo(astock, cdate)
         if df is None:
+            print("updatehistory astock: {}".format( astock))
             continue
     
         skipped = False
@@ -77,19 +77,27 @@ def update():
                 f.write("{},{},{},{},{},{},{}\n".format(\
                             cdate, opend, high, low, closed, adj, vol))
     #            latest[astock] = closed 
+    return True
 
 if __name__ == '__main__':
     import sys
     import zprep
-    try:
-        if len(sys.argv) > 1:
-            astock = sys.argv[1].upper()
-            zprep.downloadMissingHistory(astock)
-        else:
-            update()
-    except Exception as e:
-        z.trace(e)
-        pass
+    import dask_help
+    # use gbuy
+#    try:
+#        if len(sys.argv) > 1:
+#            astock = sys.argv[1].upper()
+#            zprep.downloadMissingHistory(astock)
+#        else:
+#            update()
+#
+#        z.getStocks.devoverride = "ITOT"
+#        z.getStocks.extras = True
+#        dask_help.historicalToCsv()
+#
+#    except Exception as e:
+#        z.trace(e)
+#        pass
 
     
     #z.setp(latest, "latestprices")

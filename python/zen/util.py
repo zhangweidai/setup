@@ -583,6 +583,7 @@ def getLiveData(astock, key = "price", andkey = None):
         except:
             pass
     try:
+        print("downloading astock: {}".format( astock))
         astockdf = pdr.get_quote_yahoo([astock])
         getLiveData.cached[astock] = astockdf
         z.syp(astockdf, "{}".format(astock))
@@ -944,6 +945,8 @@ def getEtfQualifications(astock, count=False):
         subset = getETF(etf)
         if astock in subset: 
             ret.append(etf)
+        if astock in z.getEtfList():
+            return "(E)"
     if count:
         return len(ret)
     return ",".join(ret)
