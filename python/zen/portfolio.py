@@ -129,6 +129,16 @@ def getRobin():
         port.setdefault(sym, 0)
         port[sym] += count[i]
 
+def worthNow(port):
+    value = 0
+    for astock, vec in port.items():
+        cprice = zen.getPrice(astock)
+        tprice = cprice * vec[0]
+        print("astock: {}".format( astock))
+        print("tprice : {}".format( tprice ))
+        value += tprice
+    print("value : {}".format( value ))
+            
 
 if __name__ == '__main__':
     fidelity()

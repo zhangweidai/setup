@@ -41,7 +41,7 @@ temp = z.getp("deletes")
 skips = ["MNST"]  + list(temp)
 
 def buySellSim(args):
-    global etfwins, current_transcript, highestValue, savedHigh, savedLow, lowestValue
+    global etfwins, highestValue, savedHigh, savedLow, lowestValue
     droppage, start, end, mode, price, typed = args[0], args[1], args[2], args[3], args[4], args[5]
 
     current_transcript = list()
@@ -80,7 +80,7 @@ def buySellSim(args):
                 if astock not in miniport and stocks_owned < buySellSim.tracks and astock not in skips:
 
                     try:
-                        something = buySomething(sub[idx], astock, spend, idxdate, myprice)
+                        something = buySomething(sub[idx], astock, spend, idxdate, current_transcript, myprice)
                     except Exception as e:
                         print("sub: {}".format( len(sub)))
                         print("idx: {}".format( idx))
@@ -95,7 +95,7 @@ def buySellSim(args):
                         stocks_owned = len(miniport)
         else:
             try:
-                spend, soldc = sell(spend, idxdate, droppage, miniport)
+                spend, soldc = sell(spend, idxdate, droppage, miniport, current_transcript)
             except:
                 pass
 
@@ -109,44 +109,40 @@ def buySellSim(args):
         print ('problem getting cprices: '+ str(e))
         return
 
+    modestr = "{}/{}".format(mode, typed)
+
+    tupp = (droppage, modestr, price)
+    collector[tupp].append(port_change)
+    etfcollectort[modestr] += 1
+    if etfChange > port_change:
+        etfwins += 1
+        etfcollector[modestr] += 1
+
     mutex.acquire()
     try:
-
-        modestr = "{}/{}".format(mode, typed)
-        if etfChange > port_change:
-            etfwins += 1
-            etfcollector[modestr] += 1
-
-        etfcollectort[modestr] += 1
-
-        tupp = (droppage, modestr, price)
-        if not etfwins % 100:
-            print (tupp)
-
-        collector[tupp].append(port_change)
-
         if port_change < lowestValue:
             lowestValue = port_change
             msg = "etf change {}".format(etfChange)
             current_transcript.append(setTranscript(msg))
-
             msg = "finish on {} change {} value {}".format(idxdate, port_change, port_value)
             current_transcript.append(setTranscript(msg))
-
+            z.setp( miniport, "lowest")
             savedLow = current_transcript
 
         elif port_change > highestValue and "2009" in idxdate:
             msg = "etf change {}".format(etfChange)
             current_transcript.append(setTranscript(msg))
-
             msg = "finish on {} change {} value {}".format(idxdate, port_change, port_value)
             current_transcript.append(setTranscript(msg))
-
             highestValue = port_change
             savedHigh = current_transcript
+            z.setp( miniport, "highest")
 
     finally:
         mutex.release()
+
+    if not etfwins % 100:
+        print (tupp)
 
 buySellSim.tracks = 16
 
@@ -198,7 +194,7 @@ def getPortValue(cdate, miniport, current_transcript, spend = 0):
     startedwith = buySellSim.tracks*original
     return round(total/startedwith, 3), round(total,4)
 
-def sell(spend, cdate, droppage, miniport):
+def sell(spend, cdate, droppage, miniport, current_transcript):
     sold = None
     sells = []
     spend = 0
@@ -234,7 +230,7 @@ def sell(spend, cdate, droppage, miniport):
 
     return 0, len(sells)
 
-def buySomething(cdate, astock, spend, idxdate, myprice = None):
+def buySomething(cdate, astock, spend, idxdate, current_transcript, myprice = None):
     try:
         if myprice:
             cprice = myprice

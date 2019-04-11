@@ -195,6 +195,12 @@ path = z.getPath("transcript/low.txt")
 with open(path, "w") as f:
     f.write("\n".join(transcript2))
 
+import portfolio
+bar = z.getp("highest")
+print (portfolio.worthNow(bar))
+bar = z.getp("lowest")
+print (portfolio.worthNow(bar))
+
 path = z.getPath("plots/test_special.png")
 plt.savefig(path)
 plt.show()
