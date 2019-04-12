@@ -261,15 +261,42 @@ def regenerateLatestPrices():
         getPrice.latest[astock] = float(row['Close'])
     z.setp(getPrice.latest, "latestprices")
 
-
-def getDropScore(astock, percent = True):
+downs = 0
+total = list()
+bought = list()
+order = list()
+def getBounceProb(astock, startd = "2016-07-11"):
+    global downs, total
     df = z.getCsv(astock)
     if df is None:
         return
-    start = "2018-07-11"
-    days = 64
+    try:
+        dates = df["Date"].tolist()
+        starti = dates.index(startd)
+    except:
+        return
+
+    for idx in range(starti, len(dates)-2):
+        opend = df.at[idx,"Open"]
+        close = df.at[idx,"Close"]
+        change = close/opend
+        if change < 0.90:
+#            opend = df.at[idx,"Close"]
+            bought.append(close)
+            order.append(astock)
+
+            close2 = df.at[idx+1,"Close"]
+            change = close2/close
+            if change < 1.0:
+                downs += 1
+            total.append(round(change,4))
+
+def getDropScore(astock, startd = "2018-07-11", days = 64):
+    df = z.getCsv(astock)
+    if df is None:
+        return
     dates = df["Date"].tolist()
-    starti = dates.index(start)
+    starti = dates.index(startd)
     minc = 10
     for idx in range(starti, len(dates)-days):
         close = df.at[idx + days,"Close"]
@@ -277,8 +304,6 @@ def getDropScore(astock, percent = True):
         change = close/opend
         if change < minc:
             minc = change
-    if percent:
-        return z.percentage(minc)
     return round(minc,4)
 
 #z.getStocks.devoverride = "ITOT"
@@ -378,11 +403,11 @@ def poolQuery():
 
 
 def getCol():
-    #        stock   vol   $price  avgC   probD  avgD   drop  change live etfs
-    return " {0:<5} {1:<4}  {2:>7} {3:>7} {4:<4} {5:>7} {6:>7} {7:>7} {8:>7} {9:>7} {10:3} {11:5}"
+    #        stock  $price avgC  probD   avgD   avgG   drop   change live   etfs  recov
+    return " {0:<5} {1:>7} {2:>7} {3:<4} {4:>7} {5:>7} {6:>7} {7:>7} {8:>7} {9:>7} {10:>3} {11:<5}"
 
 def whatAboutThese(stocks, count = 40, lowprice = False, sell=False):
-    print(getCol().format("stock", "vol", "price", "avgC", "probD", "avgD ", "avgG" ,"drop ", "change ", "live ", "etf", "recov"))
+    print(getCol().format("stock", "price", "avgC", "probD", "avgD ", "avgG " ,"d1 ", "d2 ", "change ", "live ", "etf ", "recov"))
 
     sorts = SortedSet()
     sells = list()
@@ -392,12 +417,9 @@ def whatAboutThese(stocks, count = 40, lowprice = False, sell=False):
     for i,value in enumerate(stocks):
 
         astock = value
-        vrank = i+1
         try:
             if type(value) is tuple:
                 astock = value[1]
-                vrank = getVolumeRanking(astock)
-
             try:
                 price = round(getPrice(astock),2)
             except:
@@ -413,8 +435,9 @@ def whatAboutThese(stocks, count = 40, lowprice = False, sell=False):
 #                raise SystemExit
                 continue
             try:
-                dropScore = getDropScore(astock, percent=False)
-                if not dropScore:
+                d1 = getDropScore(astock, "2018-01-12", 43)
+                d2 = getDropScore(astock)
+                if not d2:
                     continue
             except Exception as e:
                 continue
@@ -435,22 +458,23 @@ def whatAboutThese(stocks, count = 40, lowprice = False, sell=False):
                     sells.append(astock)
 
             value = getDisplaySortValue(probD,avgC,avgD,
-                    live, price, dropScore, astock, change)
+                    live, price, d2, astock, change)
 
             recov = "NA"
-            if dropScore > 1.00:
+            if d2 > 1.00:
                 recov = "WOW"
             elif avgC > 1.00:
-                recov = round(dropScore/(avgC-1.0),2)
+                recov = round(d2/(avgC-1.0),2)
 
             etfc = util.getEtfQualifications(astock, count=True)
             try:
-                msg = getCol().format(astock, vrank, price, 
+                msg = getCol().format(astock, price, 
                     z.percentage(avgC, accurate=True), 
                     probD, 
                     z.percentage(avgD),
                     z.percentage(avgG),
-                    z.percentage(dropScore),
+                    z.percentage(d1),
+                    z.percentage(d2),
                     z.percentage(change),
                     z.percentage(live),
                     etfc, 
@@ -504,7 +528,7 @@ def getVolumeRanking(astock = None):
         latestvolume = z.getp("{}latestvolume".format(label))
         whatAboutThese(latestvolume, count=astock)
 
-cats = ["Price", "AvgC", "ProbD", "Drop", "Volume", "Change", "P12", "C50"]
+cats = ["Price", "AvgC", "ProbD", "Drop", "Volume", "Change", "C50"]
 import os
 def longlists(etf, date):
     print ("long lists")
@@ -525,11 +549,10 @@ def longlists(etf, date):
         for row in csv.DictReader(open(path)):
             pass
         try:
-            cdics["C50"].add(( float(row['C50']) , astock))
-            cdics["P12"].add(( float(row['P12']) , astock))
+            cdics["C30"].add(( float(row['C30']) , astock))
             cdics["Volume"].add(( float(row['Volume']) , astock))
             cdics["Price"].add(( float(row['Close']) , astock))
-            cdics["Drop"].add((getDropScore(astock, percent = False), astock))
+            cdics["Drop"].add((getDropScore(astock), astock))
             avgC, probD, avgD, avgG, change = getProbSale(astock)
             cdics["AvgC"].add((avgC, astock))
             cdics["ProbD"].add((probD, astock))
@@ -546,7 +569,7 @@ def longlists(etf, date):
     z.setp(cdics, "{}cdics".format(etf))
 
 def yesterday():
-    return str(datetime.date.today() - datetime.timedelta(days=1))
+    return str(datetime.date.today() - datetime.timedelta(days=3))
 
 def queryh(args):
     setSortedDict(usepkl = True)
@@ -717,6 +740,22 @@ def etfq(idx, etfd, cuttoff = 40):
 
 
 #    print("number : {}".format( number ))
+def dropInvestigation():
+    stocks = z.getStocks("IUSG")
+    print("stocks : {}".format( len(stocks)))
+    for astock in stocks:
+        getBounceProb(astock, startd = "2017-07-11")
+    print(z.avg(total))
+    print(len(total))
+    print("total: {}".format( downs))
+    avgl=list()
+    for i,astock in enumerate(order):
+        print("astock : {}".format( astock ))
+        cprice = getPrice(astock)
+        change = cprice/ bought[i] 
+        print("change : {}".format( z.percentage(change)))
+        avgl.append(change)
+    print (z.avg(avgl))
 
 if __name__ == '__main__':
     import argparse
@@ -776,7 +815,7 @@ if __name__ == '__main__':
             # generate buy list which is ISUG + EXTRAS
             if args.main == "buy" or args.main == 'gbuy':
                 if args.mode == "default":
-                    modes = ["P12", "Volume"]
+                    modes = ["C30", "Volume"]
                 buyl(args)
                 print ("etfs")
                 whatAboutThese(z.getEtfList(forEtfs=True))
@@ -790,7 +829,7 @@ if __name__ == '__main__':
                 if args.mode == "default":
                     modes = ["Volume"]
                     etfsf(args)
-                    modes = ["P12"]
+                    modes = ["C30"]
                     etfsf(args)
                 else:
                     etfsf(args)

@@ -6,8 +6,7 @@ import sys
 from random import sample
 import zen
 from collections import defaultdict
-from filelock import FileLock
-from threading import Thread, Lock
+from threading import Lock
 
 z.listen()
 

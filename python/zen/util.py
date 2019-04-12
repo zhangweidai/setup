@@ -582,6 +582,8 @@ def getLiveData(astock, key = "price", andkey = None):
                 return ret
         except:
             pass
+    if not z.online():
+        return None
     try:
         print("downloading astock: {}".format( astock))
         astockdf = pdr.get_quote_yahoo([astock])

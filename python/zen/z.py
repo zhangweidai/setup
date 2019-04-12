@@ -291,6 +291,11 @@ delStock.items = []
 #delStock(getp("deletes"), save=True)
 #raise SystemExit
 #delStock("JWA", save=True)
+def daysBetween(date, date2):
+    dates = getp("dates")
+    return dates.index(date2) - dates.index(date)
+#print (daysBetween("2018-01-12", "2018-04-06"))
+#raise SystemExit
 
 import code, traceback, signal
 def debug(sig, frame):
