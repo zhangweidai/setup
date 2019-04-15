@@ -5,21 +5,21 @@ import worst_duration
 import random
 import sell_threader
 import zen
-import dask_help
+import threadprep
 from collections import defaultdict
 import matplotlib.pyplot as plt
 
+#threadprep.getModes.useRandom = True
 sell_threader.setTranscript.enabled = False
-sell_threader.buySellSim.tracks = 26
-#dask_help.getModes.override = ["Volume"]
+sell_threader.buySellSim.tracks = 30
 
-z.getStocks.devoverride = "ITOT"
-zen.getSortedStocks.get = "low"
+zen.loadSortedEtf("BUY3")
+#z.getStocks.devoverride = "ITOT"
+#zen.getSortedStocks.get = "low"
 
 use_q = True
-testpoints = 100
-print("testpoints : {}".format( testpoints ))
-years = 4
+testpoints = 150
+years = 3
 
 # The threader thread pulls an worker from the queue and processes it
 def threader():
@@ -30,21 +30,16 @@ def threader():
 dates = z.getp("dates")
 num_days = len(dates)
 
+starti = dates.index("2013-04-12")
+
 ayear = 252
 duration = int (years * ayear)
 
-starti = 1000
 endi = (num_days-duration)-1
 startd = dates[starti]
 print("startd : {}".format( startd ))
 endd = dates[endi]
 print("endd : {}".format( endd ))
-
-prices_only = False
-if zen.getSortedStocks.get == "price":
-    prices_only = True
-
-zen.setSortedDict()
 
 q = Queue()
 for x in range(7):
@@ -52,111 +47,86 @@ for x in range(7):
     t.daemon = True
     t.start()
 
-print("num_days : {} - {} {}".format( num_days, startd, endd ))
+print("num_days : {} - {} {}".format( endi- starti, startd, endd ))
 played = 0
-def calcPortfolio(droppage, mode, price, typed = None):
-    global played
-    for tries in range(testpoints):
-        start = random.randrange(starti, endi)
-        end = start + duration
-        played += 1
-        if use_q:
-            q.put([droppage, start, end, mode, price, typed])
-        else:
-            sell_threader.buySellSim([droppage, start, end, 
-                    mode, price, typed])
-#types = ["both"]
-types = ["low", "high", "both"]
 
 def getColors():
     return ["blue", "red", "green", "black", 'cyan', 'brown', 
             'orange', 'pink', 'magenta', 'olive', "indigo", "teal", "silver"]
 
-ylist = [i/100 for i in range(60,90,5)]
+types = ["low", "high", "both"]
+ylist = [i/100 for i in range(55,91,5)]
 numy = len(ylist)
-price = -1
-pricelist = [price]
-if zen.getSortedStocks.get == "price":
-    pricelist = [i for i in range(4)]
 
-    for droppage in ylist:
-        for price in pricelist:
-            calcPortfolio(droppage, mode="Change", price=price)
+#points = [ random.randrange(starti, endi) for tries in range(testpoints) ]
+#print("points : {}".format( points ))
+points = z.getp("{}points".format(years))
+if not points:
+    points = [ random.randrange(starti, endi) for tries in range(testpoints) ]
+    z.setp(points, "{}points".format(years))
 
-else:
-    for droppage in ylist:
+for droppage in ylist:
+    for start in points:
+        end = start + duration
         for typed in types:
-            for mode in dask_help.getModes():
-                calcPortfolio(droppage, mode=mode, price=price, typed=typed)
+            for mode in threadprep.getModes():
+                played += 1
+                if use_q:
+                    q.put([droppage, start, end, mode, typed])
+                else:
+                    sell_threader.buySellSim([droppage, start, end, mode, typed])
 q.join()
 
 collector = sell_threader.getCollector()
 avgdropdict = defaultdict(list)
 avgmodedict = defaultdict(list)
-avgpricedict = defaultdict(list)
 
-mode = "Change"
-if zen.getSortedStocks.get == "price":
-    for i,price in enumerate(pricelist):
-        for droppage in ylist:
-            color = getColors()[i]
-            tupp = (droppage, mode, price)
+for droppage in ylist:
+    for typed in types:
+        zen.getSortedStocks.get = typed
+        for mode in threadprep.getModes():
+            modeidx = threadprep.getModes().index(mode)
+            color = getColors()[modeidx]
+            modestr = "{}/{}".format(mode, typed)
+            tupp = (droppage, modestr)
             try:
                 value = z.avg(collector[tupp])
-            except:
-                print("tupp : {}".format( tupp ))
+            except Exception as e:
+                print("1tupp : {}".format( tupp ))
+                z.trace(e)
+                raise SystemExit
                 continue
-        
             avgdropdict[droppage].append(value)
-            avgmodedict[mode].append(value)
-            avgpricedict[price].append(value)
-        
+            avgmodedict[modestr].append(value)
+    
             try:
                 plt.scatter(droppage, value, color=color)
             except:
                 pass
-else:
-    for droppage in ylist:
-        for typed in types:
-            zen.getSortedStocks.get = typed
-            for mode in dask_help.getModes():
-                modeidx = dask_help.getModes().index(mode)
-                color = getColors()[modeidx]
-                modestr = "{}/{}".format(mode, typed)
-                tupp = (droppage, modestr, price)
-                try:
-                    value = z.avg(collector[tupp])
-                except Exception as e:
-                    print("1tupp : {}".format( tupp ))
-                    z.trace(e)
-                    raise SystemExit
-                    continue
-                avgdropdict[droppage].append(value)
-                avgmodedict[modestr].append(value)
-                avgpricedict[price].append(value)
-        
-                try:
-                    plt.scatter(droppage, value, color=color)
-                except:
-                    pass
     
 etfavg = list()
 for akey,alist in avgmodedict.items():
     avg = z.avg(alist)
     etfavg.append(avg)
 
+for mode in threadprep.getModes():
+    typed = "low"
+    modestr = "{}/{}".format(mode, typed)
+    avgl = z.avg(avgmodedict[modestr])
+
+    typed = "high"
+    modestr = "{}/{}".format(mode, typed)
+    avgh = z.avg(avgmodedict[modestr])
+    print("mode {}: {}".format(mode,  round(abs(avgl-avgh),3) ))
+
 for akey,alist in avgdropdict.items():
     avg = z.avg(alist)
     etfavg.append(avg)
 
-for akey,alist in avgpricedict.items():
-    avg = z.avg(alist)
-    etfavg.append(avg)
-
-#print(zen.getSortedStocks.get)
 avgetf = z.avg(etfavg)
 
 print (z.getStocks.devoverride)
+print("testpoints : {}".format( testpoints ))
 print("this etf avg: {}".format( avgetf))
 
 etfcollector = sell_threader.getEtfCollector()
@@ -165,17 +135,11 @@ for akey,alist in avgmodedict.items():
     avg = z.avg(alist)
     etfvalue = etfcollector[akey]
     etft = etfcollectort[akey]
-#    print("modes: {0:<12} {1:<8} {2:<7}".format( akey, avg, round(etfvalue/(numy*testpoints), 3)))
     print("modes: {0:<12} {1:<8} {2:<7}".format( akey, avg, round(etfvalue/etft,3) ))
 
 for akey,alist in avgdropdict.items():
     avg = z.avg(alist)
     print("drop: {} {} ".format( akey, avg))
-
-for akey,alist in avgpricedict.items():
-    avg = z.avg(alist)
-    print("price: {} {} ".format(akey, avg))
-
 
 print("general etf winrate: {}".format(round(sell_threader.getEtfWins() / played,3)))
 print (sell_threader.buySellSim.tracks)
@@ -184,22 +148,26 @@ print("testpoints : {}".format( testpoints ))
 
 #z.setp(avgdropdict, "{}avgdropdict".format(z.getStocks.devoverride))
 #z.setp(avgmodedict, "{}avgmodedict".format(z.getStocks.devoverride))
-
-transcript, transcript2 = sell_threader.getTranscript()
-path = z.getPath("transcript/high.txt")
-print("path: {}".format( path))
-with open(path, "w") as f:
-    f.write("\n".join(transcript))
-
-path = z.getPath("transcript/low.txt")
-with open(path, "w") as f:
-    f.write("\n".join(transcript2))
+try:
+    transcript, transcript2 = sell_threader.getTranscript()
+    path = z.getPath("transcript/{}high.txt".format(zen.loadSortedEtf.etf))
+    print("path: {}".format( path))
+    with open(path, "w") as f:
+        f.write("\n".join(transcript))
+    
+    path = z.getPath("transcript/{}low.txt".format(zen.loadSortedEtf.etf))
+    with open(path, "w") as f:
+        f.write("\n".join(transcript2))
+except:
+    pass
 
 import portfolio
+
 bar = z.getp("highest")
-print (portfolio.worthNow(bar))
+print ("worthNow {}".format(portfolio.worthNow(bar)))
+
 bar = z.getp("lowest")
-print (portfolio.worthNow(bar))
+print ("worthNow {}".format(portfolio.worthNow(bar)))
 
 path = z.getPath("plots/test_special.png")
 plt.savefig(path)

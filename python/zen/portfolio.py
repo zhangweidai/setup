@@ -2,6 +2,7 @@
 import pandas as pd
 import os
 import util
+#"Account Name/Number","Symbol","Description","Quantity","Last Price","Last Price Change","Current Value","Today's Gain/Loss Dollar","Today's Gain/Loss Percent","Total Gain/Loss Dollar","Total Gain/Loss Percent","Cost Basis Per Share","Cost Basis Total","Type"
 
 port = dict()
 def process(path):
@@ -28,47 +29,72 @@ import z
 import csv
 import zen
 
-skips = ["FNSXX", "VTRLX", "BLNK"]
+skips = ["FNSXX", "VTRLX", "BLNK", "BLCN"]
 def fidelity(forselling=False, updating=False):
     global port
-    path = z.getPath("port/fidelity.csv")
-    for row in csv.DictReader(open(path)):
+#    path = z.getPath("port/fidelity.csv")
+    spentBasis = 0
+    current_pv = 0
+    need = False
+    for row in csv.DictReader(open(getLatestFidelityCsv())):
 #        print(row )
         astock = row['Symbol'] 
         if "*" in astock:
             continue
         if len(astock) >= 1 and astock not in skips:
-            price = float(row['Cost Basis Per Share'].strip("$"))
-#            print("cost basis price : {}".format( price ))
+            cbprice = float(row['Cost Basis Per Share'].strip("$"))
+
+            try:
+                count = float(row['Quantity'])
+                temp2 = float(row['Cost Basis Total'].strip("$"))
+                spentBasis += temp2
+                currentprice = zen.getPrice(astock)
+                temp = round(count*currentprice,4)
+#                print (z.percentage(temp/temp2))
+                current_pv += temp
+            except:
+                print("astock: {}".format( astock))
+                continue
+
             if forselling:
                 try:
                     lastsaveprice = fidelity.lastSave[astock]
                 except:
                     try:
                         fidelity.lastSave = z.getp("lastsaveprice")
+                        if fidelity.lastSave is None:
+                            fidelity.lastSave = dict()
                         lastsaveprice = fidelity.lastSave[astock]
                     except:
-                        fidelity.lastSave = dict()
                         try:
-                            lastsaveprice = max([zen.getPrice(astock), price])
+                            print ("never saved before {}".format(astock))
+                            lastsaveprice = max([currentprice, cbprice])
                             fidelity.lastSave[astock] = lastsaveprice
+                            need = True
                         except:
                             print (zen.getPrice(astock))
                             print("astock: {}".format( astock))
-                            print (price)
+                            print (cbprice)
                             print ("hsouldnt gher eher")
                             pass
-                price = lastsaveprice
+                cbprice = lastsaveprice
 
             if updating:
+                try:
+                    lastsaveprice = fidelity.lastSave[astock]
+                except:
+                    print("no last save for astock: {}".format( astock))
+                    return
                 using = max([zen.getPrice(astock), lastsaveprice])
                 fidelity.lastSave[astock] = using
                 port[astock] = using
             else:
-                port[astock] = price
+                port[astock] = cbprice
 
-    if updating:
+    if updating or need:
         z.setp(fidelity.lastSave, "lastsaveprice")
+
+    return round(current_pv/spentBasis,4), spentBasis, current_pv
 
 fidelity.allowSave = False
 fidelity.lastSave = dict()
@@ -134,21 +160,61 @@ def worthNow(port):
     for astock, vec in port.items():
         cprice = zen.getPrice(astock)
         tprice = cprice * vec[0]
-        print("astock: {}".format( astock))
-        print("tprice : {}".format( tprice ))
         value += tprice
-    print("value : {}".format( value ))
+    return round(value,3)
             
+def getLatestFidelityCsv():
+    import fnmatch
+    parentdir = "/mnt/c/Users/Zoe/Downloads"
+    listOfFiles = os.listdir(parentdir)
+    newest = 0
+    cfile = None
+    for entry in listOfFiles:  
+        if ".csv" not in entry:
+            continue
+        fullpath = "{}/{}".format(parentdir, entry)
+        tim = os.path.getmtime(fullpath)
+        if tim > newest:
+            cfile = fullpath
+    os.system("chmod 777 {}".format(cfile) )
+    return cfile
 
+def getSellStats(updating=False):
+    fidelity(forselling=True, updating=updating)
+    lastSave = z.getp("lastsaveprice")
+    for row in csv.DictReader(open(getLatestFidelityCsv())):
+        astock = row['Symbol'] 
+        if "*" in astock:
+            continue
+
+        if len(astock) >= 1 and astock not in skips:
+            cprice = z.getPrice(astock)
+            last = lastSave[astock]
+            if cprice == last  or cprice > last:
+                continue
+            change = round(cprice / lastSave[astock], 3)
+            print("astock: {} {}".format( astock , z.percentage(change)))
+    
 if __name__ == '__main__':
-    fidelity()
-    print("port: {}".format(port))
-    
-    port = dict()
-    fidelity(forselling=True, updating=True)
-    print("port: {}".format(port))
-    
-    port = dict()
-    fidelity(forselling=True)
-    print("port: {}".format(port))
+    import sys
+    update = None
+    try:
+        if sys.argv[1][0] == "u":
+            update = True
+    except:
+        pass
+
+    getSellStats(updating=update)
+#    vals = fidelity(forselling)
+#    print("vals : {}".format( vals ))
+#    print("vals : {}".format( z.percentage(vals[0])))
+#    print("port: {}".format(port))
+#    
+#    port = dict()
+#    fidelity(forselling=True, updating=True)
+#    print("port: {}".format(port))
+#    
+#    port = dict()
+#    fidelity(forselling=True)
+#    print("port: {}".format(port))
     

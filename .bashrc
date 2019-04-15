@@ -128,6 +128,8 @@ export ANDROID_HOME='/mnt/c/Users/pzhang/AppData/Local/Android/Sdk'
 alias go='source ~/setup/bin/go.bash'
 alias py3='python3'
 alias py='python3'
+alias bpy='bpython'
+alias p='ipython'
 
 export CSCOPE_DB='/usr/local/lib/python2.7/dist-packages/cscope.out'
 alias scopeme='find "$PWD/" -name "*.py" -o -iname "*.cfg" > cscope.files && cscope -bv -i cscope.files -f cscope.out'
@@ -136,11 +138,12 @@ alias vgitrc='vim ~/.gitconfig'
 
 if [ `whoami` ==  "zoe" ]; then
     alias pl="cds; b; cd setup2; cd python/zen; py ~/setup2/python/zen/stock_plot.py"
+    export PYTHONSTARTUP=~/setup2/python/zen/.pystart
     alias cds="cd /home/zoe/setup2"
 else
+    export PYTHONSTARTUP=~/setup/python/zen/.pystart
     alias pl="cds; cd python/zen; py ~/setup/python/zen/stock_plot.py"
 fi
-
 alias goa="cds; cd python/zen_dump/analysis"
 alias go1="cds; cd python/zen"
 alias gof="cds; cd python/zen_dump/final"
@@ -163,3 +166,4 @@ export SDKMAN_DIR="/home/zoe/.sdkman"
 LANG=en_US.utf8
 export DISPLAY=:0.0
 export PULSE_SERVER=tcp:localhost
+go1

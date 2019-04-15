@@ -31,8 +31,7 @@ def lowSale():
 
     zen.whatAboutThese(sorts[:count])
     zen.whatAboutThese(sorts[-1*count:])
-lowSale()
-raise SystemExit
+#lowSale()
 def sortedEtfPrice():
     z.online.online = False
     stocks = z.getStocks("IVV|IUSG")
@@ -57,3 +56,28 @@ def sortedDropPrice():
     zen.whatAboutThese(latestdrop[-15:])
 #sortedDropPrice()
 #sortedEtfPrice()
+import os
+import pandas
+def marketCapSort():
+    outname = "ITOT_total_mcsorted"
+    outd = z.getp(outname)
+    path = z.getPath("analysis/mc.csv")
+    with open(path, "w") as f:
+        for item in reversed(outd):
+            astock = item[1]
+            etfc = util.getEtfQualifications(astock)
+            f.write("{},{},{}\n".format(astock, item[0], etfc))
+    
+#    cols = ["mc", "etfs"]
+#    df = pandas.DataFrame.from_dict(dicti, orient = 'index', columns=cols)
+#    df.to_csv(path)
+##    print(outs[-5:])
+#    print(outs[:5])
+
+#marketCapSort()
+#    for astock in z.getStocks("ITOT"):
+#        mc = mcsets[astock]
+        
+#        path = z.getPath("{}/{}.csv".format("historical", astock))
+#        for row in csv.DictReader(open(path)):
+

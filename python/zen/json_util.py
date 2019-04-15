@@ -22,13 +22,17 @@ def getMarketCapPage(astock):
     return decoded.split("\n")
 
 billion = 1000000000
-def parsePage(astock, live=True):
+def parsePage(astock, update=False):
 
-    if live:
+    live = None
+    if not update:
+        live = z.getp(astock, override="yahoo")
+
+    if live is None or update:
         live = getMarketCapPage(astock)
         z.setp(live, astock, override="yahoo")
-    else:
-        live = z.getp(astock, override="yahoo")
+#        live = z.getp(astock, override="yahoo")
+
 #        path = z.getPath("yahoo/{}".format(astock))
 #        with open(path,"r") as f:
 #            live = f.readlines()
@@ -46,37 +50,58 @@ def parsePage(astock, live=True):
             if lookingfor in aline:
                 nextone = True
             elif nextone and "sharesOutstanding" in aline:
-                shares = round(int(more[i+2].split(",")[0])/billion,5)
+                try:
+                    shares = round(int(more[i+2].split(",")[0])/billion,7)
+                except:
+                    return True
+
                 cap2 = round(shares * lastprice, 5)
             elif nextone and "marketCap" in aline:
-                cap = round(int(more[i+2].split(",")[0])/billion,5)
+                try:
+                    cap = round(int(more[i+2].split(",")[0])/billion,7)
+                except:
+                    return True
                 change = round(cap2/cap, 5)
-                return (shares, cap, cap2, change)
+                return (shares, cap, cap2, change, lastprice)
 
-
-def saveOutstanding():
+import calendar
+import time
+from sortedcontainers import SortedSet
+def saveOutstanding(update=False):
 
     import zen
-    z.getStocks.devoverride = "IUSG"
+    z.getStocks.devoverride = "ITOT"
     dictionary = dict()
-    stocks = z.getStocks("IUSG")
+    stocks = z.getStocks("ITOT")
+#    for astock in stocks:
+    total_mcsorted = SortedSet()
     for astock in stocks:
         try:
-            dictionary[astock] = parsePage(astock, live=False)
+            answer = parsePage(astock, update=update)
+            if answer == True:
+                answer = parsePage(astock, update=True)
+            dictionary[astock] = answer
+            total_mcsorted.add((answer[1], astock))
         except Exception as e:
             print ('saveFailed: '+ str(e))
+            z.trace(e)
             print ("Not FIND :" + astock)
+            raise SystemExit
             continue
-    z.setp(dictionary, "outstanding")
-    print(dictionary)
-    other()
 
-#saveOutstanding()
+    epoch = int(calendar.timegm(time.gmtime()))
+    outname = "{}_outstanding".format(epoch)
+    z.setp(dictionary, outname)
+
+    outname = "ITOT_total_mcsorted"
+    z.setp(total_mcsorted, outname)
+#    other(outname)
+
 #raise SystemExit
 
-def other():
-    dictionary = z.getp("outstanding")
-    path = z.getPath("analysis/outstanding.csv")
+def other(outname):
+    dictionary = z.getp(outname)
+    path = z.getPath("analysis/{}outstanding.csv".format(z.getStocks.devoverride))
     with open(path, 'w') as f:
         for key, value in dictionary.items():
             f.write("{},{},{},{},{}\n".format(key, value[0], value[1], value[2], value[3]))
@@ -250,3 +275,4 @@ def updateJsonCompany(astock):
 
 if __name__ == '__main__':
     saveOutstanding()
+#    print(parsePage("WTW", update=True))

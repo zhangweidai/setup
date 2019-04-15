@@ -5,6 +5,7 @@ import z
 import csv
 import datetime
 import fix_yahoo_finance as yf
+import zprep
 
 from pandas_datareader import data as pdr
 yf.pdr_override()
@@ -77,11 +78,11 @@ def update():
                 f.write("{},{},{},{},{},{},{}\n".format(\
                             cdate, opend, high, low, closed, adj, vol))
     #            latest[astock] = closed 
+    zprep.setStockDays() 
     return True
 
 if __name__ == '__main__':
     import sys
-    import zprep
     import dask_help
     # use gbuy
 #    try:

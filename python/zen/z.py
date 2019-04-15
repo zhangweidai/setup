@@ -40,13 +40,17 @@ def syp(data, name):
         os.remove(path)
     pickle.dump(data, open(path, "wb"))
 
-@lru_cache(maxsize=8)
+@lru_cache(maxsize=12)
 def getp(name, override="pkl"):
     try:
         path = getPath("{}/{}.pkl".format(override, name))
         return pickle.load(open(path, "rb"))
     except:
-        return None
+        try:
+            return pickle.load(open(name, "rb"))
+        except:
+            pass
+    return None
 
 def setp(data, name, override="pkl"):
     path = getPath("{}/{}.pkl".format(override, name))
@@ -318,6 +322,9 @@ def getEtfList(forEtfs = False):
         return [ "ITOT" , "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV"]
     return [ "IUSG", "IJH", "IJR", "IVV", "ITOT" ]
 
+def avgp(lists, p=4):
+    return percentage(sum(lists)/len(lists))
+
 def avg(lists, p=4):
     return round(sum(lists)/len(lists),p)
 
@@ -355,22 +362,24 @@ if __name__ == '__main__':
     import sys
     import update_history
     import dask_help
+    astock = sys.argv[2].upper()
     try:
         if len(sys.argv) > 1:
             if sys.argv[1] == "delete":
-                astock = sys.argv[2].upper()
-                print("astock : {}".format( astock ))
+                print("deleted astock : {}".format( astock ))
                 delStock(astock, True)
 
-            if sys.argv[1] == "download":
-                astock = sys.argv[2].upper()
+            elif sys.argv[1] == "lp":
+                print (zen.getPrice(astock))
+            elif sys.argv[1] == "download":
                 df = update_history.getDataFromYahoo(astock, "2000-01-05")
                 if df is not None:
                     path = getPath("historical/{}.csv".format(astock))
-                    print("written path : {}".format( path ))
                     df.to_csv(path)
-                    
-                    dask_help.historicalToCsv(astock)
+                else:
+                    print ("could not save {}".format(astock))
+#                    print("written path : {}".format( path ))
+#                    dask_help.historicalToCsv(astock)
     except Exception as e:
         trace(e)
         pass

@@ -143,6 +143,7 @@ def diffISharesEtfs():
         if diff:
 #            print("key: {}".format( key))
             print(len(diff))
+            print("diff: {}".format( diff))
             allthesame = False
             for adiff in diff:
                 if adiff in dels:
@@ -155,8 +156,8 @@ def diffISharesEtfs():
         print ("all the same")
 
 if __name__ == '__main__':
-    doit()
-#    diffISharesEtfs()
+#    doit()
+    diffISharesEtfs()
 #cleanFiles()
 #huh = util.getp("alletfs")
 

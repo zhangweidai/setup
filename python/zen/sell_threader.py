@@ -36,12 +36,12 @@ etfcollector = defaultdict(int)
 etfcollectort = defaultdict(int)
 #allowStocks = z.getStocks()
 etfwins = 0
-temp = z.getp("deletes")
-skips = ["MNST"]  + list(temp)
+#temp = z.getp("deletes")
+skips = ["WTW", "INGN", "NBR", "XOG", "SWN", "RIG", "MRO"]
 
 def buySellSim(args):
     global etfwins, highestValue, savedHigh, savedLow, lowestValue
-    droppage, start, end, mode, price, typed = args[0], args[1], args[2], args[3], args[4], args[5]
+    droppage, start, end, mode, typed = args[0], args[1], args[2], args[3], args[4]
 
     current_transcript = list()
     miniport = dict()
@@ -58,28 +58,27 @@ def buySellSim(args):
         delay = 2 if stocks_owned >= buySellSim.tracks else 1
         if idx % int(interval*delay) or idx >= maxl:
             continue
+#        print("idxdate : {}".format( idxdate ))
+#        print("2idxdate : {}".format( sub[idx]))
+#        raise SystemExit
 
         if stocks_owned < buySellSim.tracks:
 
-            buyme = None
-            if zen.getSortedStocks.get == "price":
-                buyme = zen.getPricedStocks(idxdate, price)
-            else:
-                buyme = zen.getSortedStocks(idxdate, mode, howmany=4, typed=typed)
+            buyme = zen.getSortedStocks(idxdate, mode, get=4, typed=typed)
 
             if not buyme :
                 continue
 
             for item in buyme:
                 astock = item[1]
-                myprice = None
-                if zen.getSortedStocks.get == "price":
-                    myprice = item[0]
+                useme = None
+                if mode == 'r':
+                    useme = item[0]
 
                 if astock not in miniport and stocks_owned < buySellSim.tracks and astock not in skips:
 
                     try:
-                        something = buySomething(sub[idx], astock, spend, idxdate, current_transcript, myprice)
+                        something = buySomething(idxdate, astock, spend, current_transcript, usep=useme)
                     except Exception as e:
                         print("sub: {}".format( len(sub)))
                         print("idx: {}".format( idx))
@@ -103,14 +102,14 @@ def buySellSim(args):
 
     try:
         port_change, port_value = getPortValue(idxdate, miniport, current_transcript, spend)
-        etfChange = zen.getEtfPrice("SPY", idxdate) / zen.getEtfPrice("SPY", startd)
+        etfChange = round(zen.getEtfPrice("SPY", idxdate) / zen.getEtfPrice("SPY", startd),3)
     except Exception as e:
         print ('problem getting cprices: '+ str(e))
         return
 
     modestr = "{}/{}".format(mode, typed)
 
-    tupp = (droppage, modestr, price)
+    tupp = (droppage, modestr)
     collector[tupp].append(port_change)
     etfcollectort[modestr] += 1
     if etfChange > port_change:
@@ -119,7 +118,7 @@ def buySellSim(args):
 
     mutex.acquire()
     try:
-        if port_change < lowestValue:
+        if port_change < lowestValue and ("2018-09" in idxdate):
             lowestValue = port_change
             msg = "etf change {}".format(etfChange)
             current_transcript.append(setTranscript(msg))
@@ -128,7 +127,7 @@ def buySellSim(args):
             z.setp( miniport, "lowest")
             savedLow = current_transcript
 
-        elif port_change > highestValue and "2009" in idxdate:
+        elif port_change > highestValue and ("2019-01" in idxdate or "2018-12" in idxdate):
             msg = "etf change {}".format(etfChange)
             current_transcript.append(setTranscript(msg))
             msg = "finish on {} change {} value {}".format(idxdate, port_change, port_value)
@@ -229,14 +228,16 @@ def sell(spend, cdate, droppage, miniport, current_transcript):
 
     return 0, len(sells)
 
-def buySomething(cdate, astock, spend, idxdate, current_transcript, myprice = None):
+def buySomething(cdate, astock, spend, current_transcript, usep=None):
+
     try:
-        if myprice:
-            cprice = myprice
-        else:
+        cprice = usep
+
+        if not cprice:
             cprice = zen.getPrice(astock, cdate)
-            if not cprice:
-                return None
+
+        if not cprice:
+            return None
 
         if cprice < 5.00:
             return None
@@ -256,82 +257,14 @@ def buySomething(cdate, astock, spend, idxdate, current_transcript, myprice = No
                 cprice, cdate, count)))
     return [count, spend-fee]
 
-def calcPortfolio(droppage, alist, mode):
-    print("mode: {}".format( mode))
-    changes = list()
-    for tries in range(13):
-        start = random.randrange(num_days-duration)
-        end = start + duration
-        changes.append(buySellSim(droppage, start, end, mode))
-
-    changes.remove(max(changes))
-    changes.remove(max(changes))
-    changes.remove(max(changes))
-
-    average = round(sum(changes)/len(changes),3)
-    alist.append(average)
-    
-def getSpread():
-#    x1list = list()
-#    x2list = list()
-
-    tlist = list()
-    ulist = list()
-    dlist = list()
-    ddlist = list()
-    try:
-        ylist = [i/100 for i in range(76,92,2)]
-        for droppage in ylist:
-            print("droppage : {}".format( droppage ))
-            calcPortfolio(droppage, tlist, mode="special2")
-            calcPortfolio(droppage, ulist, mode="special1")
-            calcPortfolio(droppage, dlist, mode="low")
-            calcPortfolio(droppage, ddlist, mode="lowlow")
-
-        print(tlist)
-        print(ulist)
-        print(dlist)
-        print(ddlist)
-
-        for i,droppage in enumerate(ylist):
-            tosum=[]
-            tosum.append(tlist[i])
-            tosum.append(ulist[i])
-            tosum.append(dlist[i])
-            tosum.append(ddlist[i])
-            print("droppage : {} = {} ".format( droppage, z.avg(tosum) ))
-
-        print("averages")
-        print(z.avg(tlist))
-        print(z.avg(ulist))
-        print(z.avg(dlist))
-        print(z.avg(ddlist))
-
-        import matplotlib.pyplot as plt
-        plt.scatter(ylist, tlist, color="blue")
-        plt.scatter(ylist, ulist, color="green")
-        plt.scatter(ylist, dlist, color="red")
-        plt.scatter(ylist, ddlist, color="black")
-
-        path = z.getPath("plots/{}_special.png".format(etfsource))
-        plt.savefig(path)
-        plt.show()
-
-    except Exception as e:
-        import traceback
-        print (traceback.format_exc())
-        print ('port: '+ str(e))
-        print(tlist)
-        print(ulist)
-        print(dlist)
-        print(ddlist)
-
 if __name__ == '__main__':
-    z.getStocks.devoverride = "IUSG"
-    zen.getSortedStocks.get = "low"
-    zen.setSortedDict()
-    buySellSim([.76, 3919, 4473, "P12", -1, "low"])
+#    z.getStocks.devoverride = "IUSG"
+#    zen.getSortedStocks.get = "low"
+#    zen.setSortedDict()
+    zen.loadSortedEtf(etf="ITOT")
+    buySellSim([.76, 3919, 4473, "r", "low"])
 #    buySellSim([.76, 1800, 1800 + 400, "Volume", -1])
     print("etfwins : {}".format( etfwins ))
     print(collector)
+    print("savedLow : {}".format( savedLow ))
 #getSpread()
