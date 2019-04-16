@@ -14,15 +14,13 @@ def getModes():
     return modes
 getModes.useRandom = False
 
-keeping = 40
+keeping = 60
 discardlocation = int(keeping/2)
 
 sdict = None
 ydict = None
 pdict = None
 pdict2 = None
-mutex = Lock()
-interval=5
 
 import random
 aset = set()
@@ -96,7 +94,6 @@ def doone(astock):
         if year < 2013:
             continue
 
-
         changel = list(changes)
 
         if not prevyear:
@@ -159,30 +156,6 @@ def doone(astock):
 
             if len(sdict[mode][date]) > keeping:
                 sdict[mode][date].discard(sdict[mode][date][discardlocation])
-
-def doit_3():
-    global sdict, pdict, ydict
-    ydict = defaultdict(list)
-    sdict = defaultdict(dict)
-    pdict = defaultdict(dict)
-    stocks = z.getp("ITOT_total_mcsorted")
-#    stocks = z.getStocks("IUSG|IWB", reset=True)
-    stocks = stocks[-1128:]
-    stocks = stocks[:-80]
-#    print("stocks : {}".format( len(stocks)))
-#    print("stocks : {}".format( stocks[-10:]))
-#    print("stocks : {}".format( stocks[:10]))
-#    raise SystemExit
-    for astock in stocks:
-        try:
-            doone(astock[1])
-        except Exception as e:
-            print("problem astock: {}".format( astock))
-            z.trace(e)
-            pass
-    z.setp(ydict, "BUY3_Y")
-    z.setp(sdict, "BUY3_SS")
-    z.setp(pdict, "BUY3_P")
 
 def doit_2():
     global sdict, pdict, ydict
@@ -249,7 +222,7 @@ def genSortedSets():
         doit(etf)
 
 if __name__ == '__main__':
-    doit_1k()
+    doit_buys()
     raise SystemExit
 #    genSortedSets()
 

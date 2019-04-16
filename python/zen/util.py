@@ -250,17 +250,15 @@ def getFromHoldings():
 @lru_cache(maxsize=6)
 def getETF(etf = "IVV"):
     etfdict = getp("etfdict")
-    return etfdict[etf]
-#    path = getPath("holdings/{}_holdings.csv".format(etf))
-#    try:
-#        temp = pandas.read_csv(path)
-#        getETF.ret_df[etf] = temp
+    try:
+        path = getPath("holdings/{}_holdings.csv".format(etf))
+        getETF.ret_df[etf] = pandas.read_csv(path)
 #        retlist = temp['Ticker'].tolist()
-#    except Exception as e:
-#        print ('FailedWrite: '+ str(e))
-#        return None
+    except Exception as e:
+        pass
 #    return retlist
-#getETF.ret_df = dict()
+    return etfdict[etf]
+getETF.ret_df = dict()
 
 def getScoreFromCsv(astock):
     try:

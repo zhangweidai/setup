@@ -103,6 +103,9 @@ def getSortedStocks(date, mode, typed="low", get=3, reportprob = True):
 
     try:
         alist = getSortedStocks.cdict[mode][date]
+#        print("alist : {}".format( alist ))
+#        print("date: {}".format( date))
+#        print("huhmode: {}".format( mode))
     except:
         try:
             loadSortedEtf()
@@ -261,22 +264,45 @@ def getDropScore(astock, startd = "2018-07-11", days = 64):
 #print (getPricedStocks("2017-01-11", 3))
 #raise SystemExit
 import statistics
+dated = False
 def getProbSale(astock):
 #    for astock in z.getEtfList():
     path = z.getPath("csv/{}.csv".format(astock))
+    findate = None
+    startdate = None
+    startidx = None
+    if dated:
+        path = z.getPath("historical/{}.csv".format(astock))
+        dates = z.getp("dates")
+        startidx = dates.index(dated)-51
+        finidx = dates.index(dated)
+
     count = 0
     downs = 0
     avgl = list()
     avgD = list()
     avgG = list()
     firstopen = None
-    if not os.path.exists(path):
+    if not dated and not os.path.exists(path):
         dask_help.historicalToCsv(astock)
 
     if not os.path.exists(path):
         raise SystemExit
 
     for row in csv.DictReader(open(path)):
+        if dated:
+            dates = z.getp("dates")
+            cdate = row['Date']
+            cidx = dates.index(cdate)
+            if cidx < startidx or cidx > finidx:
+                continue
+#            print("dated: {}".format( dated))
+#            print("cdate: {}".format( cdate))
+#            print("cidx : {}".format( cidx ))
+#            print("startidx : {}".format( startidx ))
+#            print("finidx: {}".format( finidx))
+
+
         opend = float(row['Open'])
 
         if not firstopen:
@@ -293,6 +319,8 @@ def getProbSale(astock):
         avgl.append(change)
 
     if not avgl:
+        print ("no avgl")
+        print("path: {}".format( path))
         return
 
     avgC = z.avg(avgl, p=5)
@@ -379,19 +407,24 @@ def whatAboutThese(stocks, count = 40, lowprice = False, sell=False, ht=None):
         try:
             if type(value) is tuple:
                 astock = value[1]
-            try:
-                price = round(getPrice(astock),2)
-            except:
-                noprices.append(astock)
-                continue
+
+            price = 0
+            if dated:
+                price = round(getPrice(astock, dated),2)
+            else:
+                try:
+                    price = round(getPrice(astock),2)
+                except:
+                    noprices.append(astock)
+                    continue
 
             cprice = price
             try:
                 avgC, probD, avgD, avgG, change, median = getProbSale(astock)
             except Exception as e:
-#                print (z.trace(e))
-#                print("astock: {}".format( astock))
-#                raise SystemExit
+                print (z.trace(e))
+                print("astock: {}".format( astock))
+                raise SystemExit
                 continue
 
             try:
@@ -422,7 +455,7 @@ def whatAboutThese(stocks, count = 40, lowprice = False, sell=False, ht=None):
                 if (cprice / basis) < .8:
                     sells.append(astock)
 
-            dscore = getDisplaySortValue(probD,avgC,avgD, live, price, d2, astock, change)
+            dscore = getDisplaySortValue(probD,avgC,avgD, live, d2, astock, change)
             if dscore > highdscore:
                 highdscore = dscore
 
@@ -492,7 +525,7 @@ def whatAboutThese(stocks, count = 40, lowprice = False, sell=False, ht=None):
     return highdscore
 
 import math
-def getDisplaySortValue(probD,avgC,avgD,live,price, dropScore, astock, change):
+def getDisplaySortValue(probD,avgC,avgD,live, dropScore, astock, change):
     if live == "NA":
         live = 1
     ret = round((((avgC**math.e + dropScore + (change/3)) / (live+avgD+probD))),2)
@@ -570,13 +603,13 @@ def today(idx = 1):
 #    return str(datetime.date.today())
 
 def buyl(args):
-    dask_help.convertToDask.directory = "csv"
-    dask_help.createRollingData.dir = "csvCalculated"
+#    dask_help.convertToDask.directory = "csv"
+#    dask_help.createRollingData.dir = "csvCalculated"
 
-    if z.getStocks.devoverride == "IUSG":
-        z.getStocks.extras = True
-        z.getStocks.sells = True
-
+#    if z.getStocks.devoverride == "IUSG":
+#        z.getStocks.extras = True
+#        z.getStocks.sells = True
+#
     if args.main == 'gbuy':
         import update_history
         import threadprep
@@ -591,12 +624,11 @@ def buyl(args):
             exit()
 
 
-    print ("\netfs")
-    dscore = whatAboutThese(z.getEtfList(forEtfs=True))
-    getSortedStocks.highlight_score = dscore
+#    print ("\netfs")
+#    dscore = whatAboutThese(z.getEtfList(forEtfs=True))
+#    getSortedStocks.highlight_score = dscore
+    usedate = dated or args.date
 
-#    z.getStocks.devoverride = args.etf.upper()
-#    print("\ntyped : {}".format( args.typed ))
     for mode in modes:
 
         modestr = "{}/low".format(mode)
@@ -605,7 +637,9 @@ def buyl(args):
             msg = colored(msg,"green")
         if modestr not in skips:
             print(msg)
-            stocks = getSortedStocks(args.date, mode, get=9, typed="low")
+            stocks = getSortedStocks(usedate, mode, get=9, typed="low")
+            if args.save == modestr:
+                z.setp(stocks, "saved")
             whatAboutThese(stocks, ht=args.ht)
 
         modestr = "{}/high".format(mode)
@@ -614,7 +648,9 @@ def buyl(args):
             msg = colored(msg,"green")
         if modestr not in skips:
             print(msg)
-            stocks = getSortedStocks(args.date, mode, get=9, typed="high")
+            stocks = getSortedStocks(usedate, mode, get="all", typed="high")
+            if args.save == modestr:
+                z.setp(stocks, "saved")
             whatAboutThese(stocks, ht=args.ht)
 #    buyl2()
 goodmodes = ["Volume/low", "Price/low", "Var50/high", "Drops/high"]
@@ -859,6 +895,7 @@ if __name__ == '__main__':
     parser.add_argument('--typed', default="low")
     parser.add_argument('--ht', default=None)
     parser.add_argument('--s', default=None)
+    parser.add_argument('--save', default=None)
     args = parser.parse_args()
 
 #    if args.main[0] == "l":
@@ -879,6 +916,8 @@ if __name__ == '__main__':
         modes = [args.mode]
 
     z.getStocks.extras = z.getStocks.devoverride == "IUSG"
+    if args.date != today():
+        dated = args.date
  
     print("date : {}".format( args.date ))
     args.catcount = int(args.catcount)
@@ -915,7 +954,8 @@ if __name__ == '__main__':
 
                 stocks = [args.s.upper()]
                 if args.s == "wab":
-                    stocks = z.getConsider()
+                    stocks = z.getp("saved")
+#                    stocks = z.getConsider()
                 whatAboutThese(stocks)
 
 

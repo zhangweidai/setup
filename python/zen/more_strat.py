@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 sell_threader.setTranscript.enabled = False
 sell_threader.buySellSim.tracks = 30
 
-zen.loadSortedEtf("BUY3")
+zen.loadSortedEtf("BUY")
 #z.getStocks.devoverride = "ITOT"
 #zen.getSortedStocks.get = "low"
 
