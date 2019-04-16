@@ -956,6 +956,9 @@ if __name__ == '__main__':
                 if args.s == "wab":
                     stocks = z.getp("saved")
 #                    stocks = z.getConsider()
+                if args.s == "highest":
+                    stocks = z.getp("highest").keys()
+                    print("stocks : {}".format( stocks ))
                 whatAboutThese(stocks)
 
 

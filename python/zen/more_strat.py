@@ -13,13 +13,13 @@ import matplotlib.pyplot as plt
 sell_threader.setTranscript.enabled = False
 sell_threader.buySellSim.tracks = 30
 
-zen.loadSortedEtf("BUY")
+zen.loadSortedEtf("BUY2")
 #z.getStocks.devoverride = "ITOT"
 #zen.getSortedStocks.get = "low"
 
 use_q = True
-testpoints = 150
-years = 3
+testpoints = 15
+years = 2
 
 # The threader thread pulls an worker from the queue and processes it
 def threader():
@@ -76,7 +76,6 @@ for droppage in ylist:
                 else:
                     sell_threader.buySellSim([droppage, start, end, mode, typed])
 q.join()
-
 collector = sell_threader.getCollector()
 avgdropdict = defaultdict(list)
 avgmodedict = defaultdict(list)
@@ -86,6 +85,7 @@ for droppage in ylist:
         zen.getSortedStocks.get = typed
         for mode in threadprep.getModes():
             modeidx = threadprep.getModes().index(mode)
+            print("modeidx : {}".format( modeidx ))
             color = getColors()[modeidx]
             modestr = "{}/{}".format(mode, typed)
             tupp = (droppage, modestr)
@@ -103,7 +103,7 @@ for droppage in ylist:
                 plt.scatter(droppage, value, color=color)
             except:
                 pass
-    
+
 etfavg = list()
 for akey,alist in avgmodedict.items():
     avg = z.avg(alist)
