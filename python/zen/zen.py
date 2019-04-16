@@ -260,6 +260,7 @@ def getDropScore(astock, startd = "2018-07-11", days = 64):
 #z.getStocks.devoverride = "ITOT"
 #print (getPricedStocks("2017-01-11", 3))
 #raise SystemExit
+import statistics
 def getProbSale(astock):
 #    for astock in z.getEtfList():
     path = z.getPath("csv/{}.csv".format(astock))
@@ -293,12 +294,15 @@ def getProbSale(astock):
 
     if not avgl:
         return
+
     avgC = z.avg(avgl, p=5)
     avgD = z.avg(avgD)
+
     avgG = z.avg(avgG)
     probD = round(downs/count,2)
     change = round(close/firstopen,3)
-    return avgC, probD, avgD, avgG, change
+#    return avgC, probD, min((avgDM, avgDA)), avgG, change, statistics.median(avgl)
+    return avgC, probD, avgD, avgG, change, statistics.median(avgl)
 
 def saveEtfPrices():
     saveEtfPrices.prices = defaultdict(dict)
@@ -354,11 +358,11 @@ def poolQuery():
 
 
 def getCol():
-    #        stock  $price avgC  probD   avgD   avgG   drop1  drop2  change  live   letfs   recov  oschg  mcchg dscore
-    return " {0:<5} {1:>7} {2:>7} {3:>4} {4:>7} {5:>7} {6:>8} {7:>8} {8:>7} {9:>7} {10:>3} {11:>7} {12:>9} {13:>7} {14:<5}"
+    #        stock  $price avgC   median probD   avgD  avgG   drop1  drop2  change  live   letfs   recov   oschg   mcchg   score
+    return " {0:<5} {1:>7} {2:>7} {3:>6} {4:>4} {5:>7} {6:>7} {7:>8} {8:>8} {9:>7} {10:>7} {11:>3} {12:>7} {13:>9} {14:>7} {15:<5}"
 
 def whatAboutThese(stocks, count = 40, lowprice = False, sell=False, ht=None):
-    print(getCol().format("stock", "price", "avgC", "probD", "avgD ", "avgG " ,"d1 ", "d2 ", 
+    print(getCol().format("stock", "price", "avgC", "median", "probD", "avgD ", "avgG " ,"d1 ", "d2 ", 
                 "change ", "live ", "etf ", "recov  ", "oschg  ", "mcchg  ", "dscore   "))
 
     sorts = SortedSet()
@@ -383,7 +387,7 @@ def whatAboutThese(stocks, count = 40, lowprice = False, sell=False, ht=None):
 
             cprice = price
             try:
-                avgC, probD, avgD, avgG, change = getProbSale(astock)
+                avgC, probD, avgD, avgG, change, median = getProbSale(astock)
             except Exception as e:
 #                print (z.trace(e))
 #                print("astock: {}".format( astock))
@@ -418,8 +422,7 @@ def whatAboutThese(stocks, count = 40, lowprice = False, sell=False, ht=None):
                 if (cprice / basis) < .8:
                     sells.append(astock)
 
-            dscore = getDisplaySortValue(probD,avgC,avgD,
-                    live, price, d2, astock, change)
+            dscore = getDisplaySortValue(probD,avgC,avgD, live, price, d2, astock, change)
             if dscore > highdscore:
                 highdscore = dscore
 
@@ -450,6 +453,7 @@ def whatAboutThese(stocks, count = 40, lowprice = False, sell=False, ht=None):
             try:
                 msg = getCol().format(astock, price, 
                     z.percentage(avgC, accurate=True), 
+                    z.percentage(median),
                     probD, 
                     z.percentage(avgD),
                     z.percentage(avgG),

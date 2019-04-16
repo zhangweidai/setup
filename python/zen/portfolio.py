@@ -37,7 +37,6 @@ def fidelity(forselling=False, updating=False):
     current_pv = 0
     need = False
     for row in csv.DictReader(open(getLatestFidelityCsv())):
-#        print(row )
         astock = row['Symbol'] 
         if "*" in astock:
             continue
@@ -163,9 +162,13 @@ def worthNow(port):
         value += tprice
     return round(value,3)
             
+import os
 def getLatestFidelityCsv():
     import fnmatch
     parentdir = "/mnt/c/Users/Zoe/Downloads"
+    if not os.path.exists(parentdir):
+        parentdir = "/mnt/c/Users/pzhang/Downloads"
+
     listOfFiles = os.listdir(parentdir)
     newest = 0
     cfile = None
@@ -176,6 +179,8 @@ def getLatestFidelityCsv():
         tim = os.path.getmtime(fullpath)
         if tim > newest:
             cfile = fullpath
+
+    print("fidelity file: {}".format( cfile))
     os.system("chmod 777 {}".format(cfile) )
     return cfile
 
