@@ -10,7 +10,7 @@ modes = [ 'Volume', 'Price', "C24", "C50", "CAvg", "Avg50", "Var50", "Drops"]
 
 def getModes():
     if getModes.useRandom:
-        return ['r']
+        return ['r'] + modes
     return modes
 getModes.useRandom = False
 

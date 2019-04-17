@@ -64,16 +64,21 @@ def buySellSim(args):
 
         if stocks_owned < buySellSim.tracks:
 
-            buyme = zen.getSortedStocks(idxdate, mode, get=4, typed=typed)
+            buyme = zen.getSortedStocks(idxdate, mode, get=20, typed=typed)
 
             if not buyme :
                 continue
 
             for item in buyme:
-                astock = item[1]
+                astock = item
+                if mode != 'r':
+                    astock = item[1]
+
                 useme = None
-                if mode == 'r':
-                    useme = item[0]
+#                if mode == 'r':
+#                    useme = item[0]
+#                    print("item: {}".format( item))
+#                    raise SystemExit
 
                 if astock not in miniport and stocks_owned < buySellSim.tracks and astock not in skips:
 
@@ -101,8 +106,14 @@ def buySellSim(args):
         current_transcript.append(setTranscript("\tcvalue {} {} on {} ".format(port_change, port_value, idxdate)))
 
     try:
-        port_change, port_value = getPortValue(idxdate, miniport, current_transcript, spend)
-        etfChange = round(zen.getEtfPrice("SPY", idxdate) / zen.getEtfPrice("SPY", startd),3)
+        port_change, port_value = getPortValue(idxdate, miniport, 
+                current_transcript, spend)
+
+        etfEnd = zen.getEtfPrice("SPY", idxdate) 
+        etfStart = zen.getEtfPrice("SPY", startd)
+
+        etfChange = round(etfEnd/etfStart,3)
+
     except Exception as e:
         print ('problem getting cprices: '+ str(e))
         return
@@ -120,7 +131,7 @@ def buySellSim(args):
     try:
         if port_change < lowestValue and ("2018-09" in idxdate):
             lowestValue = port_change
-            msg = "etf change {}".format(etfChange)
+            msg = "etf change {} start {} end {}".format(etfChange, etfStart, etfEnd)
             current_transcript.append(setTranscript(msg))
             msg = "finish on {} change {} value {}".format(idxdate, port_change, port_value)
             current_transcript.append(setTranscript(msg))
@@ -128,7 +139,7 @@ def buySellSim(args):
             savedLow = current_transcript
 
         elif port_change > highestValue and ("2019-01" in idxdate or "2018-12" in idxdate):
-            msg = "etf change {}".format(etfChange)
+            msg = "etf change {} start {} end {}".format(etfChange, etfStart, etfEnd)
             current_transcript.append(setTranscript(msg))
             msg = "finish on {} change {} value {}".format(idxdate, port_change, port_value)
             current_transcript.append(setTranscript(msg))

@@ -9,7 +9,7 @@ import threadprep
 from collections import defaultdict
 import matplotlib.pyplot as plt
 
-#threadprep.getModes.useRandom = True
+threadprep.getModes.useRandom = True
 sell_threader.setTranscript.enabled = False
 sell_threader.buySellSim.tracks = 30
 
@@ -19,7 +19,7 @@ zen.loadSortedEtf("BUY2")
 
 use_q = True
 testpoints = 15
-years = 2
+years = 2.5
 
 # The threader thread pulls an worker from the queue and processes it
 def threader():
@@ -55,15 +55,15 @@ def getColors():
             'orange', 'pink', 'magenta', 'olive', "indigo", "teal", "silver"]
 
 types = ["low", "high", "both"]
-ylist = [i/100 for i in range(55,91,5)]
+ylist = [i/100 for i in range(55,90,5)]
 numy = len(ylist)
 
 #points = [ random.randrange(starti, endi) for tries in range(testpoints) ]
 #print("points : {}".format( points ))
-points = z.getp("{}points".format(years))
+points = z.getp("{}points{}".format(years, testpoints))
 if not points:
     points = [ random.randrange(starti, endi) for tries in range(testpoints) ]
-    z.setp(points, "{}points".format(years))
+    z.setp(points, "{}points{}".format(years, testpoints))
 
 for droppage in ylist:
     for start in points:
@@ -85,7 +85,6 @@ for droppage in ylist:
         zen.getSortedStocks.get = typed
         for mode in threadprep.getModes():
             modeidx = threadprep.getModes().index(mode)
-            print("modeidx : {}".format( modeidx ))
             color = getColors()[modeidx]
             modestr = "{}/{}".format(mode, typed)
             tupp = (droppage, modestr)

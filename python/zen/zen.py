@@ -89,13 +89,13 @@ def loadSortedEtf(etf = None):
     getSortedStocks.cdict = z.getp(loaded)
 loadSortedEtf.etf = "IUSG"
 
-def getSortedStocks(date, mode, typed="low", get=3, reportprob = True):
+def getSortedStocks(date, mode, typed="low", get=10, reportprob = True):
     if mode == "r":
         try:
             return sample(getSortedStocks.ydict[date], get)
         except:
             try:
-                getSortedStocks.ydict = z.getp("ITOT_Y")
+                getSortedStocks.ydict = z.getp("{}_Y".format(loadSortedEtf.etf))
                 return sample(getSortedStocks.ydict[date], get)
             except:
                 print ("problem")
@@ -422,9 +422,8 @@ def whatAboutThese(stocks, count = 40, lowprice = False, sell=False, ht=None):
             try:
                 avgC, probD, avgD, avgG, change, median = getProbSale(astock)
             except Exception as e:
-                print (z.trace(e))
-                print("astock: {}".format( astock))
-                raise SystemExit
+                print("problem with astock: {}".format( astock))
+#                raise SystemExit
                 continue
 
             try:
@@ -624,9 +623,9 @@ def buyl(args):
             exit()
 
 
-#    print ("\netfs")
-#    dscore = whatAboutThese(z.getEtfList(forEtfs=True))
-#    getSortedStocks.highlight_score = dscore
+    print ("\netfs")
+    dscore = whatAboutThese(z.getEtfList(forEtfs=True))
+    getSortedStocks.highlight_score = dscore
     usedate = dated or args.date
 
     for mode in modes:
@@ -637,7 +636,7 @@ def buyl(args):
             msg = colored(msg,"green")
         if modestr not in skips:
             print(msg)
-            stocks = getSortedStocks(usedate, mode, get=9, typed="low")
+            stocks = getSortedStocks(usedate, mode, get="all", typed="low")
             if args.save == modestr:
                 z.setp(stocks, "saved")
             whatAboutThese(stocks, ht=args.ht)
@@ -682,6 +681,7 @@ def sells(args):
     z.getStocks.sells = True
     stocks = portfolio.getPortfolio(aslist = True)
     whatAboutThese(stocks, sell=True)
+    print("stocks : {}".format( len(stocks)))
 
 def getEtfScore(cuttoff):
     etfd = defaultdict(list)
