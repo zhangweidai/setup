@@ -13,13 +13,13 @@ threadprep.getModes.useRandom = True
 sell_threader.setTranscript.enabled = False
 sell_threader.buySellSim.tracks = 30
 
-zen.loadSortedEtf("BUY2")
+zen.loadSortedEtf("IUSG")
 #z.getStocks.devoverride = "ITOT"
 #zen.getSortedStocks.get = "low"
 
 use_q = True
-testpoints = 15
-years = 2.5
+testpoints = 100
+years = 3
 
 # The threader thread pulls an worker from the queue and processes it
 def threader():
@@ -30,13 +30,13 @@ def threader():
 dates = z.getp("dates")
 num_days = len(dates)
 
-starti = dates.index("2013-04-12")
+starti = dates.index("2013-04-16")
 
 ayear = 252
 duration = int (years * ayear)
 
-endi = (num_days-duration)-1
-startd = dates[starti]
+endi = (num_days-duration-80)-1
+startd = dates[starti-80]
 print("startd : {}".format( startd ))
 endd = dates[endi]
 print("endd : {}".format( endd ))
@@ -55,7 +55,7 @@ def getColors():
             'orange', 'pink', 'magenta', 'olive', "indigo", "teal", "silver"]
 
 types = ["low", "high", "both"]
-ylist = [i/100 for i in range(55,90,5)]
+ylist = [i/100 for i in range(45,85,5)]
 numy = len(ylist)
 
 #points = [ random.randrange(starti, endi) for tries in range(testpoints) ]
@@ -128,13 +128,17 @@ print (z.getStocks.devoverride)
 print("testpoints : {}".format( testpoints ))
 print("this etf avg: {}".format( avgetf))
 
+modeScores = dict()
 etfcollector = sell_threader.getEtfCollector()
 etfcollectort = sell_threader.getEtfCollectorT()
 for akey,alist in avgmodedict.items():
     avg = z.avg(alist)
     etfvalue = etfcollector[akey]
     etft = etfcollectort[akey]
-    print("modes: {0:<12} {1:<8} {2:<7}".format( akey, avg, round(etfvalue/etft,3) ))
+    change = round(etfvalue/etft,3)
+    modeScores[akey] = (round(avg-avgetf,3), change)
+    print("modes: {0:<12} {1:<8} {2:<7}".format(akey, avg, change))
+#z.setp(modeScores, "modeScores")
 
 for akey,alist in avgdropdict.items():
     avg = z.avg(alist)

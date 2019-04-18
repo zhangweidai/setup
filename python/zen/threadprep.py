@@ -169,7 +169,9 @@ def doit_2():
 #    print("stocks : {}".format( stocks[-10:]))
 #    print("stocks : {}".format( stocks[:10]))
 #    raise SystemExit
-    for astock in stocks:
+    for idx,astock in enumerate(stocks):
+        if not idx % 100:
+            print("idx : {}".format( idx ))
         try:
             doone(astock[1])
         except Exception as e:
@@ -222,7 +224,7 @@ def genSortedSets():
         doit(etf)
 
 if __name__ == '__main__':
-    doit_buys()
+    doit_2()
     raise SystemExit
 #    genSortedSets()
 

@@ -14,7 +14,7 @@ def getPrice(astock, date = None, openp=False):
         if not date:
             if not getPrice.latest:
                 getPrice.latest = z.getp("latestprices")
-            idx = 0 if openp else 1
+            idx = 1 if openp else 0
             return getPrice.latest[astock][idx]
             
             if not getPrice.today:
@@ -410,10 +410,10 @@ def whatAboutThese(stocks, count = 40, lowprice = False, sell=False, ht=None):
 
             price = 0
             if dated:
-                price = round(getPrice(astock, dated),2)
+                price = round(getPrice(astock, dated),3)
             else:
                 try:
-                    price = round(getPrice(astock),2)
+                    price = round(getPrice(astock),3)
                 except:
                     noprices.append(astock)
                     continue
@@ -613,25 +613,24 @@ def buyl(args):
         import update_history
         import threadprep
         try:
-            threadprep.doit_2()
-#            if update_history.update():
-#            threadprep.genSortedSets()
-#            regenerateLatestPrices()
+            if update_history.update():
+                threadprep.doit_2()
+                regenerateLatestPrices()
+                exit()
 
         except Exception as e:
             z.trace(e)
             exit()
 
-
     print ("\netfs")
     dscore = whatAboutThese(z.getEtfList(forEtfs=True))
     getSortedStocks.highlight_score = dscore
     usedate = dated or args.date
-
+    scores = z.getp("modeScores")
     for mode in modes:
 
         modestr = "{}/low".format(mode)
-        msg = "\nmode : {}\ttyped: {}".format( mode, "low")
+        msg = "\nmode : {}\ttyped: {}   {}   {}".format( mode, "low", scores[modestr][0], scores[modestr][1])
         if modestr in goodmodes:
             msg = colored(msg,"green")
         if modestr not in skips:
@@ -642,7 +641,7 @@ def buyl(args):
             whatAboutThese(stocks, ht=args.ht)
 
         modestr = "{}/high".format(mode)
-        msg = "\nmode : {}\ttyped: {}".format( mode, "high")
+        msg = "\nmode : {}\ttyped: {}   {}   {}".format( mode, "high", scores[modestr][0], scores[modestr][1])
         if modestr in goodmodes:
             msg = colored(msg,"green")
         if modestr not in skips:

@@ -129,7 +129,7 @@ def buySellSim(args):
 
     mutex.acquire()
     try:
-        if port_change < lowestValue and ("2018-09" in idxdate):
+        if port_change < lowestValue and ("2018-09" in idxdate) and mode == "r":
             lowestValue = port_change
             msg = "etf change {} start {} end {}".format(etfChange, etfStart, etfEnd)
             current_transcript.append(setTranscript(msg))
@@ -138,7 +138,7 @@ def buySellSim(args):
             z.setp( miniport, "lowest")
             savedLow = current_transcript
 
-        elif port_change > highestValue and ("2019-01" in idxdate or "2018-12" in idxdate):
+        elif port_change > highestValue and ("2019-01" in idxdate or "2018-12" in idxdate) and mode == "r":
             msg = "etf change {} start {} end {}".format(etfChange, etfStart, etfEnd)
             current_transcript.append(setTranscript(msg))
             msg = "finish on {} change {} value {}".format(idxdate, port_change, port_value)

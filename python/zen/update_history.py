@@ -9,7 +9,9 @@ import zprep
 
 from pandas_datareader import data as pdr
 yf.pdr_override()
+problems = list()
 def getDataFromYahoo(astock, cdate):
+    global problems
     df = None
     try:
         df = pdr.get_data_yahoo([astock], start=cdate)
@@ -17,8 +19,9 @@ def getDataFromYahoo(astock, cdate):
         try:
             df = pdr.get_data_yahoo([astock], start=cdate)
         except Exception as e:
-            z.trace(e)
-            raise SystemExit
+#            z.trace(e)
+            problems.append(astock)
+#            raise SystemExit
             return None
     
     for idx in df.index:
@@ -35,10 +38,14 @@ def getDataFromYahoo(astock, cdate):
 
 def update():
     parentdir = util.getPath("historical")
+    print("parentdir : {}".format( parentdir ))
     listOfFiles = os.listdir(parentdir)
     for entry in listOfFiles:
         astock = os.path.splitext(entry)[0]
+        print("astock : {}".format( astock ))
         path = "{}/{}".format(parentdir,entry)
+#        if "ZS" in path:
+#            print("path : {}".format( path ))
     
         t = os.path.getmtime(path)
         csvdate = datetime.datetime.fromtimestamp(t)
@@ -46,8 +53,11 @@ def update():
         csvmonth = csvdate.month
         ttoday = datetime.date.today().day
         tmonth = datetime.date.today().month
+#        if astock == "ZS":
+#            print("ttoday : {}".format( ttoday ))
+#            print("tmonth : {}".format( tmonth ))
         if csvday >= ttoday and tmonth == csvmonth:
-            return False
+            continue
     
         for row in csv.DictReader(open(path)):
             cdate = row['Date']
@@ -82,8 +92,10 @@ def update():
     return True
 
 if __name__ == '__main__':
-    import sys
-    import dask_help
+#    import sys
+#    import dask_help
+    update()
+    print(problems)
     # use gbuy
 #    try:
 #        if len(sys.argv) > 1:

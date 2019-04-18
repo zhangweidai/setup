@@ -13,6 +13,7 @@ z.listen()
 def setStockDays():
     df = z.getCsv("SPY")
     dates = df["Date"].tolist()
+    print("last date dates : {}".format( dates[-1]))
     z.setp(dates,"dates")
 
 yf.pdr_override()
