@@ -152,10 +152,13 @@ alias god="cds; cd python/zen_dump"
 alias goc="cds; cd python/zen_dump/historical"
 alias gop="cds; cd python/zen_dump/pkl"
 alias ipy="ipython3"
+alias p="ipython3"
 alias python="python3"
 alias ka="killall python3"
 alias checkout="git checkout --"
 alias st2="git status -uno"
+alias buy="py zen.py buy"
+alias buyl="py zen.py buy --date=l"
 #sudo -S true
 set bell-style none
 

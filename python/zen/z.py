@@ -1,6 +1,7 @@
 import os
 import pickle
 import pandas
+from collections import defaultdict
 from functools import lru_cache
 
 def getPath(path, allowmake = True):
@@ -356,6 +357,29 @@ def getConsider():
 
 def getConsider2():
     return {"Janus": ["PAGS","ZTS", "CSGP"]}
+
+def saveEtfPrices():
+    saveEtfPrices.prices = defaultdict(dict)
+    for astock in getEtfList() + ["SPY"]:
+        path = getPath("{}/{}.csv".format(dask_help.convertToDask.directory, astock))
+        for row in csv.DictReader(open(path)):
+            cdate = row['Date']
+            saveEtfPrices.prices[cdate][astock] = float(row['Close'])
+    setp(saveEtfPrices.prices, "etfprices")
+saveEtfPrices.prices = defaultdict(dict)
+
+def getEtfPrice(astock, date):
+    try:
+        return saveEtfPrices.prices[date][astock]
+    except:
+        try:
+            saveEtfPrices()
+            return saveEtfPrices.prices[date][astock]
+        except Exception as e:
+            trace(e)
+            print("problem etf date: {}".format( date))
+            print("astock: {}".format( astock))
+        return None
 
 #removeFromStocks(getCorruptStocks())
 if __name__ == '__main__':

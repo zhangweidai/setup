@@ -14,6 +14,33 @@ from dask import delayed
 #bar.discard(bar[3])
 #print(bar)
 
+import _ctypes
+import timeit
+def di(obj_id):
+    return _ctypes.PyObj_FromPtr(obj_id)
+
+from collections import defaultdict
+dictionary = defaultdict(dict)
+
+#for x in range(10):
+#    for y in range(10):
+#        dictionary[x][y] = []
+#        for z in range(100):
+#            dictionary[x][y].append(z)
+
+def one():
+    dic = dict()
+    for s in range(10):
+        for d in range(100):
+            for m in range(10):
+                try:
+                    dictionary[m][d].append(s)
+                except:
+                    dictionary[m][d] = [s]
+
+                if len(dictionary[m][d]) > 3:
+                    print dictionary[m][d]
+
 from collections import OrderedDict
 from sortedcontainers import SortedSet
 keeping = 10

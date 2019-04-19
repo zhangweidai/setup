@@ -1,13 +1,18 @@
-import z 
-import operator
-from random import sample
-import util
-import dask_help
-from collections import OrderedDict
+from random import sample, randint
+from collections import defaultdict
 from sortedcontainers import SortedSet
+import csv
+import dask_help
+import math
+import statistics
+import os
+import threadprep
+import portfolio
+import util
+import z 
+
 keeping = 40
 discardlocation = int(keeping/2)
-import csv
 
 def getPrice(astock, date = None, openp=False):
     try:
@@ -46,40 +51,6 @@ getPrice.today = None
 getPrice.pdict = None
 getPrice.latest = dict()
 
-def getScore(idxstart, df):
-    minid = 10
-    realstart = idxstart-15
-    dips = 0 
-    gains = 0 
-    for idx in range(realstart, idxstart):
-        bought = df.at[idx,"Close"]
-        now = df.at[idx+1,"Close"]
-        change = now/bought
-        if change < 1:
-            dips += 1-change
-        else:
-            gains += change
-
-    bought = df.at[realstart,"Close"]
-    now = df.at[idxstart,"Close"]
-    change = now/bought
-    s1 = -1
-    if change > 1 and dips:
-        s1 = ((change-1)*100)/dips
-
-    bought = df.at[idxstart-4,"Close"]
-    now = df.at[idxstart-2,"Close"]
-    change = now/bought
-
-    s2 = -1
-    if change < 1:
-        s2 = round((1-change)*gains,3)
-
-    return s1,s2
-
-
-import datetime
-from collections import defaultdict
 
 def loadSortedEtf(etf = None):
     if etf:
@@ -97,8 +68,13 @@ def getSortedStocks(date, mode, typed="low", get=10, reportprob = True):
             try:
                 getSortedStocks.ydict = z.getp("{}_Y".format(loadSortedEtf.etf))
                 return sample(getSortedStocks.ydict[date], get)
-            except:
-                print ("problem")
+            except Exception as e:
+                print ("problem {} ".format(e))
+                print("mode: {}".format( loadSortedEtf.etf))
+                print("mode: {}".format( mode))
+                print("len: {}".format( getSortedStocks.ydict))
+                print("len: {}".format( getSortedStocks.ydict.keys()))
+                print("date: {}".format( date))
                 raise SystemExit
 
     try:
@@ -138,26 +114,10 @@ getSortedStocks.get = "both"
 getSortedStocks.cdict = None
 getSortedStocks.ydict = None
 
-def getEtfPrice(astock, date):
-    try:
-        return saveEtfPrices.prices[date][astock]
-    except:
-        try:
-            saveEtfPrices()
-            return saveEtfPrices.prices[date][astock]
-        except Exception as e:
-            z.trace(e)
-            print("problem etf date: {}".format( date))
-#            print("astock: {}".format( astock))
-        return None
-
-import random
-from random import shuffle
 def getPricedStocks(idxdate, price):
     stocks = z.getStocks()
     minprice = price * 10
     maxprice = (price+1) * 10
-#    shuffle(stocks)
     ret = list()
     for astock in stocks:
         try:
@@ -165,7 +125,7 @@ def getPricedStocks(idxdate, price):
         except:
             pass
 
-        if not cprice or random.randint(3, 6) != 5:
+        if not cprice or randint(3, 6) != 5:
             continue
 
         if minprice < cprice < maxprice:
@@ -248,9 +208,15 @@ def getBounceProb(astock, startd = "2016-07-11"):
 def getDropScore(astock, startd = "2018-07-11", days = 64):
     df = z.getCsv(astock)
     if df is None:
-        return
+        print("astock: {}".format( astock))
+        return "NA"
     dates = df["Date"].tolist()
-    starti = dates.index(startd)
+
+    try:
+        starti = dates.index(startd)
+    except:
+        starti = 0
+
     minc = 10
     for idx in range(starti, len(dates)-days):
         close = df.at[idx + days,"Close"]
@@ -263,19 +229,17 @@ def getDropScore(astock, startd = "2018-07-11", days = 64):
 #z.getStocks.devoverride = "ITOT"
 #print (getPricedStocks("2017-01-11", 3))
 #raise SystemExit
-import statistics
-dated = False
-def getProbSale(astock):
+def getProbSale(astock, dated):
 #    for astock in z.getEtfList():
-    path = z.getPath("csv/{}.csv".format(astock))
+#    path = z.getPath("csv/{}.csv".format(astock))
     findate = None
     startdate = None
     startidx = None
-    if dated:
-        path = z.getPath("historical/{}.csv".format(astock))
-        dates = z.getp("dates")
-        startidx = dates.index(dated)-51
-        finidx = dates.index(dated)
+
+    path = z.getPath("historical/{}.csv".format(astock))
+    dates = z.getp("dates")
+    startidx = dates.index(dated)-51
+    finidx = dates.index(dated)
 
     count = 0
     downs = 0
@@ -283,8 +247,6 @@ def getProbSale(astock):
     avgD = list()
     avgG = list()
     firstopen = None
-    if not dated and not os.path.exists(path):
-        dask_help.historicalToCsv(astock)
 
     if not os.path.exists(path):
         raise SystemExit
@@ -307,6 +269,8 @@ def getProbSale(astock):
 
         if not firstopen:
             firstopen = opend
+#            print("firstopen : {}".format( firstopen ))
+#            print("astock: {}".format( astock))
 
         close = float(row['Close'])
         change = close/opend
@@ -328,30 +292,17 @@ def getProbSale(astock):
 
     avgG = z.avg(avgG)
     probD = round(downs/count,2)
-    change = round(close/firstopen,3)
-#    return avgC, probD, min((avgDM, avgDA)), avgG, change, statistics.median(avgl)
+
+    live = util.getLiveData(astock, key = "price")
+
+    change = None
+    if live:
+        change = round(live/firstopen,3)
+    else:
+        change = round(close/firstopen,3)
+
     return avgC, probD, avgD, avgG, change, statistics.median(avgl)
 
-def saveEtfPrices():
-    saveEtfPrices.prices = defaultdict(dict)
-    for astock in z.getEtfList() + ["SPY"]:
-        path = z.getPath("{}/{}.csv".format(dask_help.convertToDask.directory, astock))
-        for row in csv.DictReader(open(path)):
-            cdate = row['Date']
-            saveEtfPrices.prices[cdate][astock] = float(row['Close'])
-    z.setp(saveEtfPrices.prices, "etfprices")
-saveEtfPrices.prices = defaultdict(dict)
-
-def regenerateHistorical():
-    dask_help.convertToDask.directory = "historical"
-    dask_help.createRollingData.dir = "historicalCalculated"
-
-    for etf in z.getEtfList():
-        print("etf : {}".format( etf ))
-        z.getStocks.devoverride = etf
-        z.getStocks(reset=True)
-        setSortedDict(usepkl = False)
-    print ("you can now use more_strat with setSortedDict")
 
 def setVolumeRanking():
     label = ""
@@ -386,17 +337,17 @@ def poolQuery():
 
 
 def getCol():
-    #        stock  $price avgC   median probD   avgD  avgG   drop1  drop2  change  live   letfs   recov   oschg   mcchg   score
-    return " {0:<5} {1:>7} {2:>7} {3:>6} {4:>4} {5:>7} {6:>7} {7:>8} {8:>8} {9:>7} {10:>7} {11:>3} {12:>7} {13:>9} {14:>7} {15:<5}"
+    #        stock  $price avgC   median probD   avgD  avgG   d0     d1     d2     change  live   letfs   recov   mcchg   score
+    return " {0:<5} {1:>7} {2:>7} {3:>6} {4:>4} {5:>7} {6:>7} {7:>8} {8:>8} {9:>8} {10:>7} {11:>7} {12:>3} {13:>7} {14:>7} {15:<5}"
 
-def whatAboutThese(stocks, count = 40, lowprice = False, sell=False, ht=None):
-    print(getCol().format("stock", "price", "avgC", "median", "probD", "avgD ", "avgG " ,"d1 ", "d2 ", 
-                "change ", "live ", "etf ", "recov  ", "oschg  ", "mcchg  ", "dscore   "))
+def whatAboutThese(stocks, count = 40, lowprice = False, sell=False, ht=None, dated = None):
+    print(getCol().format("stock", "price", "avgC", "median", "probD", "avgD ", "avgG ", "d0" ,"d1 ", "d2 ", "change ", "live ", "etf ", "recov  ", "oschg  ", "mcchg  ", "dscore   "))
 
     sorts = SortedSet()
     sells = list()
     if not stocks:
         return
+
     noprices = list()
     avgChanges = list()
     avgchanget = list()
@@ -420,8 +371,9 @@ def whatAboutThese(stocks, count = 40, lowprice = False, sell=False, ht=None):
 
             cprice = price
             try:
-                avgC, probD, avgD, avgG, change, median = getProbSale(astock)
+                avgC, probD, avgD, avgG, change, median = getProbSale(astock, dated)
             except Exception as e:
+                z.trace(e)
                 print("problem with astock: {}".format( astock))
 #                raise SystemExit
                 continue
@@ -432,11 +384,20 @@ def whatAboutThese(stocks, count = 40, lowprice = False, sell=False, ht=None):
                 pass
 
             try:
-                d1 = getDropScore(astock, "2018-01-12", 43)
-                d2 = getDropScore(astock)
-                if not d2:
-                    continue
+                d0 = getDropScore(astock, "2013-03-19", 30)
             except Exception as e:
+                print("e: {}".format( e))
+                d0 = "NA"
+
+            try:
+                d1 = getDropScore(astock, "2017-05-25", 45)
+            except Exception as e:
+                d1 = "NA"
+
+            try:
+                d2 = getDropScore(astock)
+            except Exception as e:
+                print("problem with astock: {}".format( astock))
                 continue
 
             live = "NA"
@@ -454,7 +415,23 @@ def whatAboutThese(stocks, count = 40, lowprice = False, sell=False, ht=None):
                 if (cprice / basis) < .8:
                     sells.append(astock)
 
-            dscore = getDisplaySortValue(probD,avgC,avgD, live, d2, astock, change)
+            try:
+                avgds = z.avg([d0,d1,d2])
+            except:
+                try:
+                    avgds = z.avg([d1,d2])
+                except:
+                    avgds = d2
+
+            try:
+                dscore = getDisplaySortValue(probD,avgC, avgD, live, avgds, astock, change)
+            except:
+                print("live: {}".format( live))
+                print("avgds: {}".format( avgds))
+                print("avgD: {}".format( avgD))
+                print("avgC: {}".format( avgC))
+                print("probD: {}".format( probD))
+
             if dscore > highdscore:
                 highdscore = dscore
 
@@ -478,8 +455,8 @@ def whatAboutThese(stocks, count = 40, lowprice = False, sell=False, ht=None):
                 mcchg = z.percentage(mcchg)
             else:
                 mcchg = "NA"
-            if not oschg:
-                oschg = "NA"
+#            if not oschg:
+#                oschg = "NA"
 
             etfc = util.getEtfQualifications(astock, count=True)
             try:
@@ -489,13 +466,13 @@ def whatAboutThese(stocks, count = 40, lowprice = False, sell=False, ht=None):
                     probD, 
                     z.percentage(avgD),
                     z.percentage(avgG),
+                    z.percentage(d0),
                     z.percentage(d1),
                     z.percentage(d2),
                     z.percentage(change),
                     z.percentage(live),
                     etfc, 
                     recov,
-                    oschg,
                     mcchg,
                     ddscore)
             except:
@@ -523,38 +500,13 @@ def whatAboutThese(stocks, count = 40, lowprice = False, sell=False, ht=None):
 
     return highdscore
 
-import math
 def getDisplaySortValue(probD,avgC,avgD,live, dropScore, astock, change):
     if live == "NA":
         live = 1
     ret = round((((avgC**math.e + dropScore + (change/3)) / (live+avgD+probD))),2)
     return ret
 
-def getVolumeRanking(astock = None):
-    label = ""
-    if type(z.getStocks.devoverride) is str:
-        label = z.getStocks.devoverride
-
-    if type(astock) is str: 
-        try:
-            return setVolumeRanking.latestvolumedic[astock]
-        except:
-            setVolumeRanking.latestvolumedic = z.getp("{}latestvolumedic".format(label))
-            try:
-                return setVolumeRanking.latestvolumedic[astock]
-            except:
-                setVolumeRanking()
-            try:
-                return setVolumeRanking.latestvolumedic[astock]
-            except:
-#                print("no volume data for astock: {}".format( astock))
-                pass
-    elif type(astock) is int:
-        latestvolume = z.getp("{}latestvolume".format(label))
-        whatAboutThese(latestvolume, count=astock)
-
 cats = ["Price", "AvgC", "ProbD", "Drop", "Volume", "Change", "C50"]
-import os
 def longlists(etf, date):
     print ("long lists")
     z.getStocks.devoverride = etf
@@ -593,25 +545,13 @@ def longlists(etf, date):
     print ("written {}cdics".format(etf))
     z.setp(cdics, "{}cdics".format(etf))
 
-def yesterday():
-    return str(datetime.date.today() - datetime.timedelta(days=1))
-
 def today(idx = 1):
     dates = z.getp("dates")
     return dates[-1 * idx]
-#    return str(datetime.date.today())
 
-def buyl(args):
-#    dask_help.convertToDask.directory = "csv"
-#    dask_help.createRollingData.dir = "csvCalculated"
-
-#    if z.getStocks.devoverride == "IUSG":
-#        z.getStocks.extras = True
-#        z.getStocks.sells = True
-#
+def buyl(args, dated):
     if args.main == 'gbuy':
         import update_history
-        import threadprep
         try:
             if update_history.update():
                 threadprep.doit_2()
@@ -623,7 +563,7 @@ def buyl(args):
             exit()
 
     print ("\netfs")
-    dscore = whatAboutThese(z.getEtfList(forEtfs=True))
+    dscore = whatAboutThese(z.getEtfList(forEtfs=True), dated=dated)
     getSortedStocks.highlight_score = dscore
     usedate = dated or args.date
     scores = z.getp("modeScores")
@@ -638,7 +578,7 @@ def buyl(args):
             stocks = getSortedStocks(usedate, mode, get="all", typed="low")
             if args.save == modestr:
                 z.setp(stocks, "saved")
-            whatAboutThese(stocks, ht=args.ht)
+            whatAboutThese(stocks, ht=args.ht, dated=dated)
 
         modestr = "{}/high".format(mode)
         msg = "\nmode : {}\ttyped: {}   {}   {}".format( mode, "high", scores[modestr][0], scores[modestr][1])
@@ -649,8 +589,7 @@ def buyl(args):
             stocks = getSortedStocks(usedate, mode, get="all", typed="high")
             if args.save == modestr:
                 z.setp(stocks, "saved")
-            whatAboutThese(stocks, ht=args.ht)
-#    buyl2()
+            whatAboutThese(stocks, ht=args.ht, dated=dated)
 goodmodes = ["Volume/low", "Price/low", "Var50/high", "Drops/high"]
 skips = ["Price/high", "Var50/low", "Drops/low", "Volume/high"]
 
@@ -668,8 +607,6 @@ def buyl2():
     whatAboutThese(sets[:7])
 
 
-
-import portfolio
 def generateSellPrice():
     stocks = portfolio.getPortfolio(aslist=True)
     sell_list = z.getp("sell_list")
@@ -679,7 +616,7 @@ def generateSellPrice():
 def sells(args):
     z.getStocks.sells = True
     stocks = portfolio.getPortfolio(aslist = True)
-    whatAboutThese(stocks, sell=True)
+    whatAboutThese(stocks, sell=True, dated=args.date)
     print("stocks : {}".format( len(stocks)))
 
 def getEtfScore(cuttoff):
@@ -870,11 +807,16 @@ def getStats(astock, idx=1):
     return 0,0
 getStats.outdic = dict()
 
+def getLastDate():
+    path = z.getPath("historical/IVV.csv")
+    for row in csv.DictReader(open(path)):
+        date = row['Date']
+    return date
+
 if __name__ == '__main__':
     import argparse
     import sys
     import zprep
-    import threadprep
     from termcolor import colored
 
 #    diffOuts()
@@ -914,9 +856,9 @@ if __name__ == '__main__':
     if args.mode != "default":
         modes = [args.mode]
 
-    z.getStocks.extras = z.getStocks.devoverride == "IUSG"
-    if args.date != today():
-        dated = args.date
+#    z.getStocks.extras = z.getStocks.devoverride == "IUSG"
+    if args.date == "l":
+        args.date = getLastDate()
  
     print("date : {}".format( args.date ))
     args.catcount = int(args.catcount)
@@ -941,15 +883,13 @@ if __name__ == '__main__':
                 lists = z.getp(name)
                 for cat in catl:
                     print ("{} High".format(cat))
-                    whatAboutThese(lists[cat][-1 * args.catcount:])
+                    whatAboutThese(lists[cat][-1 * args.catcount:], 
+                            dated = args.date)
                     print ("{} Low".format(cat))
-                    whatAboutThese(lists[cat][:args.catcount])
+                    whatAboutThese(lists[cat][:args.catcount], 
+                            dated = args.date)
 
             elif "wab" in args.main:
-                if args.main[0] == 'y':
-                    args.date = yesterday()
-                else:
-                    args.date = today()
 
                 stocks = [args.s.upper()]
                 if args.s == "wab":
@@ -958,7 +898,7 @@ if __name__ == '__main__':
                 if args.s == "highest":
                     stocks = z.getp("highest").keys()
                     print("stocks : {}".format( stocks ))
-                whatAboutThese(stocks)
+                whatAboutThese(stocks, dated=args.date)
 
 
             # what to buy tomorrow
@@ -968,14 +908,8 @@ if __name__ == '__main__':
             # generate buy list which is ISUG + EXTRAS
             if "buy" in args.main or args.main == "buy" or args.main == 'gbuy':
 
-                if args.main[0] == 'y':
-                    args.date = yesterday()
-                else:
-                    args.date = today()
-
                 loadSortedEtf("BUY2")
-                buyl(args)
-
+                buyl(args, args.date)
 
             # generate buy list which is ISUG + EXTRAS
             if args.main == "sell":
