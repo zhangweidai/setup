@@ -1,4 +1,5 @@
 from random import sample, randint
+from functools import lru_cache
 from collections import defaultdict
 from sortedcontainers import SortedSet
 import csv
@@ -11,41 +12,58 @@ import portfolio
 import util
 import z 
 
-keeping = 40
+keeping = 60
 discardlocation = int(keeping/2)
 
-def getPrice(astock, date = None, openp=False):
+def getPriceFromCsv(astock, date = None, field="Open"):
+    path = z.getPath("historical/{}.csv".format(astock))
+    if not os.path.exists(path):
+        path = z.getPath("ETF/{}.csv".format(astock))
+
     try:
-        if not date:
-            if not getPrice.latest:
-                getPrice.latest = z.getp("latestprices")
-            idx = 1 if openp else 0
-            return getPrice.latest[astock][idx]
-            
-            if not getPrice.today:
-                dates = z.getp("dates")
-                getPrice.today = dates[-1]
-            date = getPrice.today
+        for row in csv.DictReader(open(path)):
+            cdate = row['Date']
+            if cdate == date:
+                return float(row[field])
+    except:
+        return None
+    
+
+def getPrice(astock, date = None, openp=False):
+
+    if not date or date == today():
+        if not getPrice.latest:
+            getPrice.latest = z.getp("latestprices")
+        idx = 1 if openp else 0
+        return getPrice.latest[astock][idx]
+        
+        if not getPrice.today:
+            dates = z.getp("dates")
+            getPrice.today = dates[-1]
+        date = getPrice.today
+
+    if openp:
+        print("lookin up astock: {}".format( astock))
+        print("date: {}".format( date))
+#        import traceback
+#        traceback.print_stack()
+#        raise SystemExit
+        return getPriceFromCsv(astock,date)
+    
+    try:
+        return getPrice.pdict[astock][date]
+    except Exception as e:
         try:
+            name= "{}_P".format(loadSortedEtf.etf)
+            getPrice.pdict = z.getp("{}_P".format(loadSortedEtf.etf))
             return getPrice.pdict[astock][date]
         except:
-            try:
-                getPrice.pdict = z.getp("{}_P".format(loadSortedEtf.etf))
-                return getPrice.pdict[astock][date]
-            except:
-                getPrice.pdict = z.getp("ITOT_P2")
-                return getPrice.pdict[astock][date]
-    except Exception as e:
-#        z.trace(e)
-#        print("astock: {}".format( astock))
-#        print("date : {}".format( date ))
-#        print (loadSortedEtf.etf)
-#        raise SystemExit
+            return getPriceFromCsv(astock, date, 'Close')
 
-        path = z.getPath("historical/{}.csv".format(astock))
-        for row in csv.DictReader(open(path)):
-            closep = float(row['Close'])
-        return closep
+    print("date : {}".format( date ))
+    print("astock: {}".format( astock))
+    raise SystemExit
+
 
 getPrice.today = None
 getPrice.pdict = None
@@ -57,7 +75,7 @@ def loadSortedEtf(etf = None):
         loadSortedEtf.etf = etf
     loaded = "{}_SS".format(loadSortedEtf.etf)
     print("loaded : {}".format( loaded ))
-    getSortedStocks.cdict = z.getp(loaded)
+    getSortedStocks.cdict = z.getp(loaded)  
 loadSortedEtf.etf = "IUSG"
 
 def getSortedStocks(date, mode, typed="low", get=10, reportprob = True):
@@ -140,24 +158,6 @@ def getPricedStocks(idxdate, price):
     return None
 #    raise SystemExit
 
-def getLatestPrices(astock, force=False):
-    try:
-        getPrice.latest = z.getp("latestprices")
-        if getPrice.latest and astock in getPrice.latest:
-            return
-    except:
-        pass
-
-    if not force:
-        return
-
-    if getLatestPrices.done:
-        return
-
-    getLatestPrices.done = True
-    regenerateLatestPrices()
-getLatestPrices.done = False            
-
 def regenerateLatestPrices():
 #    print ("regenerating latest prices")
     getPrice.latest = dict()
@@ -170,8 +170,14 @@ def regenerateLatestPrices():
         astock = os.path.splitext(entry)[0]
         getPrice.latest[astock] = (float(row['Close']), float(row['Open']))
 
-    print (len(z.getStocks("ITOT", reset=True)))
-    print (len(getPrice.latest))
+    path = z.getPath("ETF")
+    listOfFiles = os.listdir(path)
+    for entry in listOfFiles:  
+        cpath = "{}/{}".format(path, entry)
+        for row in csv.DictReader(open(cpath)):
+            pass
+        astock = os.path.splitext(entry)[0]
+        getPrice.latest[astock] = (float(row['Close']), float(row['Open']))
 
     z.setp(getPrice.latest, "latestprices")
 
@@ -206,10 +212,15 @@ def getBounceProb(astock, startd = "2016-07-11"):
             total.append(round(change,4))
 
 def getDropScore(astock, startd = "2018-07-11", days = 64):
+    try:
+        return getDropScore.cache[astock][startd]
+    except:
+        pass
+
+    recovery = -1
     df = z.getCsv(astock)
     if df is None:
-        print("astock: {}".format( astock))
-        return "NA"
+        return "NA", recovery
     dates = df["Date"].tolist()
 
     try:
@@ -218,13 +229,37 @@ def getDropScore(astock, startd = "2018-07-11", days = 64):
         starti = 0
 
     minc = 10
+    minp = None
+    dayc = 0
+    lastrecovday = None
+    recovPrice = None
     for idx in range(starti, len(dates)-days):
         close = df.at[idx + days,"Close"]
         opend = df.at[idx,"Open"]
         change = close/opend
         if change < minc:
             minc = change
-    return round(minc,4)
+            minp = close
+            dayc = 0
+            recovPrice = opend
+            recovery = -1
+        else:
+            dayc += 1
+
+            if recovPrice and close > recovPrice :
+                recovery = dayc
+                lastrecovday = df.at[idx, "Date"]
+                recovPrice = None
+
+    if minc > 1.00:
+        return round(minc,4), "WOW"
+
+    if recovery < 0:
+        recovery = z.percentage(close / recovPrice,1)
+
+    getDropScore.cache[astock][startd] = (round(minc,4), recovery)
+    return round(minc,4), recovery
+
 
 #z.getStocks.devoverride = "ITOT"
 #print (getPricedStocks("2017-01-11", 3))
@@ -237,6 +272,8 @@ def getProbSale(astock, dated):
     startidx = None
 
     path = z.getPath("historical/{}.csv".format(astock))
+    if not os.path.exists(path):
+        path = z.getPath("ETF/{}.csv".format(astock))
     dates = z.getp("dates")
     startidx = dates.index(dated)-51
     finidx = dates.index(dated)
@@ -249,6 +286,7 @@ def getProbSale(astock, dated):
     firstopen = None
 
     if not os.path.exists(path):
+        print("DOES NOT EXIST: {}".format( path))
         raise SystemExit
 
     for row in csv.DictReader(open(path)):
@@ -290,7 +328,7 @@ def getProbSale(astock, dated):
     avgC = z.avg(avgl, p=5)
     avgD = z.avg(avgD)
 
-    avgG = z.avg(avgG)
+#    avgGs = z.avg(avgG)
     probD = round(downs/count,2)
 
     live = util.getLiveData(astock, key = "price")
@@ -301,7 +339,7 @@ def getProbSale(astock, dated):
     else:
         change = round(close/firstopen,3)
 
-    return avgC, probD, avgD, avgG, change, statistics.median(avgl)
+    return avgC, probD, avgD, statistics.median(avgG), change, statistics.median(avgl)
 
 
 def setVolumeRanking():
@@ -335,163 +373,218 @@ def poolQuery():
         print (len(cmode))
         
 
+skipss = ['CVET']
+def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, lowprice = False, sell=False, ht=None, dated = None):
+
+    dates = z.getp("dates")
+    astock = value
+
+    if type(value) is tuple:
+        astock = value[1]
+
+    if astock in skipss:
+        return
+
+    o3price = 1
+    oprice = 1
+    price = 0
+
+    try:
+        if dated:
+            price = round(getPrice(astock, dated),3)
+            oprice = round(getPrice(astock, dated, openp = True),3)
+            idx4 = dates.index(dated)-4
+            o3price = round(getPrice(astock, dates[idx4]),3)
+        else:
+            try:
+                price = round(getPrice(astock),3)
+                oprice = round(getPrice(astock, openp = True),3)
+                o3price = round(getPrice(astock,  dates[-4]),3)
+            except:
+                noprices.append(astock)
+                return
+    except Exception as e:
+        z.trace(e)
+        print("dated: {}".format( dated))
+        print("astock : {}".format( astock ))
+        raise SystemExit
+        return
+
+    chg3 = None
+    chg1 = None
+    cprice = price
+
+    try:
+        avgC, probD, avgD, avgG, chgT, median = getProbSale(astock, dated)
+    except Exception as e:
+        z.trace(e)
+        print("problem with astock: {}".format( astock))
+        return
+
+    try:
+        beta, pe, mcchg = getChangeStats(astock)
+    except:
+        pass
+
+    recov = None
+
+    try:
+        d0, temp = getDropScore(astock, "2013-03-19", 30)
+    except Exception as e:
+        z.trace(e)
+        print("probleme: {}".format( e))
+        d0 = "NA"
+        raise SystemExit
+
+    try:
+        d1, recov = getDropScore(astock, "2017-05-25", 45)
+    except Exception as e:
+        d1 = "NA"
+
+    try:
+        d2, temp = getDropScore(astock)
+    except Exception as e:
+        print("problem with astock: {}".format( astock))
+        return
+
+    live = "NA"
+    try:
+        live = util.getLiveChange(astock)
+        if not live:
+            live = "NA"
+            chg1 = z.percentage(price/oprice,1)
+            chg3 = z.percentage(price/o3price,1)
+        else:
+            cprice = live * price
+            chg1 = z.percentage(cprice/oprice,1)
+            chg3 = z.percentage(cprice/o3price,1)
+
+    except Exception as e:
+        print("astock: {}".format( astock))
+        z.trace(e)
+        raise SystemExit
+        pass
+
+    if sell:
+        basis = portfolio.getBasis(astock)
+        if (cprice / basis) < .8:
+            sellsl.append(astock)
+
+    try:
+        avgds = z.avg([d0,d1,d2])
+    except:
+        try:
+            avgds = z.avg([d1,d2])
+        except:
+            avgds = d2
+
+    try:
+        dscore = getDisplaySortValue(probD,avgC, avgD, live, avgds, astock, chgT)
+    except:
+        print("live: {}".format( live))
+        print("avgds: {}".format( avgds))
+        print("avgD: {}".format( avgD))
+        print("avgC: {}".format( avgC))
+        print("probD: {}".format( probD))
+        return
+
+    ddscore = dscore
+    if getSortedStocks.highlight_score and dscore >= getSortedStocks.highlight_score:
+        ddscore = colored(ddscore, "green")  
+
+#    if d2 > 1.00:
+#        recov = "WOW"
+#    elif avgC > 1.00:
+#        recov = round(d2/(avgC-1.0),1)
+
+    avgChanges.append(avgC)
+    avgchanget.append(chgT)
+
+    if mcchg:
+        mcchg = z.percentage(mcchg)
+    else:
+        mcchg = "NA"
+
+    if type(beta) == float:
+        beta = round(beta,2)
+    else:
+        beta = "NA"
+        
+    if type(pe) == float:
+        pe = round(pe,1)
+    else:
+        pe = "NA"
+
+
+    etfc = util.getEtfQualifications(astock, count=True)
+
+    try:
+        if astock in myportlist:
+            astock = "*{}".format(astock)
+        else:
+            astock = " {}".format(astock)
+    except:
+        pass
+    try:
+        msg = getCol().format(astock, price, 
+            z.percentage(avgC, accurate=2), 
+            z.percentage(median),
+            probD, 
+            z.percentage(avgD),
+            z.percentage(avgG),
+            z.percentage(d0),
+            z.percentage(d1),
+            z.percentage(d2),
+            z.percentage(chgT),
+            z.percentage(chg1),
+            z.percentage(chg3),
+            z.percentage(live),
+            etfc, 
+            recov,
+            mcchg,
+            beta,
+            pe,
+            ddscore)
+    except:
+        return
+
+    sorts.add((dscore,msg))
+    return dscore
 
 def getCol():
-    #        stock  $price avgC   median probD   avgD  avgG   d0     d1     d2     change  live   letfs   recov   mcchg   score
-    return " {0:<5} {1:>7} {2:>7} {3:>6} {4:>4} {5:>7} {6:>7} {7:>8} {8:>8} {9:>8} {10:>7} {11:>7} {12:>3} {13:>7} {14:>7} {15:<5}"
+    #        astock $price avgC   median probD  avgD  avgG    d0     d1     d2     
+    return " {0:<6} {1:>7} {2:>7} {3:>6} {4:>4} {5:>7} {6:>7} {7:>8} {8:>8} {9:>8} "\
+           " {10:>7} {11:>6} {12:>6} {13:>7} {14:>4} {15:>7} {16:>7} {17:>5} {18:>6} {19:<5}"
+           # chgT    chg1    chg3    live    etfc    recov   mcchg   beta    pe      ddscore
 
-def whatAboutThese(stocks, count = 40, lowprice = False, sell=False, ht=None, dated = None):
-    print(getCol().format("stock", "price", "avgC", "median", "probD", "avgD ", "avgG ", "d0" ,"d1 ", "d2 ", "change ", "live ", "etf ", "recov  ", "oschg  ", "mcchg  ", "dscore   "))
+def whatAboutThese(stocks, lowprice = False, sell=False, ht=None, dated = None):
+    print(getCol().format("stock", "price", "avgC", "median", "probD", "avgD ", "avgG ", "d0" ,"d1 ", "d2 ", "chgT ", "chg1", "chg3", "live ", "etf ", "recov  ", "mcchg  ", "beta  ", "pe  ", "d"))
 
-    sorts = SortedSet()
-    sells = list()
     if not stocks:
         return
 
+    sorts = SortedSet()
+    sellsl = list()
     noprices = list()
     avgChanges = list()
     avgchanget = list()
     highdscore = 0
-    for i,value in enumerate(stocks):
 
-        astock = value
-        try:
-            if type(value) is tuple:
-                astock = value[1]
-
-            price = 0
-            if dated:
-                price = round(getPrice(astock, dated),3)
-            else:
-                try:
-                    price = round(getPrice(astock),3)
-                except:
-                    noprices.append(astock)
-                    continue
-
-            cprice = price
-            try:
-                avgC, probD, avgD, avgG, change, median = getProbSale(astock, dated)
-            except Exception as e:
-                z.trace(e)
-                print("problem with astock: {}".format( astock))
-#                raise SystemExit
-                continue
-
-            try:
-                oschg, mcchg = getChangeStats(astock)
-            except:
-                pass
-
-            try:
-                d0 = getDropScore(astock, "2013-03-19", 30)
-            except Exception as e:
-                print("e: {}".format( e))
-                d0 = "NA"
-
-            try:
-                d1 = getDropScore(astock, "2017-05-25", 45)
-            except Exception as e:
-                d1 = "NA"
-
-            try:
-                d2 = getDropScore(astock)
-            except Exception as e:
-                print("problem with astock: {}".format( astock))
-                continue
-
-            live = "NA"
-            try:
-                live = util.getLiveChange(astock)
-                if not live:
-                    live = "NA"
-                else:
-                    cprice = live * price
-            except Exception as e:
-                pass
-
-            if sell:
-                basis = portfolio.getBasis(astock)
-                if (cprice / basis) < .8:
-                    sells.append(astock)
-
-            try:
-                avgds = z.avg([d0,d1,d2])
-            except:
-                try:
-                    avgds = z.avg([d1,d2])
-                except:
-                    avgds = d2
-
-            try:
-                dscore = getDisplaySortValue(probD,avgC, avgD, live, avgds, astock, change)
-            except:
-                print("live: {}".format( live))
-                print("avgds: {}".format( avgds))
-                print("avgD: {}".format( avgD))
-                print("avgC: {}".format( avgC))
-                print("probD: {}".format( probD))
-
-            if dscore > highdscore:
-                highdscore = dscore
-
-            ddscore = dscore
-            if getSortedStocks.highlight_score and dscore >= getSortedStocks.highlight_score:
-                ddscore = colored(ddscore, "green")  
-
-            if ht and dscore < float(ht):
-                continue
-
-            recov = "NA"
-            if d2 > 1.00:
-                recov = "WOW"
-            elif avgC > 1.00:
-                recov = round(d2/(avgC-1.0),1)
-
-            avgChanges.append(avgC)
-            avgchanget.append(change)
-
-            if mcchg:
-                mcchg = z.percentage(mcchg)
-            else:
-                mcchg = "NA"
-#            if not oschg:
-#                oschg = "NA"
-
-            etfc = util.getEtfQualifications(astock, count=True)
-            try:
-                msg = getCol().format(astock, price, 
-                    z.percentage(avgC, accurate=True), 
-                    z.percentage(median),
-                    probD, 
-                    z.percentage(avgD),
-                    z.percentage(avgG),
-                    z.percentage(d0),
-                    z.percentage(d1),
-                    z.percentage(d2),
-                    z.percentage(change),
-                    z.percentage(live),
-                    etfc, 
-                    recov,
-                    mcchg,
-                    ddscore)
-            except:
-                continue
-            sorts.add((dscore,msg))
-
-        except Exception as e:
-            print (z.trace(e))
-            raise SystemExit
-            continue
+    for idx, value in enumerate(stocks):
+        dscore = whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl,
+                lowprice = lowprice, sell=sell, dated = dated)
+        if dscore and dscore > highdscore:
+            highdscore = dscore
 
     for astock in reversed(sorts):
         print(astock[1])
 
     if noprices:
         print("noprices: {}".format( noprices))
+
     if sell:
-        print("sells")
-        print(sells)
+        print("sellsl")
+        print(sellsl)
 
     if avgChanges:
         total = z.avgp(avgchanget)
@@ -512,12 +605,13 @@ def longlists(etf, date):
     z.getStocks.devoverride = etf
     z.getStocks.extras = (etf == "IUSG")
 
-    stocks = z.getStocks(etf, reset=True)
+#    stocks = z.getStocks(etf, reset=True)
+    stocks = z.getp("ITOT_total_mcsorted")
     cdics = defaultdict(SortedSet)
     print("stocks: {}".format( len(stocks)))
 
     for astock in stocks:
-        path = z.getPath("{}/{}.csv".format(dask_help.createRollingData.dir, astock))
+        path = z.getPath("historical/{}.csv".format(astock))
 
         if not os.path.exists(path):
             print("problem with : {}".format( path ))
@@ -545,16 +639,32 @@ def longlists(etf, date):
     print ("written {}cdics".format(etf))
     z.setp(cdics, "{}cdics".format(etf))
 
+@lru_cache(maxsize=1)
 def today(idx = 1):
     dates = z.getp("dates")
     return dates[-1 * idx]
+
+
+def whatAboutThisMode(mode, typed, usedate, dated):
+    scores = z.getp("modeScores")
+    modestr = "{}/{}".format(mode, typed)
+    msg = "\nmode : {}\ttyped: {}   {}   {}   {}".format( mode, typed, scores[modestr][0], scores[modestr][1], usedate)
+    if modestr in goodmodes:
+        msg = colored(msg,"green")
+    if modestr not in skips:
+        print(msg)
+        stocks = getSortedStocks(usedate, mode, get="all", typed=typed)
+#        if args.save == modestr:
+#            z.setp(stocks, "saved")
+        whatAboutThese(stocks, dated=dated)
+
 
 def buyl(args, dated):
     if args.main == 'gbuy':
         import update_history
         try:
             if update_history.update():
-                threadprep.doit_2()
+                threadprep.regenerateBUY()
                 regenerateLatestPrices()
                 exit()
 
@@ -565,31 +675,19 @@ def buyl(args, dated):
     print ("\netfs")
     dscore = whatAboutThese(z.getEtfList(forEtfs=True), dated=dated)
     getSortedStocks.highlight_score = dscore
+    
+    rankstock = z.getp("rankstock")
+    whatAboutThese(rankstock, dated=dated)
+
+    rankstock = z.getp("ranketf")
+    whatAboutThese(rankstock, dated=dated)
+
     usedate = dated or args.date
-    scores = z.getp("modeScores")
     for mode in modes:
+        whatAboutThisMode(mode, "low", usedate, dated)
+        whatAboutThisMode(mode, "high", usedate, dated)
 
-        modestr = "{}/low".format(mode)
-        msg = "\nmode : {}\ttyped: {}   {}   {}".format( mode, "low", scores[modestr][0], scores[modestr][1])
-        if modestr in goodmodes:
-            msg = colored(msg,"green")
-        if modestr not in skips:
-            print(msg)
-            stocks = getSortedStocks(usedate, mode, get="all", typed="low")
-            if args.save == modestr:
-                z.setp(stocks, "saved")
-            whatAboutThese(stocks, ht=args.ht, dated=dated)
 
-        modestr = "{}/high".format(mode)
-        msg = "\nmode : {}\ttyped: {}   {}   {}".format( mode, "high", scores[modestr][0], scores[modestr][1])
-        if modestr in goodmodes:
-            msg = colored(msg,"green")
-        if modestr not in skips:
-            print(msg)
-            stocks = getSortedStocks(usedate, mode, get="all", typed="high")
-            if args.save == modestr:
-                z.setp(stocks, "saved")
-            whatAboutThese(stocks, ht=args.ht, dated=dated)
 goodmodes = ["Volume/low", "Price/low", "Var50/high", "Drops/high"]
 skips = ["Price/high", "Var50/low", "Drops/low", "Volume/high"]
 
@@ -766,19 +864,19 @@ def diffOuts():
     ossets = SortedSet()
     mcsets = SortedSet()
     mcdiff = dict()
+    # out1dict is the newer one
     for astock, values in out1dic.items():
-        changes = round( out2dic[astock][0]/ values[0] ,6)
-        changem = round( out2dic[astock][2]/ values[2] ,6)
-        mcdiff[astock] = (changes,changem)
+        changem = round( values[1]/out2dic[astock][1], 6)
+#        if changem == 1:
+#            changem = round( values[2]/out2dic[astock][2], 6)
+        mcdiff[astock] = (values[3], values[4], changem)
         mcsets.add((changem,astock))
-        ossets.add((changes,astock))
 #    print(ossets[-10:])
 #    print(ossets[:10])
 #    print(mcsets[-10:])
 #    print(mcsets[:10])
     z.setp(mcdiff, "mcdiff")
     z.setp(mcsets, "mcsets")
-    z.setp(ossets, "ossets")
 
 
 def getChangeStats(astock, idx=1):
@@ -790,7 +888,7 @@ def getChangeStats(astock, idx=1):
             return getChangeStats.outdic[astock]
         except:
             pass
-    return None, None
+    return None, None, None
 
 
 def getStats(astock, idx=1):
@@ -813,14 +911,46 @@ def getLastDate():
         date = row['Date']
     return date
 
+@lru_cache(maxsize=1)
+def getEtfFeeDic():
+    path = z.getPath("ProductScreener.csv")
+    ret = dict()
+    try:
+        for row in csv.DictReader(open(path)):
+            try:
+                ret[row["Ticker"]] = row['Fee1']
+            except:
+                pass
+    except:
+        pass
+    return ret
+
+
+def getLongEtfList():
+    path = z.getPath("ProductScreener.csv")
+    ret = list()
+    try:
+        for row in csv.DictReader(open(path)):
+            try:
+                ret.append(row['Ticker'])
+            except:
+                pass
+    except:
+        pass
+    return ret
+
 if __name__ == '__main__':
     import argparse
     import sys
     import zprep
     from termcolor import colored
 
-#    diffOuts()
-#    mcchg = getChangeStats("WTW")
+    getDropScore.cache = z.getp("dropcache")
+    if getDropScore.cache is None:
+        getDropScore.cache = defaultdict(dict)
+
+#    raise SystemExit
+#    mcchg = getChangeStats("AAPL")
 #    print(mcchg )
 #    raise SystemExit
 #    poolQuery()
@@ -864,6 +994,8 @@ if __name__ == '__main__':
     args.catcount = int(args.catcount)
 
     dask_help.convertToDask.directory = "csv"
+
+    myportlist = z.getp("myportlist")
     try:
         if args.main:
             if args.main == "stat":
@@ -898,6 +1030,8 @@ if __name__ == '__main__':
                 if args.s == "highest":
                     stocks = z.getp("highest").keys()
                     print("stocks : {}".format( stocks ))
+                if args.s == "etfs":
+                    stocks = getLongEtfList()
                 whatAboutThese(stocks, dated=args.date)
 
 
@@ -912,7 +1046,9 @@ if __name__ == '__main__':
                 buyl(args, args.date)
 
             # generate buy list which is ISUG + EXTRAS
-            if args.main == "sell":
+            if "sell" in args.main:
+                if "r" in args.main:
+                   regenerateLatestPrices() 
                 sells(args)
 
             if args.main == "ll":
@@ -938,7 +1074,7 @@ if __name__ == '__main__':
                 import matplotlib.pyplot as plt
                 getEtfScore2()
 
-                        
+        z.setp(getDropScore.cache, "dropcache")
     except Exception as e:
         z.trace(e)
         pass

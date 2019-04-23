@@ -11,6 +11,7 @@ from pandas_datareader import data as pdr
 yf.pdr_override()
 problems = list()
 def getDataFromYahoo(astock, cdate):
+    print("astock: {}".format( astock))
     global problems
     df = None
     try:
@@ -19,7 +20,7 @@ def getDataFromYahoo(astock, cdate):
         try:
             df = pdr.get_data_yahoo([astock], start=cdate)
         except Exception as e:
-#            z.trace(e)
+            z.trace(e)
             problems.append(astock)
 #            raise SystemExit
             return None
@@ -29,11 +30,13 @@ def getDataFromYahoo(astock, cdate):
             change = df.at[idx, "Close"]/df.at[idx+1, "Close"]
             if change > 5 or change < 0.15 or df.at[idx, "Volume"] == 0:
                 print ("may have problem {}".format(astock))
-        except:
+        except Exception as e:
+#            z.trace(e)
             pass
 
         for label in ["Open", "Close", "High", "Low", "Adj Close"]:
             df.at[idx, label] = round(df.at[idx, label], 3)
+
     return df
 
 def update():
@@ -42,7 +45,7 @@ def update():
     listOfFiles = os.listdir(parentdir)
     for entry in listOfFiles:
         astock = os.path.splitext(entry)[0]
-        print("astock : {}".format( astock ))
+#        print("astock : {}".format( astock ))
         path = "{}/{}".format(parentdir,entry)
 #        if "ZS" in path:
 #            print("path : {}".format( path ))
@@ -62,13 +65,17 @@ def update():
         for row in csv.DictReader(open(path)):
             cdate = row['Date']
     
-#        if cdate != "2019-04-05":
+#        print("cdate : {}".format( cdate ))
+#        raise SystemExit
+#        if cdate == "2019-04-18":
+#            continue
 #            latest.append(astock)
 #        continue
 
         df = getDataFromYahoo(astock, cdate)
         if df is None:
-            print("updatehistory astock: {}".format( astock))
+            print("this is not good updatehistory astock: {}".format( astock))
+            raise SystemExit
             continue
     
         skipped = False

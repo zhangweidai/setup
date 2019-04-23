@@ -45,8 +45,8 @@ def saveDates(astock):
     except:
         pass
 
-def doone(astock):
-    path = z.getPath("historical/{}.csv".format(astock))
+def doone(astock, directory = "historical", complete = False):
+    path = z.getPath("{}/{}.csv".format(directory, astock))
     volumes = deque([])
     closes = deque([])
     changes = deque([])
@@ -154,34 +154,54 @@ def doone(astock):
                     z.trace(e)
                     raise SystemExit                    
 
-            if len(sdict[mode][date]) > keeping:
-                sdict[mode][date].discard(sdict[mode][date][discardlocation])
+            if not complete:
+                if len(sdict[mode][date]) > keeping:
+                    sdict[mode][date].discard(sdict[mode][date][discardlocation])
 
-def doit_2():
+def regenerate(stocks, code, directory):
     global sdict, pdict, ydict
     ydict = defaultdict(list)
     sdict = defaultdict(dict)
     pdict = defaultdict(dict)
-    stocks = z.getp("ITOT_total_mcsorted")
-#    stocks = z.getStocks("IUSG|IWB", reset=True)
-    stocks = stocks[-1048:]
-#    print("stocks : {}".format( len(stocks)))
-#    print("stocks : {}".format( stocks[-10:]))
-#    print("stocks : {}".format( stocks[:10]))
-#    raise SystemExit
+    problems = z.getp("problems")
     for idx,astock in enumerate(stocks):
+
+        if type(astock) != str:
+            astock = astock[1]
+
         if not idx % 100:
             print("idx : {}".format( idx ))
         try:
-            doone(astock[1])
+            doone(astock, directory)
         except Exception as e:
             print("problem astock: {}".format( astock))
             z.trace(e)
             pass
+    z.setp(ydict, "{}_Y".format(code))
+    z.setp(sdict, "{}_SS".format(code))
+    z.setp(pdict, "{}_P".format(code))
 
-    z.setp(ydict, "BUY2_Y")
-    z.setp(sdict, "BUY2_SS")
-    z.setp(pdict, "BUY2_P")
+def regenerateBEtfs():
+    import update_history
+    import zen
+
+    stocks = zen.getLongEtfList()
+    download = False
+    if download:
+        for astock in stocks:
+            try:
+                df = update_history.getDataFromYahoo(astock, "2010-01-05")
+            except:
+                continue
+            if df is not None:
+                path = z.getPath("ETF/{}.csv".format(astock))
+                df.to_csv(path)
+    regenerate(stocks, "ETF", "ETF")
+
+def regenerateBUY():
+    stocks = z.getp("ITOT_total_mcsorted")
+    stocks = stocks[-1048:]
+    regenerate(stocks, "BUY2", "historical")
 
 def doit_buys():
     global sdict, pdict, ydict
@@ -224,7 +244,8 @@ def genSortedSets():
         doit(etf)
 
 if __name__ == '__main__':
-    doit_2()
+    regenerateBUY()
+#    regenerateBEtfs()
     raise SystemExit
 #    genSortedSets()
 

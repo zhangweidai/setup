@@ -36,11 +36,15 @@ def fidelity(forselling=False, updating=False):
     spentBasis = 0
     current_pv = 0
     need = False
+    myportlist = list()
     for row in csv.DictReader(open(getLatestFidelityCsv())):
         astock = row['Symbol'] 
         if "*" in astock:
             continue
+
         if len(astock) >= 1 and astock not in skips:
+
+            myportlist.append(astock)
             cbprice = float(row['Cost Basis Per Share'].strip("$"))
 
             try:
@@ -92,6 +96,8 @@ def fidelity(forselling=False, updating=False):
 
     if updating or need:
         z.setp(fidelity.lastSave, "lastsaveprice")
+
+    z.setp(myportlist,"myportlist")
 
     return round(current_pv/spentBasis,4), spentBasis, current_pv
 
@@ -173,6 +179,8 @@ def getLatestFidelityCsv():
     newest = 0
     cfile = None
     for entry in listOfFiles:  
+        if "Portfolio" not in entry:
+            continue
         if ".csv" not in entry:
             continue
         fullpath = "{}/{}".format(parentdir, entry)
@@ -187,10 +195,12 @@ def getLatestFidelityCsv():
 def getSellStats(updating=False):
     fidelity(forselling=True, updating=updating)
     lastSave = z.getp("lastsaveprice")
+    myportlist = list()
     for row in csv.DictReader(open(getLatestFidelityCsv())):
         astock = row['Symbol'] 
         if "*" in astock:
             continue
+        myportlist.append(astock)
 
         if len(astock) >= 1 and astock not in skips:
             cprice = z.getPrice(astock)

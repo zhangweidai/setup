@@ -2,6 +2,7 @@ from util import *
 import urllib.request, json
 from bs4 import BeautifulSoup
 import z
+import zen
 
 def getMarketCapPage(astock):
     addy = "https://finance.yahoo.com/quote/{}/key-statistics?p={}".format(\
@@ -45,8 +46,12 @@ def parsePage(astock, update=False):
         startprinting = False
         nextone = True
         shares = None
-        cap2 = None
+        cap = None
+        beta = None
+        pe = None
+        change = None
         for i,aline in enumerate(more):
+
             if lookingfor in aline:
                 nextone = True
             elif nextone and "sharesOutstanding" in aline:
@@ -55,33 +60,53 @@ def parsePage(astock, update=False):
                 except:
                     return True
 
-                cap2 = round(shares * lastprice, 5)
             elif nextone and "marketCap" in aline:
                 try:
                     cap = round(int(more[i+2].split(",")[0])/billion,7)
                 except:
+                    pass
+            elif nextone and "beta" in aline:
+                try:
+                    beta=float(more[i+2].split(",")[0])
+                except:
+                    beta=None
+            elif nextone and "trailingPE" in aline:
+                try:
+                    pe=float(more[i+2].split(",")[0])
+                    return (shares, cap, lastprice, beta, pe)
+                except:
+                    pe=None
                     return True
-                change = round(cap2/cap, 5)
-                return (shares, cap, cap2, change, lastprice)
+
+#    print (shares, cap, cap2, change, lastprice, beta, pe)
+    return True
+#print (parsePage("BA", update=False))
+#raise SystemExit
 
 import calendar
 import time
 from sortedcontainers import SortedSet
 def saveOutstanding(update=False):
-
-    import zen
     z.getStocks.devoverride = "ITOT"
     dictionary = dict()
     stocks = z.getStocks("ITOT")
 #    for astock in stocks:
     total_mcsorted = SortedSet()
-    for astock in stocks:
+    for idx, astock in enumerate(stocks):
+        if not idx % 100:
+            print("idx: {}".format( idx))
         try:
             answer = parsePage(astock, update=update)
             if answer == True:
                 answer = parsePage(astock, update=True)
+                if answer == True:
+                    continue
             dictionary[astock] = answer
-            total_mcsorted.add((answer[1], astock))
+            try:
+                total_mcsorted.add((answer[1], astock))
+            except:
+                print("answer: {}".format( answer))
+                raise SystemExit
         except Exception as e:
             print ('saveFailed: '+ str(e))
             z.trace(e)
@@ -274,5 +299,7 @@ def updateJsonCompany(astock):
     return name
 
 if __name__ == '__main__':
-    saveOutstanding()
-#    print(parsePage("WTW", update=True))
+#    saveOutstanding(update=False)
+    zen.diffOuts()
+
+#    print(parsePage("WTW", update=False))

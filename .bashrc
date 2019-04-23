@@ -158,7 +158,12 @@ alias ka="killall python3"
 alias checkout="git checkout --"
 alias st2="git status -uno"
 alias buy="py zen.py buy"
+alias sell="py zen.py sell"
+alias rsell="py zen.py rsell"
+alias download="py z.py download"
+alias wab="py zen.py wab"
 alias buyl="py zen.py buy --date=l"
+alias gbuy="py zen.py gbuy"
 #sudo -S true
 set bell-style none
 

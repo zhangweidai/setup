@@ -607,7 +607,10 @@ def getLiveChange(astock):
 #        getLiveChange.dev += 1
 #        return getLiveChange.dev / 8
 #        return None
-    return float(getLiveData(astock) / zen.getPrice(astock))
+    live = getLiveData(astock)
+    if not live:
+        return None
+    return (float(live) / zen.getPrice(astock))
 getLiveChange.dev = 1
 
 from datetime import date, timedelta
@@ -947,8 +950,11 @@ def getEtfQualifications(astock, count=False):
         subset = getETF(etf)
         if astock in subset: 
             ret.append(etf)
-        if astock in z.getEtfList():
-            return "(E)"
+        try:
+            return zen.getEtfFeeDic()[astock]
+        except:
+            pass
+#        if astock in z.getEtfList():
     if count:
         return len(ret)
     return ",".join(ret)

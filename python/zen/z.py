@@ -24,8 +24,15 @@ online.online = False
 def percentage(factor, accurate=False):
     if type(factor) is str:
         return factor
+
+    if accurate == 1:
+        return "{:.1%}".format(factor-1)
+    if accurate == 2:
+        return "{:.2%}".format(factor-1)
+
     if not accurate:
         return "{:.2%}".format(factor-1)
+
     return "{:.3%}".format(factor-1)
 
 def gyp(name):
@@ -179,6 +186,8 @@ def getCsv(astock, asPath=False, save=True):
     df = None
     try:
         path = getPath("{}/{}.csv".format(getCsv.csvdir, astock), allowmake = False)
+        if not os.path.exists(path):
+            path = getPath("ETF/{}.csv".format(astock), allowmake = False)
         df = pandas.read_csv(path)
         if df is None:
             return None
@@ -361,7 +370,7 @@ def getConsider2():
 def saveEtfPrices():
     saveEtfPrices.prices = defaultdict(dict)
     for astock in getEtfList() + ["SPY"]:
-        path = getPath("{}/{}.csv".format(dask_help.convertToDask.directory, astock))
+        path = getPath("historical/{}.csv".format(astock))
         for row in csv.DictReader(open(path)):
             cdate = row['Date']
             saveEtfPrices.prices[cdate][astock] = float(row['Close'])
@@ -372,6 +381,11 @@ def getEtfPrice(astock, date):
     try:
         return saveEtfPrices.prices[date][astock]
     except:
+        try:
+            saveEtfPrices.prices = getp("etfprices")
+            return saveEtfPrices.prices[date][astock]
+        except:
+            pass
         try:
             saveEtfPrices()
             return saveEtfPrices.prices[date][astock]
@@ -385,7 +399,6 @@ def getEtfPrice(astock, date):
 if __name__ == '__main__':
     import sys
     import update_history
-    import dask_help
     astock = sys.argv[2].upper()
     try:
         if len(sys.argv) > 1:
@@ -402,8 +415,6 @@ if __name__ == '__main__':
                     df.to_csv(path)
                 else:
                     print ("could not save {}".format(astock))
-#                    print("written path : {}".format( path ))
-#                    dask_help.historicalToCsv(astock)
     except Exception as e:
         trace(e)
         pass
