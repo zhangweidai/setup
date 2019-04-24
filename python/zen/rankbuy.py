@@ -1,4 +1,5 @@
 import z 
+from random import sample
 from collections import defaultdict, deque
 from sortedcontainers import SortedSet
 import random
@@ -9,28 +10,56 @@ stocks = zen.getLongEtfList()
 
 reloadd = False
 startd = "2013-04-16"
-if reloadd:
+dics = None
+dics52 = None
+
+
+def reloaddic():
+    global dics
+
+    dates = z.getp("dates")
+    date52 = dates[-52]
+
     path = z.getPath('historical')  
     listOfFiles = os.listdir(path)
     dics = defaultdict(dict)
+    dics52 = defaultdict(dict)
     for idx,entry in enumerate(listOfFiles):
+
         if not idx % 100:
             print("idx: {}".format( idx))
+
         tpath = "{}/{}".format(path,entry)
         start = False
+        start52 = False
         astock = os.path.splitext(entry)[0]
+
         for row in csv.DictReader(open(tpath)):
             date = row['Date']
+
             if date == startd:
                 start = True
-            if start:
-                dics[astock][date] = float(row['Close'])
+
+            if date == date52:
+                start52 = True
+
+            ans = (float(row['Open']), float(row['Close']))
+
+            if start52:
+                dics52[astock][date] = ans
+
+            if start: 
+                dics[astock][date] = ans
+
     z.setp(dics, "buydics")
+    z.setp(dics52, "buydics52")
 
 dics = z.getp("buydics")
-print ("loadeD")
+if dics is None or reloadd:
+    reloaddic()
+#raise SystemExit
 
-testpoints = 4000
+testpoints = 100000
 dates = z.getp("dates")
 num_days = len(dates)
 endi = (num_days-100)-1
@@ -39,23 +68,69 @@ starti = dates.index(startd)
 vals = defaultdict(list)
 vals2 = defaultdict(int)
 problems = set()
+total = 0
+etfwins = 0
+print (len(dics.keys()))
+keys = dics.keys()
+
+tally = defaultdict(int)
+tallyt = defaultdict(int)
+
 for test in range(testpoints):
+    dsize = random.randrange(4, 30)
+
     first = random.randrange(starti, endi)
     second = random.randrange(first, endi)
     fd = dates[first]
     sd = dates[second]
-    for astock in dics.keys():
+    etfchange = round(dics["SPY"][sd][1] / dics["SPY"][fd][1],4)
+
+    samples = sample(keys, dsize)
+    cum = 0
+    added = 0
+    for astock in samples:
         try:
-            change = round(dics[astock][sd] / dics[astock][fd],4)
+            startv = dics[astock][sd][1]
+            if startv < 30.00 :
+                continue
+#            if startv < 200.00 or startv > 300.00:
+#                continue
+            change = round(startv / dics[astock][fd][1],4)
+            added += 1
         except:
             problems.add(astock)
             continue
+        cum += change
 
-        if change > 1.07:
-            vals2[astock] += 1
+#        if etfchange > change:
+#            etfwins += 1
+#        total += 1
+#        if change > 1.07:
+#            vals2[astock] += 1
+#        vals[astock].append(change)
+    try:
+        change = round(cum/added,3)
+        if etfchange > change:
+            tally[added] += 1
+        tallyt[added] += 1
+    except:
+        continue
 
-        vals[astock].append(change)
-print("problems : {}".format( problems ))
+import matplotlib.pyplot as plt
+for count,total in tallyt.items():
+    answer = round(tally[count]/total,3)
+    print("count: {} {} {} ".format( count, answer, total))
+    plt.scatter(count, answer)
+plt.show()
+
+
+#print("tallyt: {}".format( tallyt))
+#print("tally: {}".format( tally))
+
+raise SystemExit
+#print("problems : {}".format( problems ))
+#print ("etf wins")
+#print (round(etfwins/total,3))
 
 #z.setp(problems, "etfproblems")
 

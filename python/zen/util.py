@@ -114,7 +114,6 @@ def averageRegress(items):
 def dipScore(items, interval=7, avg=3, retAvg=False):
     from collections import deque
     currentStack = deque([])
-    low = deque([])
     dips = []
     gains = []
     for i,price in enumerate(items):

@@ -30,6 +30,32 @@ def getPriceFromCsv(astock, date = None, field="Open"):
     
 
 def getPrice(astock, date = None, openp=False):
+    if not date:
+        date = getLastDate()
+
+    idx = 0 if openp else 1
+    try:
+        return getPrice.pricedict[astock][date][idx]
+    except:
+        try:
+            getPrice.pricedict = z.getp("buydics52")
+            return getPrice.pricedict[astock][date][idx]
+        except:
+            pass
+
+    try:
+        return getPrice.pdict[astock][date]
+    except Exception as e:
+        try:
+            name= "{}_P".format(loadSortedEtf.etf)
+            getPrice.pdict = z.getp("{}_P".format(loadSortedEtf.etf))
+            return getPrice.pdict[astock][date]
+        except:
+            return getPriceFromCsv(astock, date, 'Close')
+
+    print ("need more data")
+
+def getPrice3(astock, date = None, openp=False):
 
     if not date or date == today():
         if not getPrice.latest:
@@ -43,11 +69,6 @@ def getPrice(astock, date = None, openp=False):
         date = getPrice.today
 
     if openp:
-        print("lookin up astock: {}".format( astock))
-        print("date: {}".format( date))
-#        import traceback
-#        traceback.print_stack()
-#        raise SystemExit
         return getPriceFromCsv(astock,date)
     
     try:
@@ -103,7 +124,10 @@ def getSortedStocks(date, mode, typed="low", get=10, reportprob = True):
     except:
         try:
             loadSortedEtf()
-            alist = getSortedStocks.cdict[mode][date]
+            try:
+                alist = getSortedStocks.cdict[mode][date]
+            except:
+                return None
         except Exception as e:
             if reportprob:
                 print("dates: {}".format(len(getSortedStocks.cdict[mode])))
@@ -423,7 +447,8 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
 
     try:
         beta, pe, mcchg = getChangeStats(astock)
-    except:
+    except Exception as e:
+        beta, pe, mcchg = None, None, None
         pass
 
     recov = None
@@ -959,7 +984,7 @@ if __name__ == '__main__':
     parser.add_argument('main' , nargs='?', default="buy")
     parser.add_argument('--mode', default="default")
     parser.add_argument('--etf', default="IUSG")
-    parser.add_argument('--date', default=today())
+    parser.add_argument('--date', default=getLastDate())
     parser.add_argument('--live', default=False, action="store_true")
     parser.add_argument('--cat', default="default")
     parser.add_argument('--catcount', default=7)
@@ -987,8 +1012,8 @@ if __name__ == '__main__':
         modes = [args.mode]
 
 #    z.getStocks.extras = z.getStocks.devoverride == "IUSG"
-    if args.date == "l":
-        args.date = getLastDate()
+#    if args.date == "l":
+    args.date = getLastDate()
  
     print("date : {}".format( args.date ))
     args.catcount = int(args.catcount)
