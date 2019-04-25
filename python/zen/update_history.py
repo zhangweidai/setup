@@ -39,16 +39,13 @@ def getDataFromYahoo(astock, cdate):
 
     return df
 
-def update():
-    parentdir = util.getPath("historical")
+def update(where= "historical"):
+    parentdir = util.getPath(where)
     print("parentdir : {}".format( parentdir ))
     listOfFiles = os.listdir(parentdir)
     for entry in listOfFiles:
         astock = os.path.splitext(entry)[0]
-#        print("astock : {}".format( astock ))
         path = "{}/{}".format(parentdir,entry)
-#        if "ZS" in path:
-#            print("path : {}".format( path ))
     
         t = os.path.getmtime(path)
         csvdate = datetime.datetime.fromtimestamp(t)
@@ -56,21 +53,12 @@ def update():
         csvmonth = csvdate.month
         ttoday = datetime.date.today().day
         tmonth = datetime.date.today().month
-#        if astock == "ZS":
-#            print("ttoday : {}".format( ttoday ))
-#            print("tmonth : {}".format( tmonth ))
+
         if csvday >= ttoday and tmonth == csvmonth:
             continue
     
         for row in csv.DictReader(open(path)):
             cdate = row['Date']
-    
-#        print("cdate : {}".format( cdate ))
-#        raise SystemExit
-#        if cdate == "2019-04-18":
-#            continue
-#            latest.append(astock)
-#        continue
 
         df = getDataFromYahoo(astock, cdate)
         if df is None:
@@ -94,15 +82,15 @@ def update():
                 vol = df.at[idx, "Volume"]
                 f.write("{},{},{},{},{},{},{}\n".format(\
                             cdate, opend, high, low, closed, adj, vol))
-    #            latest[astock] = closed 
-    zprep.setStockDays() 
+    if where == "historical":
+        zprep.setStockDays() 
     return True
 
 if __name__ == '__main__':
 #    import sys
 #    import dask_help
     update()
-    print(problems)
+    update(where= "ETF")
     # use gbuy
 #    try:
 #        if len(sys.argv) > 1:

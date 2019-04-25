@@ -687,12 +687,17 @@ def whatAboutThisMode(mode, typed, usedate, dated):
 def buyl(args, dated):
     if args.main == 'gbuy':
         import update_history
+#        import rankbuy
         try:
             if update_history.update():
+                print ("done updating")
+                update_history.update(where= "ETF")
+                print ("done updating etf")
                 threadprep.regenerateBUY()
+                print ("done regenerate etf")
+#                rankbuy.reloaddic()
                 regenerateLatestPrices()
                 exit()
-
         except Exception as e:
             z.trace(e)
             exit()

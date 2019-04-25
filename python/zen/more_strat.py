@@ -13,9 +13,9 @@ import matplotlib.pyplot as plt
 
 zen.loadSortedEtf("BUY2")
 threadprep.getModes.useRandom = True
-sell_threader.buySellSim.tracks = 12
-testpoints = 110
-years = 4
+sell_threader.buySellSim.tracks = 24
+testpoints = 140
+years = 2.5
 
 #########################################################################
 
@@ -137,7 +137,7 @@ for akey,alist in avgmodedict.items():
     change = round(etfvalue/etft,3)
     modeScores[akey] = (round(avg-avgetf,3), change)
     print("modes: {0:<12} {1:<8} {2:<7}".format(akey, avg, change))
-#z.setp(modeScores, "modeScores")
+z.setp(modeScores, "modeScores")
 
 for akey,alist in avgdropdict.items():
     avg = z.avg(alist)
