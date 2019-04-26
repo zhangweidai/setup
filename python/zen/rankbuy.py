@@ -1,6 +1,6 @@
 import z 
 from random import sample
-from collections import defaultdict, deque
+from collections import defaultdict
 from sortedcontainers import SortedSet
 import random
 import zen

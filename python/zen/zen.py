@@ -1,7 +1,8 @@
 from random import sample, randint
 from functools import lru_cache
-from collections import defaultdict
+from collections import defaultdict, deque
 from sortedcontainers import SortedSet
+import matplotlib.pyplot as plt
 import csv
 import dask_help
 import math
@@ -33,6 +34,16 @@ def getPrice(astock, date = None, openp=False):
     if not date:
         date = getLastDate()
 
+    if openp == "both":
+        try:
+            return getPrice.pricedict[astock][date]
+        except:
+            try:
+                getPrice.pricedict = z.getp("buydics52")
+                return getPrice.pricedict[astock][date]
+            except:
+                pass
+
     idx = 0 if openp else 1
     try:
         return getPrice.pricedict[astock][date][idx]
@@ -52,8 +63,8 @@ def getPrice(astock, date = None, openp=False):
             return getPrice.pdict[astock][date]
         except:
             return getPriceFromCsv(astock, date, 'Close')
-
     print ("need more data")
+
 
 def getPrice3(astock, date = None, openp=False):
 
@@ -288,60 +299,54 @@ def getDropScore(astock, startd = "2018-07-11", days = 64):
 #z.getStocks.devoverride = "ITOT"
 #print (getPricedStocks("2017-01-11", 3))
 #raise SystemExit
-def getProbSale(astock, dated):
-#    for astock in z.getEtfList():
-#    path = z.getPath("csv/{}.csv".format(astock))
-    findate = None
-    startdate = None
-    startidx = None
+
+def getProbSale(astock, dated = None):
+
+    if not dated:
+        dated = today()
 
     path = z.getPath("historical/{}.csv".format(astock))
     if not os.path.exists(path):
         path = z.getPath("ETF/{}.csv".format(astock))
-    dates = z.getp("dates")
-    startidx = dates.index(dated)-51
-    finidx = dates.index(dated)
+        if not os.path.exists(path):
+            print("DOES NOT EXIST: {}".format( path))
+            raise SystemExit
 
-    count = 0
+    dates = z.getp("dates")
+    startidx = dates.index(dated)-52
+    startd = dates[startidx]
+
     downs = 0
     avgl = list()
     avgD = list()
     avgG = list()
     firstopen = None
-
-    if not os.path.exists(path):
-        print("DOES NOT EXIST: {}".format( path))
-        raise SystemExit
+    countidx = 0
+    started = False
 
     for row in csv.DictReader(open(path)):
-        if dated:
-            dates = z.getp("dates")
-            cdate = row['Date']
-            cidx = dates.index(cdate)
-            if cidx < startidx or cidx > finidx:
-                continue
-#            print("dated: {}".format( dated))
-#            print("cdate: {}".format( cdate))
-#            print("cidx : {}".format( cidx ))
-#            print("startidx : {}".format( startidx ))
-#            print("finidx: {}".format( finidx))
 
+        if not started:
+            cdate = row['Date']
+            if cdate == startd:
+                started = True
+                firstopen = float(row['Open'])
+            else:
+                continue
+        elif countidx >= 52:
+            break
+        else:
+            countidx += 1
 
         opend = float(row['Open'])
-
-        if not firstopen:
-            firstopen = opend
-#            print("firstopen : {}".format( firstopen ))
-#            print("astock: {}".format( astock))
-
         close = float(row['Close'])
+
         change = close/opend
         if change < 1.000:
             downs += 1
             avgD.append(change)
         else:
             avgG.append(change)
-        count += 1
         avgl.append(change)
 
     if not avgl:
@@ -351,19 +356,71 @@ def getProbSale(astock, dated):
 
     avgC = z.avg(avgl, p=5)
     avgD = z.avg(avgD)
-
-#    avgGs = z.avg(avgG)
-    probD = round(downs/count,2)
-
+    probD = round(downs/len(avgl),2)
     live = util.getLiveData(astock, key = "price")
-
-    change = None
-    if live:
-        change = round(live/firstopen,3)
-    else:
-        change = round(close/firstopen,3)
+    live = live if live else close
+    change = round(close/firstopen,3)
 
     return avgC, probD, avgD, statistics.median(avgG), change, statistics.median(avgl)
+
+def plotProbSale(astock):
+
+    path = z.getPath("historical/{}.csv".format(astock))
+    if not os.path.exists(path):
+        path = z.getPath("ETF/{}.csv".format(astock))
+        if not os.path.exists(path):
+            print("DOES NOT EXIST: {}".format( path))
+            raise SystemExit
+
+    dated = "2013-03-19"
+    dates = z.getp("dates")
+    startidx = dates.index(dated)
+    startd = dates[startidx]
+
+    downs = 0
+    avgl = list()
+    avgD = list()
+    avgG = list()
+    firstopen = None
+    countidx = 0
+    started = False
+    droplist = deque([])
+
+    for idx,row in enumerate(csv.DictReader(open(path))):
+
+        if not started:
+            cdate = row['Date']
+            if cdate == startd:
+                started = True
+            else:
+                continue
+
+        if idx == 3930:
+            cdate = row['Date']
+            print("cdate : {}".format( cdate ))
+
+        if idx == 4080:
+            cdate = row['Date']
+            print("cdate : {}".format( cdate ))
+
+        if len(droplist) > 120:
+            droplist.popleft()
+            value = round(sum(droplist)/len(droplist),3)
+            plt.scatter(idx, value)
+
+        opend = float(row['Open'])
+        close = float(row['Close'])
+
+        change = close/opend
+        if change < 1.000:
+            downs += 1
+            avgD.append(change)
+            droplist.append(1)
+        else:
+            droplist.append(0)
+            avgG.append(change)
+        avgl.append(change)
+    plt.show()
 
 
 def setVolumeRanking():
@@ -397,7 +454,7 @@ def poolQuery():
         print (len(cmode))
         
 
-skipss = ['CVET']
+#skipss = ['CVET']
 def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, lowprice = False, sell=False, ht=None, dated = None):
 
     dates = z.getp("dates")
@@ -406,32 +463,21 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
     if type(value) is tuple:
         astock = value[1]
 
-    if astock in skipss:
-        return
-
-    o3price = 1
-    oprice = 1
-    price = 0
-
     try:
-        if dated:
-            price = round(getPrice(astock, dated),3)
-            oprice = round(getPrice(astock, dated, openp = True),3)
-            idx4 = dates.index(dated)-4
-            o3price = round(getPrice(astock, dates[idx4]),3)
-        else:
-            try:
-                price = round(getPrice(astock),3)
-                oprice = round(getPrice(astock, openp = True),3)
-                o3price = round(getPrice(astock,  dates[-4]),3)
-            except:
-                noprices.append(astock)
-                return
+        oprice, price = getPrice(astock, dated, openp = 'both')
     except Exception as e:
-        z.trace(e)
-        print("dated: {}".format( dated))
-        print("astock : {}".format( astock ))
+        print("no price dated: {}".format( dated))
+        print("no price astock : {}".format( astock ))
+        noprices.append(astock)
         raise SystemExit
+        return
+    try:
+        idx4 = -4 if not dated else dates.index(dated)-4 
+        o3price = round(getPrice(astock, dates[idx4]),3)
+    except:
+        print("no price dated: {}".format( dated))
+        print("no price astock : {}".format( astock ))
+        noprices.append(astock)
         return
 
     chg3 = None
@@ -787,7 +833,6 @@ def getEtfScore2():
             currentlist = list()
             idx += 1
 #    print("tally: {}".format( tally))
-    import matplotlib.pyplot as plt
     for key, value in tally.items():
         plt.scatter(key, value)
         print("key: {}".format( key))
@@ -974,6 +1019,9 @@ if __name__ == '__main__':
     import sys
     import zprep
     from termcolor import colored
+
+    print (plotProbSale("BA"))
+    raise SystemExit
 
     getDropScore.cache = z.getp("dropcache")
     if getDropScore.cache is None:

@@ -167,12 +167,21 @@ def rebuild(start = None, end = None,
             pass
 #            print ('Scatter : '+ str(e))
 
+
     byx = int((endx-startx)/xcount)
     try:
         dates = df['Date'].tolist()
     except Exception as e:
         deleteStock(astock)
         return
+
+    for mark in marked:
+        try: 
+            here = dates.index(mark)
+            local_ax.scatter(here, 0, s=80, color="green")
+        except:
+            print ("did not find {}".format(mark))
+            pass
 
     if not byx:
         byx = 1
@@ -276,12 +285,19 @@ def previ():
         idx -= increment
         updateDisplay()
 
+marked = []
 def interpret(answer):
     global idx, stocks, previdx, stock_count, setstart_date
     print("answer: {}".format( answer))
     if not answer:
         return
-    if "reset" in answer:
+
+    if "mark" in answer:
+        date = answer.split(" ")[1].upper()
+        marked.append(date)
+        updateDisplay()
+
+    elif "reset" in answer:
         stock = getCurrentStock()
         if Modes.multi in currentMode:
             stock = answer.split(" ")[1].upper()
