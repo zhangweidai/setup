@@ -199,6 +199,7 @@ def regenerateBEtfs():
     regenerate(stocks, "ETF", "ETF")
 
 def regenerateBUY():
+    print ("regenerating BUY2")
     stocks = z.getp("ITOT_total_mcsorted")
     stocks = stocks[-1048:]
     regenerate(stocks, "BUY2", "historical")

@@ -16,7 +16,8 @@ import z
 keeping = 60
 discardlocation = int(keeping/2)
 
-def getPriceFromCsv(astock, date = None, field="Open"):
+def getPriceFromCsv(astock, date = None, openp=None):
+    field = "Open"
     path = z.getPath("historical/{}.csv".format(astock))
     if not os.path.exists(path):
         path = z.getPath("ETF/{}.csv".format(astock))
@@ -25,7 +26,10 @@ def getPriceFromCsv(astock, date = None, field="Open"):
         for row in csv.DictReader(open(path)):
             cdate = row['Date']
             if cdate == date:
-                return float(row[field])
+                if not openp:
+                    return float(row[field])
+                return float(row["Open"]), float(row["Close"])
+
     except:
         return None
     
@@ -62,7 +66,7 @@ def getPrice(astock, date = None, openp=False):
             getPrice.pdict = z.getp("{}_P".format(loadSortedEtf.etf))
             return getPrice.pdict[astock][date]
         except:
-            return getPriceFromCsv(astock, date, 'Close')
+            return getPriceFromCsv(astock, date, openp=openp)
     print ("need more data")
 
 
@@ -194,7 +198,7 @@ def getPricedStocks(idxdate, price):
 #    raise SystemExit
 
 def regenerateLatestPrices():
-#    print ("regenerating latest prices")
+    print ("regenerating latest prices")
     getPrice.latest = dict()
     path = z.getPath("historical")
     listOfFiles = os.listdir(path)
@@ -203,7 +207,7 @@ def regenerateLatestPrices():
         for row in csv.DictReader(open(cpath)):
             pass
         astock = os.path.splitext(entry)[0]
-        getPrice.latest[astock] = (float(row['Close']), float(row['Open']))
+        getPrice.latest[astock] = ( float(row['Open']), float(row['Close']) )
 
     path = z.getPath("ETF")
     listOfFiles = os.listdir(path)
@@ -212,7 +216,7 @@ def regenerateLatestPrices():
         for row in csv.DictReader(open(cpath)):
             pass
         astock = os.path.splitext(entry)[0]
-        getPrice.latest[astock] = (float(row['Close']), float(row['Open']))
+        getPrice.latest[astock] = ( float(row['Open']), float(row['Close']) )
 
     z.setp(getPrice.latest, "latestprices")
 
@@ -323,6 +327,7 @@ def getProbSale(astock, dated = None):
     firstopen = None
     countidx = 0
     started = False
+    largest = 1.00
 
     for row in csv.DictReader(open(path)):
 
@@ -342,6 +347,9 @@ def getProbSale(astock, dated = None):
         close = float(row['Close'])
 
         change = close/opend
+        if change < largest:
+            largest = change
+
         if change < 1.000:
             downs += 1
             avgD.append(change)
@@ -361,7 +369,7 @@ def getProbSale(astock, dated = None):
     live = live if live else close
     change = round(close/firstopen,3)
 
-    return avgC, probD, avgD, statistics.median(avgG), change, statistics.median(avgl)
+    return avgC, probD, avgD, statistics.median(avgG), change, statistics.median(avgl), largest
 
 def plotProbSale(astock):
 
@@ -466,8 +474,8 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
     try:
         oprice, price = getPrice(astock, dated, openp = 'both')
     except Exception as e:
-        print("no price dated: {}".format( dated))
-        print("no price astock : {}".format( astock ))
+        print("1no price dated: {}".format( dated))
+        print("1no price astock : {}".format( astock ))
         noprices.append(astock)
         raise SystemExit
         return
@@ -485,16 +493,16 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
     cprice = price
 
     try:
-        avgC, probD, avgD, avgG, chgT, median = getProbSale(astock, dated)
+        avgC, probD, avgD, avgG, chgT, median, largest = getProbSale(astock, dated)
     except Exception as e:
         z.trace(e)
         print("problem with astock: {}".format( astock))
         return
 
     try:
-        beta, pe, mcchg = getChangeStats(astock)
+        beta, pe, mcchg, div = getChangeStats(astock)
     except Exception as e:
-        beta, pe, mcchg = None, None, None
+        beta, pe, mcchg, div = None, None, None, None
         pass
 
     recov = None
@@ -571,10 +579,10 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
     avgChanges.append(avgC)
     avgchanget.append(chgT)
 
-    if mcchg:
-        mcchg = z.percentage(mcchg)
-    else:
-        mcchg = "NA"
+#    if mcchg:
+#        mcchg = z.percentage(mcchg)
+#    else:
+    mcchg = "NA"
 
     if type(beta) == float:
         beta = round(beta,2)
@@ -586,6 +594,19 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
     else:
         pe = "NA"
 
+    if type(div) == float:
+        div = round(div,3)
+    else:
+        div = "NA"
+
+
+    try:
+        etfrank = z.getp("ranklist").index(astock)
+    except Exception as e:
+#        print("astock: {}".format( astock))
+#        print("astock: {}".format( len(z.getp("ranklist"))))
+        etfrank = "NA"
+
 
     etfc = util.getEtfQualifications(astock, count=True)
 
@@ -596,6 +617,8 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
             astock = " {}".format(astock)
     except:
         pass
+
+
     try:
         msg = getCol().format(astock, price, 
             z.percentage(avgC, accurate=2), 
@@ -615,8 +638,12 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
             mcchg,
             beta,
             pe,
+            z.percentage(largest),
+            etfrank,
+            div,
             ddscore)
-    except:
+    except Exception as e:
+        z.trace(e)
         return
 
     sorts.add((dscore,msg))
@@ -625,11 +652,11 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
 def getCol():
     #        astock $price avgC   median probD  avgD  avgG    d0     d1     d2     
     return " {0:<6} {1:>7} {2:>7} {3:>6} {4:>4} {5:>7} {6:>7} {7:>8} {8:>8} {9:>8} "\
-           " {10:>7} {11:>6} {12:>6} {13:>7} {14:>4} {15:>7} {16:>7} {17:>5} {18:>6} {19:<5}"
-           # chgT    chg1    chg3    live    etfc    recov   mcchg   beta    pe      ddscore
+           " {10:>7} {11:>6} {12:>6} {13:>7} {14:>4} {15:>7} {16:>7} {17:>5} {18:>6} {19:>8} {20:>8} {21:>8}  {22:<5}"
+           # chgT    chg1    chg3    live    etfc    recov   mcchg   beta    pe      largest etfrank div     ddscore
 
 def whatAboutThese(stocks, lowprice = False, sell=False, ht=None, dated = None):
-    print(getCol().format("stock", "price", "avgC", "median", "probD", "avgD ", "avgG ", "d0" ,"d1 ", "d2 ", "chgT ", "chg1", "chg3", "live ", "etf ", "recov  ", "mcchg  ", "beta  ", "pe  ", "d"))
+    print(getCol().format("stock", "price", "avgC", "median", "probD", "avgD ", "avgG ", "d0" ,"d1 ", "d2 ", "chgT ", "chg1", "chg3", "live ", "etf ", "recov  ", "mcchg  ", "beta  ", "pe  ", "largest  ",  "erank  ", "div   ", "display"))
 
     if not stocks:
         return
@@ -730,33 +757,94 @@ def whatAboutThisMode(mode, typed, usedate, dated):
         whatAboutThese(stocks, dated=dated)
 
 
+startd = "2014-04-01"
+dics = None
+dics52 = None
+def reloaddic(latest=True):
+    print ("regenerating buydics52")
+    global dics
+
+    dates = z.getp("dates")
+    date52 = dates[-52]
+
+    path = z.getPath('historical')  
+    listOfFiles = os.listdir(path)
+    dics = defaultdict(dict)
+    dics52 = defaultdict(dict)
+    for idx,entry in enumerate(listOfFiles):
+
+        if not idx % 100:
+            print("idx: {}".format( idx))
+
+        tpath = "{}/{}".format(path,entry)
+        start = False
+        start52 = False
+        astock = os.path.splitext(entry)[0]
+
+        for row in csv.DictReader(open(tpath)):
+            date = row['Date']
+
+            if date == startd:
+                start = True
+
+            if date == date52:
+                start52 = True
+
+            if not start52 and latest:
+                continue
+
+            ans = (float(row['Open']), float(row['Close']))
+
+            if start52:
+                dics52[astock][date] = ans
+
+#            if astock not in working:
+#                continue
+
+            if not latest and start: 
+                dics[astock][date] = ans
+
+    if not latest:
+        z.setp(dics, "buydics")
+
+    z.setp(dics52, "buydics52")
+
 def buyl(args, dated):
     if args.main == 'gbuy':
         import update_history
-#        import rankbuy
         try:
             if update_history.update():
-                print ("done updating")
                 update_history.update(where= "ETF")
-                print ("done updating etf")
-                threadprep.regenerateBUY()
-                print ("done regenerate etf")
-#                rankbuy.reloaddic()
+                print ("done updating csvs")
+                reloaddic()
                 regenerateLatestPrices()
+                threadprep.regenerateBUY()
+                diffOuts()
                 exit()
         except Exception as e:
             z.trace(e)
             exit()
 
     print ("\netfs")
+
     dscore = whatAboutThese(z.getEtfList(forEtfs=True), dated=dated)
     getSortedStocks.highlight_score = dscore
     
-    rankstock = z.getp("rankstock")
-    whatAboutThese(rankstock, dated=dated)
+    if not len(modes) == 1:
+        print ("\nranked")
+        rankstock = z.getp("rankstock")
+        whatAboutThese(rankstock, dated=dated)
+    
+        print ("\netf extended")
+        rankstock = z.getp("ranketf")
+        whatAboutThese(rankstock, dated=dated)
 
-    rankstock = z.getp("ranketf")
-    whatAboutThese(rankstock, dated=dated)
+        try:
+            print ("\ndiv extended")
+            divs = z.getp("divset")[-30:]
+            whatAboutThese(divs, dated=dated)
+        except:
+            pass
 
     usedate = dated or args.date
     for mode in modes:
@@ -765,7 +853,7 @@ def buyl(args, dated):
 
 
 goodmodes = ["Volume/low", "Price/low", "Var50/high", "Drops/high"]
-skips = ["Price/high", "Var50/low", "Drops/low", "Volume/high"]
+skips = ["Price/high", "Var50/low", "Drops/low", "Volume/high", "C24/high", "C24/low"]
 
 def buyl2():
     sets = z.getp("mcsets")
@@ -790,8 +878,15 @@ def generateSellPrice():
 def sells(args):
     z.getStocks.sells = True
     stocks = portfolio.getPortfolio(aslist = True)
+    count = len(stocks)
+    count_vs_etf = z.getp("count_vs_etf")
+
     whatAboutThese(stocks, sell=True, dated=args.date)
     print("stocks : {}".format( len(stocks)))
+    try:
+        print("prob etf wins : {}".format( count_vs_etf[count]))
+    except:
+        pass
 
 def getEtfScore(cuttoff):
     etfd = defaultdict(list)
@@ -929,6 +1024,7 @@ def getOuts():
     return cfiles
 
 def diffOuts():
+    print ("regenerating pe/div/mc")
     outs = getOuts()
     out1 = outs[-1]
     print("out1 : {}".format( out1 ))
@@ -936,20 +1032,28 @@ def diffOuts():
     print("out2 : {}".format( out2 ))
     out1dic = z.getp(out1)
     out2dic = z.getp(out2)
-    ossets = SortedSet()
+    divset = SortedSet()
     mcsets = SortedSet()
     mcdiff = dict()
     # out1dict is the newer one
     for astock, values in out1dic.items():
-        changem = round( values[1]/out2dic[astock][1], 6)
-#        if changem == 1:
-#            changem = round( values[2]/out2dic[astock][2], 6)
-        mcdiff[astock] = (values[3], values[4], changem)
-        mcsets.add((changem,astock))
+        try:
+            changem = round( values[0]/out2dic[astock][0], 6)
+    #        if changem == 1:
+    #            changem = round( values[2]/out2dic[astock][2], 6)
+            mcdiff[astock] = (values[1], values[2], changem, values[3])
+            mcsets.add((changem,astock))
+            if type(values[3]) is float:
+                price = getPrice(astock)
+                if price > 40.00:
+                    divset.add((values[3],astock))
+        except:
+            pass
 #    print(ossets[-10:])
 #    print(ossets[:10])
 #    print(mcsets[-10:])
 #    print(mcsets[:10])
+    z.setp(divset, "divset")
     z.setp(mcdiff, "mcdiff")
     z.setp(mcsets, "mcsets")
 
@@ -963,7 +1067,7 @@ def getChangeStats(astock, idx=1):
             return getChangeStats.outdic[astock]
         except:
             pass
-    return None, None, None
+    return None, None, None, None
 
 
 def getStats(astock, idx=1):
@@ -1020,8 +1124,8 @@ if __name__ == '__main__':
     import zprep
     from termcolor import colored
 
-    print (plotProbSale("BA"))
-    raise SystemExit
+#    print (plotProbSale("BA"))
+#    raise SystemExit
 
     getDropScore.cache = z.getp("dropcache")
     if getDropScore.cache is None:

@@ -39,7 +39,13 @@ def getDataFromYahoo(astock, cdate):
 
     return df
 
-def update(where= "historical"):
+def update(where= "historical", problems = [], attempts=0):
+
+    if attempts > 4:
+        print ("tried too many times")
+        print("problems : {}".format( problems ))
+        return
+
     parentdir = util.getPath(where)
     print("parentdir : {}".format( parentdir ))
     listOfFiles = os.listdir(parentdir)
@@ -62,11 +68,11 @@ def update(where= "historical"):
 
         df = getDataFromYahoo(astock, cdate)
         if df is None:
-            print("this is not good updatehistory astock: {}".format( astock))
-            raise SystemExit
+            problems.append(astock)
             continue
     
         skipped = False
+        added = False
         with open(path, "a") as f:
             for idx in df.index:
                 if not skipped:
@@ -80,16 +86,26 @@ def update(where= "historical"):
                 closed = df.at[idx, "Close"]
                 adj = df.at[idx, "Adj Close"]
                 vol = df.at[idx, "Volume"]
+                added = True
                 f.write("{},{},{},{},{},{},{}\n".format(\
                             cdate, opend, high, low, closed, adj, vol))
+
+        if not added:
+            problems.append(astock)
+
     if where == "historical":
         zprep.setStockDays() 
+
+    if problems:
+        attempts += 1
+        update(where=where, problems=problems, attempts=attempts)
+
     return True
 
 if __name__ == '__main__':
 #    import sys
 #    import dask_help
-    update()
+#    update()
     update(where= "ETF")
     # use gbuy
 #    try:

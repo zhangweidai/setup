@@ -9,65 +9,22 @@ import csv
 stocks = zen.getLongEtfList()
 
 reloadd = False
-startd = "2013-04-16"
+startd = "2014-04-01"
 dics = None
 dics52 = None
 
 working = z.getp("working")
 
-def reloaddic():
-    global dics
-
-    dates = z.getp("dates")
-    date52 = dates[-52]
-
-    path = z.getPath('historical')  
-    listOfFiles = os.listdir(path)
-    dics = defaultdict(dict)
-    dics52 = defaultdict(dict)
-    for idx,entry in enumerate(listOfFiles):
-
-        if not idx % 100:
-            print("idx: {}".format( idx))
-
-        tpath = "{}/{}".format(path,entry)
-        start = False
-        start52 = False
-        astock = os.path.splitext(entry)[0]
-
-
-        for row in csv.DictReader(open(tpath)):
-            date = row['Date']
-
-            if date == startd:
-                start = True
-
-            if date == date52:
-                start52 = True
-
-            ans = (float(row['Open']), float(row['Close']))
-
-            if start52:
-                dics52[astock][date] = ans
-
-            if astock not in working:
-                continue
-
-            if start: 
-                dics[astock][date] = ans
-
-    z.setp(dics, "buydics")
-    z.setp(dics52, "buydics52")
-
 dics = z.getp("buydics")
 if dics is None or reloadd:
-    reloaddic()
+    zen.reloaddic(False)
 #raise SystemExit
 
 testpoints = 10000
 dates = z.getp("dates")
 num_days = len(dates)
-endi = (num_days-100)-1
+halfp = int(num_days/2)
+endi = (num_days-32)-1
 starti = dates.index(startd)
 
 vals = defaultdict(list)
@@ -76,6 +33,7 @@ problems = set()
 working = set()
 total = 0
 etfwins = 0
+print ("len(dics.keys())")
 print (len(dics.keys()))
 keys = list(dics.keys())
 #keys.remove("AIPT")
@@ -83,24 +41,25 @@ keys = list(dics.keys())
 tally = defaultdict(int)
 tallyt = defaultdict(int)
 
-for dsize in range(5,121, 5):
+for dsize in range(30, 70, 1):
+    print("dsize : {}".format( dsize ))
     for test in range(testpoints):
 
         first = random.randrange(starti, endi)
-        second = random.randrange(first, endi)
+        second = random.randrange(max((first, halfp)), endi)
         fd = dates[first]
         sd = dates[second]
         etfchange = round(dics["SPY"][sd][1] / dics["SPY"][fd][1],4)
     
-        samples = sample(keys, dsize)
+        samples = sample(keys, dsize*2)
         cum = 0
         added = 0
         for astock in samples:
             try:
                 startv = dics[astock][sd][1]
-#                if startv < 90.00 :
-#                    continue
-#                working.add(astock)
+                if startv < 20.00 :
+                    continue
+                working.add(astock)
 #                if startv < 200.00 or startv > 300.00:
 #                    continue
                 change = round(startv / dics[astock][fd][1],4)
@@ -116,7 +75,13 @@ for dsize in range(5,121, 5):
     #        total += 1
             if change > 1.07:
                 vals2[astock] += 1
+
+            if added == dsize:
+                break
+
 #        vals[astock].append(change)
+        if added < 30:
+            continue
         try:
             change = round(cum/added,3)
             if etfchange > change:
@@ -126,9 +91,11 @@ for dsize in range(5,121, 5):
             continue
 
 import matplotlib.pyplot as plt
+count_vs_etf = dict()
 for count,total in tallyt.items():
     answer = round(tally[count]/total,3)
     print("count: {} {} {} ".format( count, answer, total))
+    count_vs_etf[count] = answer
     plt.scatter(count, answer)
 plt.show()
 
@@ -141,13 +108,13 @@ print("problems : {}".format( problems ))
 #print (round(etfwins/total,3))
 
 #z.setp(problems, "etfproblems")
-#z.setp(working, "working")
+z.setp(working, "working")
 #raise SystemExit
 
-#ss = SortedSet()
-#for key,value in vals.items():
-#    avg = z.avg(value)
-#    ss.add((avg, key))
+ss = SortedSet()
+for key,value in vals.items():
+    avg = z.avg(value)
+    ss.add((avg, key))
 
 #path = z.getPath("analysis/stockanalysis.csv")
 #with open(path, "w") as f:
@@ -162,6 +129,14 @@ for key,value in vals2.items():
 
 save = ss[-30:]
 z.setp(save, "rankstock")
+
+ranklist = list()
+for item in reversed(ss):
+    ranklist.append(item[1])
+
+z.setp(ranklist, "ranklist")
+#print("ranklist: {}".format( ranklist))
+z.setp(count_vs_etf, "count_vs_etf")
 #print(ss[-30:])
 #print(ss[:10])
 

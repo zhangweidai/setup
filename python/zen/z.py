@@ -48,7 +48,7 @@ def syp(data, name):
         os.remove(path)
     pickle.dump(data, open(path, "wb"))
 
-@lru_cache(maxsize=12)
+@lru_cache(maxsize=20)
 def getp(name, override="pkl"):
     try:
         path = getPath("{}/{}.pkl".format(override, name))

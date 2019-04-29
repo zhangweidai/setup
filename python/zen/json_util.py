@@ -27,61 +27,73 @@ def parsePage(astock, update=False):
 
     live = None
     if not update:
-        live = z.getp(astock, override="yahoo")
+        live = z.getp(astock, override="yahoo_mc")
 
     if live is None or update:
         live = getMarketCapPage(astock)
-        z.setp(live, astock, override="yahoo")
+        z.setp(live, astock, override="yahoo_mc")
 #        live = z.getp(astock, override="yahoo")
 
 #        path = z.getPath("yahoo/{}".format(astock))
 #        with open(path,"r") as f:
 #            live = f.readlines()
-    lastprice = z.getPrice(astock)
+#    lastprice = z.getPrice(astock)
     started = False
     lookingfor = '{{"{}"'.format(astock)
+    startprinting = False
+    nextone = True
+    cap = None
+    dividend = None
+    pe = None
+    beta = None
+    change = None
+
     for line in live:
         line = line.strip()
         more = line.split(":")
-        startprinting = False
-        nextone = True
-        shares = None
-        cap = None
-        beta = None
-        pe = None
-        change = None
         for i,aline in enumerate(more):
+#            print("aline : {}".format( aline ))
 
             if lookingfor in aline:
                 nextone = True
-            elif nextone and "sharesOutstanding" in aline:
-                try:
-                    shares = round(int(more[i+2].split(",")[0])/billion,7)
-                except:
-                    return True
+
+#            elif nextone and "sharesOutstanding" in aline:
+#                try:
+#                    shares = round(int(more[i+2].split(",")[0])/billion,7)
+#                    print("shares : {}".format( shares ))
+#                except:
+#                    pass
+##                    return True
 
             elif nextone and "marketCap" in aline:
                 try:
                     cap = round(int(more[i+2].split(",")[0])/billion,7)
                 except:
                     pass
+
+            elif nextone and "trailingAnnualDividendYield" in aline:
+                try:
+                    dividend=float(more[i+2].split(",")[0])
+                except:
+                    pass
+
             elif nextone and "beta" in aline:
                 try:
                     beta=float(more[i+2].split(",")[0])
                 except:
-                    beta=None
+                    pass
+
             elif nextone and "trailingPE" in aline:
                 try:
                     pe=float(more[i+2].split(",")[0])
-                    return (shares, cap, lastprice, beta, pe)
+                    return (cap, beta, pe, dividend)
                 except:
-                    pe=None
-                    return True
+                    pass
+#                    return True
 
-#    print (shares, cap, cap2, change, lastprice, beta, pe)
+    if cap:
+        return (cap, beta, pe, dividend)
     return True
-#print (parsePage("BA", update=False))
-#raise SystemExit
 
 import calendar
 import time
@@ -97,16 +109,17 @@ def saveOutstanding(update=False):
             print("idx: {}".format( idx))
         try:
             answer = parsePage(astock, update=update)
-            if answer == True:
+            if answer == True and not update:
                 answer = parsePage(astock, update=True)
                 if answer == True:
                     continue
             dictionary[astock] = answer
             try:
-                total_mcsorted.add((answer[1], astock))
+                total_mcsorted.add((answer[0], astock))
             except:
+                print("astock: {}".format( astock))
                 print("answer: {}".format( answer))
-                raise SystemExit
+#                raise SystemExit
         except Exception as e:
             print ('saveFailed: '+ str(e))
             z.trace(e)
@@ -119,6 +132,7 @@ def saveOutstanding(update=False):
     z.setp(dictionary, outname)
 
     outname = "ITOT_total_mcsorted"
+    print("saved : {}".format( outname ))
     z.setp(total_mcsorted, outname)
 #    other(outname)
 
@@ -299,7 +313,7 @@ def updateJsonCompany(astock):
     return name
 
 if __name__ == '__main__':
-#    saveOutstanding(update=False)
+#    saveOutstanding(update=True)
     zen.diffOuts()
 
 #    print(parsePage("WTW", update=False))
