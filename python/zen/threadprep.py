@@ -21,6 +21,7 @@ sdict = None
 ydict = None
 pdict = None
 pdict2 = None
+closekey = z.closekey
 
 import random
 aset = set()
@@ -35,7 +36,7 @@ def saveDates(astock):
             if year < 2013:
                 continue
 
-            close = round(float(row['Close']),2)
+            close = round(float(row[closekey]),2)
             if random.randint(0, 85) == 1:
                 ydict[date].append((close, astock))
                 aset.add(astock)
@@ -61,7 +62,7 @@ def doone(astock, directory = "historical", complete = False):
         year = int(tokens[0])
 
         if (year > 2012) or (year == 2012 and int(tokens[1]) > 8):
-            c = float(row['Close'])
+            c = float(row[closekey])
             closes.append(c)
 
             if not firstdate:
@@ -99,7 +100,7 @@ def doone(astock, directory = "historical", complete = False):
         if not prevyear:
             prevyear = year
 
-        close = float(row['Close'])
+        close = float(row[closekey])
 
         pdict[astock][date] = close
 
@@ -171,12 +172,14 @@ def regenerate(stocks, code, directory):
 
         if not idx % 100:
             print("idx : {}".format( idx ))
+
         try:
             doone(astock, directory)
         except Exception as e:
             print("problem astock: {}".format( astock))
             z.trace(e)
             pass
+
     z.setp(ydict, "{}_Y".format(code))
     z.setp(sdict, "{}_SS".format(code))
     z.setp(pdict, "{}_P".format(code))
@@ -199,7 +202,7 @@ def regenerateBEtfs():
     regenerate(stocks, "ETF", "ETF")
 
 def regenerateBUY():
-    print ("regenerating BUY2")
+    print ("regenerating BUY2 from ITOT_total_mcsorted")
     stocks = z.getp("ITOT_total_mcsorted")
     stocks = stocks[-1048:]
     regenerate(stocks, "BUY2", "historical")

@@ -132,7 +132,7 @@ def saveOutstanding(update=False):
     z.setp(dictionary, outname)
 
     outname = "ITOT_total_mcsorted"
-    print("saved : {}".format( outname ))
+    print("update saved : {}".format( outname ))
     z.setp(total_mcsorted, outname)
 #    other(outname)
 
@@ -313,7 +313,7 @@ def updateJsonCompany(astock):
     return name
 
 if __name__ == '__main__':
-#    saveOutstanding(update=True)
+    saveOutstanding(update=True)
     zen.diffOuts()
 
 #    print(parsePage("WTW", update=False))

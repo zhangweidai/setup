@@ -11,6 +11,8 @@ def getPath(path, allowmake = True):
         os.makedirs(parent)
     return path
 
+closekey = "Adj Close"
+
 def getAdded():
     ret = set()
     ret.add("SPY")
@@ -232,16 +234,6 @@ def getLatestDate(etf="IUSG", final=""):
 import zen
 def getPrice(*kwargs, **kwarg2s):
     return zen.getPrice(*kwargs, **kwarg2s)
-#    df = getCsv(astock)
-#    if type(idx) == int:
-#        return round(df.at[idx,"Close"],3)
-#    try:
-#        idx = list(df["Date"]).index(idx)
-#    except Exception as e:
-#        getPrice.noprice.append(astock)
-#        return None
-#    return round(df.at[idx,"Close"],3)
-#getPrice.noprice = list()
 
 #    items = [ "ROKA", "CRDB", "LGFB", "CBSA", "MPO", "LGFA", "CRDA", 
 def removeFromStocks(itemd):
@@ -373,7 +365,7 @@ def saveEtfPrices():
         path = getPath("historical/{}.csv".format(astock))
         for row in csv.DictReader(open(path)):
             cdate = row['Date']
-            saveEtfPrices.prices[cdate][astock] = float(row['Close'])
+            saveEtfPrices.prices[cdate][astock] = float(row[closekey])
     setp(saveEtfPrices.prices, "etfprices")
 saveEtfPrices.prices = defaultdict(dict)
 

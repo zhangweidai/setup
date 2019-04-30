@@ -164,6 +164,7 @@ alias download="py z.py download"
 alias wab="py zen.py wab"
 alias buyl="py zen.py buy --date=l"
 alias gbuy="py zen.py gbuy"
+alias gbuy2="py zen.py gbuy2"
 #sudo -S true
 set bell-style none
 

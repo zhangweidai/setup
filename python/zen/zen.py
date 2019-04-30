@@ -3,6 +3,7 @@ from functools import lru_cache
 from collections import defaultdict, deque
 from sortedcontainers import SortedSet
 import matplotlib.pyplot as plt
+import readchar
 import csv
 import dask_help
 import math
@@ -12,7 +13,20 @@ import threadprep
 import portfolio
 import util
 import z 
-
+#
+#import atexit
+#import curses
+#stdscr = curses.initscr()  # initialise it
+#stdscr.clear()  # Clear the screen
+#@atexit.register
+#def goodbye():
+#    """ Reset terminal from curses mode on exit """
+#    curses.nocbreak()
+#    if stdscr:
+#        stdscr.keypad(0)
+#    curses.echo()
+#    curses.endwin()
+closekey = z.closekey
 keeping = 60
 discardlocation = int(keeping/2)
 
@@ -28,7 +42,7 @@ def getPriceFromCsv(astock, date = None, openp=None):
             if cdate == date:
                 if not openp:
                     return float(row[field])
-                return float(row["Open"]), float(row["Close"])
+                return float(row["Open"]), float(row[closekey])
 
     except:
         return None
@@ -94,7 +108,7 @@ def getPrice3(astock, date = None, openp=False):
             getPrice.pdict = z.getp("{}_P".format(loadSortedEtf.etf))
             return getPrice.pdict[astock][date]
         except:
-            return getPriceFromCsv(astock, date, 'Close')
+            return getPriceFromCsv(astock, date, closekey)
 
     print("date : {}".format( date ))
     print("astock: {}".format( astock))
@@ -207,7 +221,7 @@ def regenerateLatestPrices():
         for row in csv.DictReader(open(cpath)):
             pass
         astock = os.path.splitext(entry)[0]
-        getPrice.latest[astock] = ( float(row['Open']), float(row['Close']) )
+        getPrice.latest[astock] = ( float(row['Open']), float(row[closekey]) )
 
     path = z.getPath("ETF")
     listOfFiles = os.listdir(path)
@@ -216,7 +230,7 @@ def regenerateLatestPrices():
         for row in csv.DictReader(open(cpath)):
             pass
         astock = os.path.splitext(entry)[0]
-        getPrice.latest[astock] = ( float(row['Open']), float(row['Close']) )
+        getPrice.latest[astock] = ( float(row['Open']), float(row[closekey]) )
 
     z.setp(getPrice.latest, "latestprices")
 
@@ -237,14 +251,13 @@ def getBounceProb(astock, startd = "2016-07-11"):
 
     for idx in range(starti, len(dates)-2):
         opend = df.at[idx,"Open"]
-        close = df.at[idx,"Close"]
+        close = df.at[idx,closekey]
         change = close/opend
         if change < 0.90:
-#            opend = df.at[idx,"Close"]
             bought.append(close)
             order.append(astock)
 
-            close2 = df.at[idx+1,"Close"]
+            close2 = df.at[idx+1,closekey]
             change = close2/close
             if change < 1.0:
                 downs += 1
@@ -273,7 +286,7 @@ def getDropScore(astock, startd = "2018-07-11", days = 64):
     lastrecovday = None
     recovPrice = None
     for idx in range(starti, len(dates)-days):
-        close = df.at[idx + days,"Close"]
+        close = df.at[idx + days,closekey]
         opend = df.at[idx,"Open"]
         change = close/opend
         if change < minc:
@@ -344,7 +357,7 @@ def getProbSale(astock, dated = None):
             countidx += 1
 
         opend = float(row['Open'])
-        close = float(row['Close'])
+        close = float(row[closekey])
 
         change = close/opend
         if change < largest:
@@ -417,7 +430,7 @@ def plotProbSale(astock):
             plt.scatter(idx, value)
 
         opend = float(row['Open'])
-        close = float(row['Close'])
+        close = float(row[closekey])
 
         change = close/opend
         if change < 1.000:
@@ -720,7 +733,7 @@ def longlists(etf, date):
         try:
             cdics["C30"].add(( float(row['C30']) , astock))
             cdics["Volume"].add(( float(row['Volume']) , astock))
-            cdics["Price"].add(( float(row['Close']) , astock))
+            cdics["Price"].add(( float(row[closekey]) , astock))
             cdics["Drop"].add((getDropScore(astock), astock))
             avgC, probD, avgD, avgG, change = getProbSale(astock)
             cdics["AvgC"].add((avgC, astock))
@@ -761,10 +774,10 @@ startd = "2014-04-01"
 dics = None
 dics52 = None
 def reloaddic(latest=True):
-    print ("regenerating buydics52")
     global dics
-
     dates = z.getp("dates")
+    print ("regenerating buydics52 {}".format(dates[-1]))
+
     date52 = dates[-52]
 
     path = z.getPath('historical')  
@@ -793,7 +806,7 @@ def reloaddic(latest=True):
             if not start52 and latest:
                 continue
 
-            ans = (float(row['Open']), float(row['Close']))
+            ans = (float(row['Open']), float(row[closekey]))
 
             if start52:
                 dics52[astock][date] = ans
@@ -810,21 +823,30 @@ def reloaddic(latest=True):
     z.setp(dics52, "buydics52")
 
 def buyl(args, dated):
-    if args.main == 'gbuy':
+    if "gbuy" in args.main:
         import update_history
         try:
-            if update_history.update():
-                update_history.update(where= "ETF")
-                print ("done updating csvs")
+            latestprices = dict()
+            if update_history.update(prices = latestprices):
+                update_history.update(where= "ETF", prices=latestprices)
+                z.setp(latestprices, "latestprices")
+
+                if "2" in args.main:
+                    import json_util
+                    json_util.saveOutstanding(update=True)
+                    diffOuts()
+
                 reloaddic()
-                regenerateLatestPrices()
                 threadprep.regenerateBUY()
-                diffOuts()
+
                 exit()
+
         except Exception as e:
+            print ("problem with gbuy")
             z.trace(e)
             exit()
 
+    loadSortedEtf("BUY2")
     print ("\netfs")
 
     dscore = whatAboutThese(z.getEtfList(forEtfs=True), dated=dated)
@@ -839,6 +861,10 @@ def buyl(args, dated):
         rankstock = z.getp("ranketf")
         whatAboutThese(rankstock, dated=dated)
 
+        key = readchar.readkey()
+        if key == "q":
+            return
+
         try:
             print ("\ndiv extended")
             divs = z.getp("divset")[-30:]
@@ -850,6 +876,10 @@ def buyl(args, dated):
     for mode in modes:
         whatAboutThisMode(mode, "low", usedate, dated)
         whatAboutThisMode(mode, "high", usedate, dated)
+
+        key = readchar.readkey()
+        if key == "q":
+            return
 
 
 goodmodes = ["Volume/low", "Price/low", "Var50/high", "Drops/high"]
@@ -1223,8 +1253,6 @@ if __name__ == '__main__':
 
             # generate buy list which is ISUG + EXTRAS
             if "buy" in args.main or args.main == "buy" or args.main == 'gbuy':
-
-                loadSortedEtf("BUY2")
                 buyl(args, args.date)
 
             # generate buy list which is ISUG + EXTRAS

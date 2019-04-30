@@ -7,11 +7,13 @@ import datetime
 import fix_yahoo_finance as yf
 import zprep
 
+closekey = z.closekey
+
 from pandas_datareader import data as pdr
 yf.pdr_override()
 problems = list()
 def getDataFromYahoo(astock, cdate):
-    print("astock: {}".format( astock))
+    return
     global problems
     df = None
     try:
@@ -27,7 +29,7 @@ def getDataFromYahoo(astock, cdate):
     
     for idx in df.index:
         try:
-            change = df.at[idx, "Close"]/df.at[idx+1, "Close"]
+            change = df.at[idx, "Close"] / df.at[idx+1, "Close"]
             if change > 5 or change < 0.15 or df.at[idx, "Volume"] == 0:
                 print ("may have problem {}".format(astock))
         except Exception as e:
@@ -39,20 +41,28 @@ def getDataFromYahoo(astock, cdate):
 
     return df
 
-def update(where= "historical", problems = [], attempts=0):
+def update(where= "historical", problems = [], attempts=0, prices = dict()):
 
-    if attempts > 4:
+    if attempts > 3:
         print ("tried too many times")
         print("problems : {}".format( problems ))
         return
 
     parentdir = util.getPath(where)
-    print("parentdir : {}".format( parentdir ))
+    print("updating : {}".format( parentdir ))
+
     listOfFiles = os.listdir(parentdir)
-    for entry in listOfFiles:
+    for idx,entry in enumerate(listOfFiles):
         astock = os.path.splitext(entry)[0]
         path = "{}/{}".format(parentdir,entry)
+
+        if not idx % 100:
+            print("idx : {}".format( idx ))
     
+        for row in csv.DictReader(open(path)):
+            pass
+        prices[astock] = row['Open'], row[closekey]
+
         t = os.path.getmtime(path)
         csvdate = datetime.datetime.fromtimestamp(t)
         csvday = csvdate.day
@@ -62,11 +72,8 @@ def update(where= "historical", problems = [], attempts=0):
 
         if csvday >= ttoday and tmonth == csvmonth:
             continue
-    
-        for row in csv.DictReader(open(path)):
-            cdate = row['Date']
 
-        df = getDataFromYahoo(astock, cdate)
+        df = getDataFromYahoo(astock, row['Date'])
         if df is None:
             problems.append(astock)
             continue
@@ -90,23 +97,25 @@ def update(where= "historical", problems = [], attempts=0):
                 f.write("{},{},{},{},{},{},{}\n".format(\
                             cdate, opend, high, low, closed, adj, vol))
 
+                prices[astock] = cprice
+
         if not added:
             problems.append(astock)
 
     if where == "historical":
         zprep.setStockDays() 
 
-    if problems:
-        attempts += 1
-        update(where=where, problems=problems, attempts=attempts)
+#    if problems:
+#        attempts += 1
+#        update(where=where, problems=problems, attempts=attempts, prices=prices)
 
     return True
 
 if __name__ == '__main__':
 #    import sys
 #    import dask_help
-#    update()
-    update(where= "ETF")
+    update()
+#    update(where= "ETF")
     # use gbuy
 #    try:
 #        if len(sys.argv) > 1:
