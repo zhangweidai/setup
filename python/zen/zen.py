@@ -71,7 +71,6 @@ def getPrice(astock, date = None, openp=False):
             return getPrice.pricedict[astock][date][idx]
         except:
             pass
-
     try:
         return getPrice.pdict[astock][date]
     except Exception as e:
@@ -341,7 +340,7 @@ def getProbSale(astock, dated = None):
     countidx = 0
     started = False
     largest = 1.00
-
+    prevclose = None
     for row in csv.DictReader(open(path)):
 
         if not started:
@@ -356,12 +355,15 @@ def getProbSale(astock, dated = None):
         else:
             countidx += 1
 
-        opend = float(row['Open'])
         close = float(row[closekey])
+        if not prevclose:
+            prevclose = float(row['Open'])
 
-        change = close/opend
+        change = close/prevclose
         if change < largest:
             largest = change
+
+        prevclose = close
 
         if change < 1.000:
             downs += 1
@@ -476,7 +478,9 @@ def poolQuery():
         
 
 #skipss = ['CVET']
+savedSort = SortedSet()
 def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, lowprice = False, sell=False, ht=None, dated = None):
+    global savedSort
 
     dates = z.getp("dates")
     astock = value
@@ -486,14 +490,16 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
 
     try:
         oprice, price = getPrice(astock, dated, openp = 'both')
+        oprice = round(getPrice(astock, dates[-2]),3)
     except Exception as e:
         print("1no price dated: {}".format( dated))
         print("1no price astock : {}".format( astock ))
         noprices.append(astock)
         raise SystemExit
         return
+
     try:
-        idx4 = -4 if not dated else dates.index(dated)-4 
+        idx4 = -5 if not dated else dates.index(dated)-5
         o3price = round(getPrice(astock, dates[idx4]),3)
     except:
         print("no price dated: {}".format( dated))
@@ -548,6 +554,7 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
             chg3 = z.percentage(price/o3price,1)
         else:
             cprice = live * price
+            savedSort.add((live, astock))
             chg1 = z.percentage(cprice/oprice,1)
             chg3 = z.percentage(cprice/o3price,1)
 
@@ -592,10 +599,10 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
     avgChanges.append(avgC)
     avgchanget.append(chgT)
 
-#    if mcchg:
-#        mcchg = z.percentage(mcchg)
-#    else:
-    mcchg = "NA"
+    if mcchg and mcchg < 5.00:
+        mcchg = z.percentage(mcchg)
+    else:
+        mcchg = "NA"
 
     if type(beta) == float:
         beta = round(beta,2)
@@ -828,7 +835,9 @@ def buyl(args, dated):
         try:
             latestprices = dict()
             if update_history.update(prices = latestprices):
+                print ("finished update history 1")
                 update_history.update(where= "ETF", prices=latestprices)
+                print ("finished update history 2")
                 z.setp(latestprices, "latestprices")
 
                 if "2" in args.main:
@@ -858,7 +867,7 @@ def buyl(args, dated):
         whatAboutThese(rankstock, dated=dated)
     
         print ("\netf extended")
-        rankstock = z.getp("ranketf")
+        rankstock = z.getp("ranketf2")
         whatAboutThese(rankstock, dated=dated)
 
         key = readchar.readkey()
@@ -880,6 +889,11 @@ def buyl(args, dated):
         key = readchar.readkey()
         if key == "q":
             return
+
+    if savedSort:
+        print ("\narranged change")
+        whatAboutThese(savedSort[-5:], dated=dated)
+        whatAboutThese(savedSort[:5], dated=dated)
 
 
 goodmodes = ["Volume/low", "Price/low", "Var50/high", "Drops/high"]
@@ -1117,8 +1131,8 @@ getStats.outdic = dict()
 def getLastDate():
     path = z.getPath("historical/IVV.csv")
     for row in csv.DictReader(open(path)):
-        date = row['Date']
-    return date
+        pass
+    return row['Date']
 
 @lru_cache(maxsize=1)
 def getEtfFeeDic():

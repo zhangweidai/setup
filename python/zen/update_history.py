@@ -13,7 +13,7 @@ from pandas_datareader import data as pdr
 yf.pdr_override()
 problems = list()
 def getDataFromYahoo(astock, cdate):
-    return
+    print("astock: {}".format( astock))
     global problems
     df = None
     try:
@@ -97,7 +97,7 @@ def update(where= "historical", problems = [], attempts=0, prices = dict()):
                 f.write("{},{},{},{},{},{},{}\n".format(\
                             cdate, opend, high, low, closed, adj, vol))
 
-                prices[astock] = cprice
+                prices[astock] = opend, adj
 
         if not added:
             problems.append(astock)
