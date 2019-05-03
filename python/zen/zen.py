@@ -477,6 +477,17 @@ def poolQuery():
         print (len(cmode))
         
 
+def getMCRank(astock):
+    try:
+        return getMCRank.dic.index(astock)
+    except:
+        try:
+            getMCRank.dic = z.getp("ITOT_total_mcsorted_idx")
+            return getMCRank.dic.index(astock)
+        except:
+            pass
+    return "NA"
+
 #skipss = ['CVET']
 savedSort = SortedSet()
 def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, lowprice = False, sell=False, ht=None, dated = None):
@@ -490,12 +501,16 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
 
     try:
         oprice, price = getPrice(astock, dated, openp = 'both')
-        oprice = round(getPrice(astock, dates[-2]),3)
+        try:
+            oprice = round(getPrice(astock, dates[-2]),3)
+        except:
+            pass
     except Exception as e:
+        print("1no price dated: {}".format( dates[-2]))
         print("1no price dated: {}".format( dated))
         print("1no price astock : {}".format( astock ))
         noprices.append(astock)
-        raise SystemExit
+#        raise SystemExit
         return
 
     try:
@@ -517,6 +532,8 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
         z.trace(e)
         print("problem with astock: {}".format( astock))
         return
+
+    mcrank = getMCRank(astock)
 
     try:
         beta, pe, mcchg, div = getChangeStats(astock)
@@ -661,6 +678,7 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
             z.percentage(largest),
             etfrank,
             div,
+            mcrank,
             ddscore)
     except Exception as e:
         z.trace(e)
@@ -672,11 +690,11 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
 def getCol():
     #        astock $price avgC   median probD  avgD  avgG    d0     d1     d2     
     return " {0:<6} {1:>7} {2:>7} {3:>6} {4:>4} {5:>7} {6:>7} {7:>8} {8:>8} {9:>8} "\
-           " {10:>7} {11:>6} {12:>6} {13:>7} {14:>4} {15:>7} {16:>7} {17:>5} {18:>6} {19:>8} {20:>8} {21:>8}  {22:<5}"
+           " {10:>7} {11:>6} {12:>6} {13:>7} {14:>4} {15:>7} {16:>7} {17:>5} {18:>6} {19:>8} {20:>8} {21:>8} {22:>3} {23:<5}"
            # chgT    chg1    chg3    live    etfc    recov   mcchg   beta    pe      largest etfrank div     ddscore
 
 def whatAboutThese(stocks, lowprice = False, sell=False, ht=None, dated = None):
-    print(getCol().format("stock", "price", "avgC", "median", "probD", "avgD ", "avgG ", "d0" ,"d1 ", "d2 ", "chgT ", "chg1", "chg3", "live ", "etf ", "recov  ", "mcchg  ", "beta  ", "pe  ", "largest  ",  "erank  ", "div   ", "display"))
+    print(getCol().format("stock", "price", "avgC", "median", "probD", "avgD ", "avgG ", "d0" ,"d1 ", "d2 ", "chgT ", "chg1", "chg3", "live ", "etf ", "recov  ", "mcchg  ", "beta  ", "pe  ", "largest  ",  "erank  ", "div   ", "mcrnk", "display"))
 
     if not stocks:
         return

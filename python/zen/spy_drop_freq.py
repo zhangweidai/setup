@@ -4,7 +4,7 @@ from collections import defaultdict, deque
 import zen
 import csv
 
-path = z.getPath("ETF/SOXX.csv")
+path = z.getPath("ETF/IUSG.csv")
 prevclose = None
 changes = list()
 negs = list()

@@ -131,9 +131,20 @@ def saveOutstanding(update=False):
     outname = "{}_outstanding".format(epoch)
     z.setp(dictionary, outname)
 
-    outname = "ITOT_total_mcsorted"
     print("update saved : {}".format( outname ))
+    outname = "ITOT_total_mcsorted"
     z.setp(total_mcsorted, outname)
+    savMCIdx(total_mcsorted)
+
+def savMCIdx(total_mcsorted = None):
+    if not total_mcsorted:
+        outname = "ITOT_total_mcsorted"
+        total_mcsorted = z.getp(outname)
+
+    ITOT_total_mcsorted_idx = list()
+    for item in reversed(total_mcsorted):
+        ITOT_total_mcsorted_idx.append(item[1])
+    z.setp(ITOT_total_mcsorted_idx, "ITOT_total_mcsorted_idx")
 #    other(outname)
 
 #raise SystemExit
@@ -313,7 +324,8 @@ def updateJsonCompany(astock):
     return name
 
 if __name__ == '__main__':
-    saveOutstanding(update=True)
-    zen.diffOuts()
+    savMCIdx()
+#    saveOutstanding(update=False)
+#    zen.diffOuts()
 
 #    print(parsePage("WTW", update=False))
