@@ -490,7 +490,7 @@ def getMCRank(astock):
 
 #skipss = ['CVET']
 savedSort = SortedSet()
-def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, lowprice = False, sell=False, ht=None, dated = None):
+def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear, sellsl, lowprice = False, sell=False, ht=None, dated = None):
     global savedSort
 
     dates = z.getp("dates")
@@ -604,9 +604,10 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
         print("probD: {}".format( probD))
         return
 
-    ddscore = dscore
-    if getSortedStocks.highlight_score and dscore >= getSortedStocks.highlight_score:
-        ddscore = colored(ddscore, "green")  
+#    ddscore = dscore
+#    if getSortedStocks.highlight_score and dscore >= getSortedStocks.highlight_score:
+#        ddscore = colored(ddscore, "green")  
+
 
 #    if d2 > 1.00:
 #        recov = "WOW"
@@ -637,6 +638,7 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
         div = "NA"
 
 
+    # above etf rank
     try:
         etfrank = z.getp("ranklist").index(astock)
     except Exception as e:
@@ -646,7 +648,12 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
 
 
     etfc = util.getEtfQualifications(astock, count=True)
-
+    y1w, y1m = getYearly(astock)
+    y1l = getLastYearChange(astock)
+    if y1l != "NA":
+        avgOneYear.append(y1l)
+        y1l = z.percentage(y1l)
+    ultrank = getUltRank(astock)
     try:
         if astock in myportlist:
             astock = "*{}".format(astock)
@@ -654,7 +661,6 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
             astock = " {}".format(astock)
     except:
         pass
-
 
     try:
         msg = getCol().format(astock, price, 
@@ -679,7 +685,10 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
             etfrank,
             div,
             mcrank,
-            ddscore)
+            y1w,
+            y1m,
+            y1l,
+            ultrank)
     except Exception as e:
         z.trace(e)
         return
@@ -687,14 +696,38 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl, low
     sorts.add((dscore,msg))
     return dscore
 
+def getUltRank(astock):
+    ultdict = z.getp("ultdict")
+    try:
+        return ultdict[astock]
+    except:
+        return "NA"
+    return 
+
+def getLastYearChange(astock):
+    yearlydic = z.getp("latestAnnual")
+    try:
+        return yearlydic[astock]
+    except:
+        pass
+    return "NA"
+
+def getYearly(astock):
+    yearlydic = z.getp("yearlydic")
+    try:
+        one, two = yearlydic[astock]
+    except:
+        return "NA", "NA"
+    return z.percentage(one), z.percentage(two)
+
 def getCol():
     #        astock $price avgC   median probD  avgD  avgG    d0     d1     d2     
     return " {0:<6} {1:>7} {2:>7} {3:>6} {4:>4} {5:>7} {6:>7} {7:>8} {8:>8} {9:>8} "\
-           " {10:>7} {11:>6} {12:>6} {13:>7} {14:>4} {15:>7} {16:>7} {17:>5} {18:>6} {19:>8} {20:>8} {21:>8} {22:>3} {23:<5}"
-           # chgT    chg1    chg3    live    etfc    recov   mcchg   beta    pe      largest etfrank div     ddscore
+           " {10:>7} {11:>6} {12:>6} {13:>7} {14:>4} {15:>7} {16:>7} {17:>5} {18:>6} {19:>8} {20:>8} {21:>8} {22:>7} {23:>8} {24:>8} {25:>8} {26:>5}"
+           # chgT    chg1    chg3    live    etfc    recov   mcchg   beta    pe      largest etfrank div     mcrank  y1w     y1m     y1l     ultrank
 
 def whatAboutThese(stocks, lowprice = False, sell=False, ht=None, dated = None):
-    print(getCol().format("stock", "price", "avgC", "median", "probD", "avgD ", "avgG ", "d0" ,"d1 ", "d2 ", "chgT ", "chg1", "chg3", "live ", "etf ", "recov  ", "mcchg  ", "beta  ", "pe  ", "largest  ",  "erank  ", "div   ", "mcrnk", "display"))
+    print(getCol().format("stock", "price", "avgC", "median", "probD", "avgD ", "avgG ", "d0" ,"d1 ", "d2 ", "chgT ", "chg1", "chg3", "live ", "etf ", "recov  ", "mcchg  ", "beta  ", "pe  ", "largest  ",  "erank  ", "div   ", "mcrnk  ","y1w","y1m", "y1l", "ultrank"))
 
     if not stocks:
         return
@@ -704,11 +737,11 @@ def whatAboutThese(stocks, lowprice = False, sell=False, ht=None, dated = None):
     noprices = list()
     avgChanges = list()
     avgchanget = list()
+    avgOneYear = list()
     highdscore = 0
 
     for idx, value in enumerate(stocks):
-        dscore = whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, sellsl,
-                lowprice = lowprice, sell=sell, dated = dated)
+        dscore = whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear, sellsl, lowprice = lowprice, sell=sell, dated = dated)
         if dscore and dscore > highdscore:
             highdscore = dscore
 
@@ -724,8 +757,8 @@ def whatAboutThese(stocks, lowprice = False, sell=False, ht=None, dated = None):
 
     if avgChanges:
         total = z.avgp(avgchanget)
-        print ("Average 52 day change {} - Total change {}".format(
-                    z.avgp(avgChanges), total))
+        yearone = z.avgp(avgOneYear)
+        print ("Average 52 day change {} - Total change {} - Annual Change {}".format(z.avgp(avgChanges), total, yearone))
 
     return highdscore
 
@@ -880,12 +913,24 @@ def buyl(args, dated):
     getSortedStocks.highlight_score = dscore
     
     if not len(modes) == 1:
+        print ("\nlowyearly")
+        rankstock = z.getp("lowyear")
+        whatAboutThese(rankstock, dated=dated)
+
         print ("\nranked")
         rankstock = z.getp("rankstock")
         whatAboutThese(rankstock, dated=dated)
+
+        print ("\nranked2")
+        rankstock = z.getp("ranked_stocks")
+        whatAboutThese(rankstock, dated=dated)
+
+        print ("\nranked_ult")
+        rankstock = z.getp("ultrank")
+        whatAboutThese(rankstock, dated=dated)
     
         print ("\netf extended")
-        rankstock = z.getp("ranketf2")
+        rankstock = z.getp("ranketf")
         whatAboutThese(rankstock, dated=dated)
 
         key = readchar.readkey()

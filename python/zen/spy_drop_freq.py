@@ -4,7 +4,7 @@ from collections import defaultdict, deque
 import zen
 import csv
 
-path = z.getPath("ETF/IUSG.csv")
+path = z.getPath("ETF/IHI.csv")
 prevclose = None
 changes = list()
 negs = list()
@@ -67,7 +67,6 @@ print ("max(dayslist)")
 print (max(dayslist))
 print ("min(dayslist)")
 print (min(dayslist))
-
 
 print("len: {}".format( len(changes)))
 print("dic: {}".format( dic))
