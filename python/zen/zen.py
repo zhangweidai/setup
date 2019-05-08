@@ -723,7 +723,7 @@ def getYearly(astock):
 def getCol():
     #        astock $price avgC   median probD  avgD  avgG    d0     d1     d2     
     return " {0:<6} {1:>7} {2:>7} {3:>6} {4:>4} {5:>7} {6:>7} {7:>8} {8:>8} {9:>8} "\
-           " {10:>7} {11:>6} {12:>6} {13:>7} {14:>4} {15:>7} {16:>7} {17:>5} {18:>6} {19:>8} {20:>8} {21:>8} {22:>7} {23:>8} {24:>8} {25:>8} {26:>5}"
+           " {10:>7} {11:>6} {12:>6} {13:>7} {14:>4} {15:>6} {16:>6} {17:>5} {18:>6} {19:>8} {20:>7} {21:>8} {22:>7} {23:>8} {24:>8} {25:>8} {26:>5}"
            # chgT    chg1    chg3    live    etfc    recov   mcchg   beta    pe      largest etfrank div     mcrank  y1w     y1m     y1l     ultrank
 
 def whatAboutThese(stocks, lowprice = False, sell=False, ht=None, dated = None):
@@ -757,7 +757,10 @@ def whatAboutThese(stocks, lowprice = False, sell=False, ht=None, dated = None):
 
     if avgChanges:
         total = z.avgp(avgchanget)
-        yearone = z.avgp(avgOneYear)
+        try:
+            yearone = z.avgp(avgOneYear)
+        except:
+            yearone = "NA"
         print ("Average 52 day change {} - Total change {} - Annual Change {}".format(z.avgp(avgChanges), total, yearone))
 
     return highdscore

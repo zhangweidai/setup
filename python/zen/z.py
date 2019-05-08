@@ -50,8 +50,10 @@ def syp(data, name):
         os.remove(path)
     pickle.dump(data, open(path, "wb"))
 
+getpd = list()
 @lru_cache(maxsize=20)
 def getp(name, override="pkl"):
+    getpd.append(name)
     try:
         path = getPath("{}/{}.pkl".format(override, name))
         return pickle.load(open(path, "rb"))
@@ -61,6 +63,16 @@ def getp(name, override="pkl"):
         except:
             pass
     return None
+
+import atexit
+from shutil import copyfile
+@atexit.register
+def goodbye():
+    print("getpd: {}".format( getpd))
+    for save in getpd:
+        path = getPath("pkl/{}.pkl".format(save))
+        newpath = getPath("pkl2/{}.pkl".format(save))
+        copyfile(path, newpath)
 
 def setp(data, name, override="pkl"):
     path = getPath("{}/{}.pkl".format(override, name))
