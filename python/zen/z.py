@@ -66,7 +66,7 @@ def getp(name, override="pkl"):
 
 import atexit
 from shutil import copyfile
-gsave = True
+gsave = False
 
 @atexit.register
 def goodbye():

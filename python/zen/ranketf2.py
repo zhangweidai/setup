@@ -55,24 +55,23 @@ sdate = "2013-01-02"
 didx = dates.index(sdate)
 print("didx : {}".format( didx ))
 lens = len(dates)
-ayear = 252
+ayear = 202
 #latestAnnual = dict()
 latestAnnual = z.getp("latestAnnual")
 thelist = list()
 whats = set()
+sdate_look = (-1  *  ayear ) 
 for sdate in range(-1*(lens-didx),(-1*ayear)+1):
-    edate = sdate + ayear
+    edate = sdate + ayear - 1
     sday = dates[sdate]
     eday = dates[edate]
-#    print("sday : {}".format( sday ))
-#    print("eday : {}".format( eday ))
-#    continue
-#    raise SystemExit
     score = 1
     if "2019" in eday:
         score = 2
-#    print("date : {}".format( dates[sdate] ))
-#    print("date : {}".format( dates[edate] ))
+#    print("sdate: {}".format( sdate))
+#print("sdate_look : {}".format( sdate_look ))
+#raise SystemExit
+#def dele():
     for astock in stocks:
         if not astock == "IUSG":
             continue
@@ -97,7 +96,7 @@ for sdate in range(-1*(lens-didx),(-1*ayear)+1):
                 continue
         change = round(second/first,4)
 
-        if sdate == -252:
+        if sdate == sdate_look:
             thelist.append(change)
             latestAnnual[astock] = change
 
@@ -127,8 +126,8 @@ print (z.avg(thelist))
 print (statistics.median(thelist))
 print (min(thelist))
 print (max(thelist))
-z.setp(whats, "whats")
-
+#z.setp(whats, "whats")
+#raise SystemExit
 #for test in range(testpoints):
 #    if not test % 100:
 #        print("test : {}".format( test ))
@@ -176,8 +175,8 @@ z.setp(whats, "whats")
 median = SortedSet()
 lowest = SortedSet()
 lowestdic = dict()
-#yearlydic = z.getp("yearlydic")
-yearlydic = dict()
+yearlydic = z.getp("yearlydic")
+#yearlydic = dict()
 yearlyscore = SortedSet()
 for astock,value in vals.items():
     if astock in problems:
@@ -200,7 +199,7 @@ for idx, item in enumerate(reversed(yearlyscore)):
 z.setp(ultdict, "ultdict")
 
 #z.setp(lowestdic,"lowestdic")
-#z.setp(yearlydic,"yearlydic")
+z.setp(yearlydic,"yearlydic")
 print("lowest: {}".format( lowest[-20:]))
 print("median: {}".format( median[-20:]))
 

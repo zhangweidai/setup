@@ -5,6 +5,7 @@ import math
 import pandas
 import datetime
 import pickle
+import z
 import fix_yahoo_finance as yf
 import fnmatch
 import urllib.request, json
@@ -35,17 +36,6 @@ def getPath(path, allowmake = True):
     if allowmake and not os.path.exists(parent):
         os.makedirs(parent)
     return path
-
-def getp(name):
-    try:
-        path = getPath("pkl/{}.pkl".format(name))
-        return pickle.load(open(path, "rb"))
-    except:
-        return None
-
-def setp(data, name):
-    path = getPath("pkl/{}.pkl".format(name))
-    pickle.dump(data, open(path, "wb"))
 
 def getRangedDist(items):
     maxr = 100
@@ -248,7 +238,7 @@ def getFromHoldings():
 
 @lru_cache(maxsize=6)
 def getETF(etf = "IVV"):
-    etfdict = getp("etfdict")
+    etfdict = z.getp("etfdict")
     try:
         path = getPath("holdings/{}_holdings.csv".format(etf))
         getETF.ret_df[etf] = pandas.read_csv(path)
@@ -265,7 +255,7 @@ def getScoreFromCsv(astock):
         df = getStocks.dataf
     except:
         try:
-            path = getp("buyfile")
+            path = z.getp("buyfile")
             df = pandas.read_csv(path)
         except Exception as e:
             try:
@@ -327,14 +317,14 @@ getCompanyName.etfs = ["IVV", "IWB", "IUSG", "USMV", "IJH", "IJR"]
 
 def saveAdded(astock):
     print("astock: {}".format( astock))
-    getAdded.added = getp("addedStocks")
+    getAdded.added = z.getp("addedStocks")
     if getAdded.added == None:
         getAdded.added = set()
     getAdded.added.add(astock)
-    setp(getAdded.added, "addedStocks")
+    z.setp(getAdded.added, "addedStocks")
 
 def getAdded():
-    getAdded.added = getp("addedStocks")
+    getAdded.added = z.getp("addedStocks")
     if getAdded.added == None:
         getAdded.added = set()
     return getAdded.added
@@ -471,7 +461,7 @@ def setGetStocksRet(noivv, simple):
 
 def cleanUpRet():
     try:
-        dels = getp("deletes")
+        dels = z.getp("deletes")
         for item in dels:
             getStocks.ret.remove(item)
     except:
@@ -535,7 +525,7 @@ def getSortDisplay():
 def setWhatToBuy(column, ascending = True):
     try: 
         if not setWhatToBuy.fromfile:
-            setWhatToBuy.fromfile = getp("buyfile")
+            setWhatToBuy.fromfile = z.getp("buyfile")
     except Exception as e:
         print ("setWhatToBuy")
         z.trace(e)
@@ -563,7 +553,6 @@ removed = []
 def getRemovedStocks():
     return removed
 
-import z
 def getLiveData(astock, key = "price", andkey = None):
     try :
         ret = float(getLiveData.cached[astock][key])
@@ -619,7 +608,7 @@ def saveProcessedFromYahoo(astock, add=False):
         return
 
     try:
-        if astock in getp("deletes"):
+        if astock in z.getp("deletes"):
             return
     except:
         pass
@@ -809,7 +798,7 @@ def targetPrice(items):
 #print (df['Date'].tolist()[idx])
 
 def saveTargets():
-    setp(targets, "targets")
+    z.setp(targets, "targets")
 
 def setTargetPrice(astock, price):
     global targets
@@ -819,7 +808,7 @@ targets = dict()
 def getTargetPrice(astock, end = None, start = None):
     global targets
     if not targets:
-        dic = getp("targets")
+        dic = z.getp("targets")
         if not dic:
             for stock in getStocks():
                 path = getPath("csv/{}.csv".format(stock))
@@ -831,7 +820,7 @@ def getTargetPrice(astock, end = None, start = None):
                 idx = listRightIndex(values, minv)
                 date = df['Date'].tolist()[idx]
                 targets[stock] = minv, date
-            setp(targets, "targets")
+            z.setp(targets, "targets")
         else:
             targets = dic
     return targets[astock]
@@ -899,7 +888,7 @@ def saveCsvCache():
     stocks = getStocks()
     for astock in stocks:
         getCsv.savedReads[astock] = getCsv(astock)
-    setp(getCsv.savedReads, "allcsvs")
+    z.setp(getCsv.savedReads, "allcsvs")
                 
 def getCsv(astock, asPath=False, save=True):
 
@@ -1126,7 +1115,7 @@ def getDipDates(astock = "SPY"):
 #raise SystemExit
 
 def getTrimStock(astock):
-    try : return getp("trims")[astock]
+    try : return z.getp("trims")[astock]
     except : return None
 #print (getTrimStock("VST"))
 
@@ -1144,12 +1133,12 @@ def delStock(astock, report = True):
     except Exception as e:
         print ('Failed Removal from getStocks: '+ str(e))
 
-    dels = getp("deletes") or set()
+    dels = z.getp("deletes") or set()
     dels.add(astock)
     print("astock: {}".format( astock))
-    setp(dels, "deletes")
+    z.setp(dels, "deletes")
 
-    dels = getp("deletes")
+    dels = z.getp("deletes")
     print(dels )
 
 def resetStock(astock):
@@ -1159,9 +1148,9 @@ def resetStock(astock):
     except:
         pass
 
-    trims = getp("trims")
+    trims = z.getp("trims")
     del trims[astock]
-    setp(trims, "trims")
+    z.setp(trims, "trims")
 
     saveProcessedFromYahoo(astock)
     del getCsv.savedReads[astock]
@@ -1180,14 +1169,14 @@ def trimStock(astock, end):
 
     try: trimStock.trims[astock] += end
     except : 
-        trimStock.trims = getp("trims")
+        trimStock.trims = z.getp("trims")
         try : trimStock.trims[astock] = end
         except : 
             trimStock.trims = dict()
             trimStock.trims[astock] = end
 
     del getCsv.savedReads[astock]
-    setp(trimStock.trims, "trims")
+    z.setp(trimStock.trims, "trims")
 #print (getTrimStock("GOOG"))
 #trimStock("VST", 200)
 #plot("EXAS")
