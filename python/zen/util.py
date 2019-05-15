@@ -254,6 +254,7 @@ def getETF(etf = "IVV"):
         getETF.ret_df[etf] = pandas.read_csv(path)
 #        retlist = temp['Ticker'].tolist()
     except Exception as e:
+        print(" problem iwth etf: {}".format( etf))
         pass
 #    return retlist
     return etfdict[etf]

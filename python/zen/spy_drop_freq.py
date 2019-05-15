@@ -4,7 +4,7 @@ from collections import defaultdict, deque
 import zen
 import csv
 
-path = z.getPath("ETF/IHI.csv")
+path = z.getPath("ETF/IUSG.csv")
 prevclose = None
 changes = list()
 negs = list()
@@ -32,10 +32,14 @@ for row in csv.DictReader(open(path)):
     if change < 1.00:
         negs.append(change)
 
+    if change < 0.9000:
+        date = row["Date"]
+        print("DATE : {} {} ".format( date, daysapart ))
+
     if change < 0.9800:
         dayslist.append(daysapart)
         date = row["Date"]
-        print("date : {} {} ".format( date, daysapart ))
+#        print("date : {} {} ".format( date, daysapart ))
         if daysapart > 80:
             tally += 1
         daysapart = 0

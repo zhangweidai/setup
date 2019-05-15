@@ -832,19 +832,11 @@ def whatAboutThisMode(mode, typed, usedate, dated):
 
 
 startd = "2014-04-01"
-dics = None
-dics52 = None
-def reloaddic(latest=True):
-    global dics
-    dates = z.getp("dates")
-    print ("regenerating buydics52 {}".format(dates[-1]))
+buydics = None
+buydics52 = None
 
-    date52 = dates[-52]
+def updateDics(listOfFiles, path, buydics52, buydics, date52, latest):
 
-    path = z.getPath('historical')  
-    listOfFiles = os.listdir(path)
-    dics = defaultdict(dict)
-    dics52 = defaultdict(dict)
     for idx,entry in enumerate(listOfFiles):
 
         if not idx % 100:
@@ -870,18 +862,34 @@ def reloaddic(latest=True):
             ans = (float(row['Open']), float(row[closekey]))
 
             if start52:
-                dics52[astock][date] = ans
-
-#            if astock not in working:
-#                continue
+                buydics52[astock][date] = ans
 
             if not latest and start: 
-                dics[astock][date] = ans
+                buydics[astock][date] = ans
+
+
+def reloaddic(latest=True):
+    global buydics, buydics52
+
+    buydics = defaultdict(dict)
+    buydics52 = defaultdict(dict)
+
+    dates = z.getp("dates")
+    print ("regenerating buydics52 {}".format(dates[-1]))
+    date52 = dates[-52]
+
+    path = z.getPath('historical')  
+    listOfFiles = os.listdir(path)
+    updateDics(listOfFiles, path, buydics52, buydics, date52, latest)
+
+    path = z.getPath('ETF')  
+    listOfFiles = os.listdir(path)
+    updateDics(listOfFiles, path, buydics52, buydics, date52, latest)
 
     if not latest:
-        z.setp(dics, "buydics")
+        z.setp(buydics, "buydics")
 
-    z.setp(dics52, "buydics52")
+    z.setp(buydics52, "buydics52")
 
 def buyl(args, dated):
     if "gbuy" in args.main:
@@ -936,9 +944,9 @@ def buyl(args, dated):
         rankstock = z.getp("ranketf")
         whatAboutThese(rankstock, dated=dated)
 
-        key = readchar.readkey()
-        if key == "q":
-            return
+#        key = readchar.readkey()
+#        if key == "q":
+#            return
 
         try:
             print ("\ndiv extended")
@@ -952,9 +960,9 @@ def buyl(args, dated):
         whatAboutThisMode(mode, "low", usedate, dated)
         whatAboutThisMode(mode, "high", usedate, dated)
 
-        key = readchar.readkey()
-        if key == "q":
-            return
+#        key = readchar.readkey()
+#        if key == "q":
+#            return
 
     if savedSort:
         print ("\narranged change")

@@ -37,7 +37,6 @@ testpoints = 0
 dates = z.getp("dates")
 num_days = len(dates)
 endi = (num_days-252)-1
-starti = dates.index("2014-01-02")
 
 vals = defaultdict(list)
 negs = defaultdict(int)
@@ -75,6 +74,9 @@ for sdate in range(-1*(lens-didx),(-1*ayear)+1):
 #    print("date : {}".format( dates[sdate] ))
 #    print("date : {}".format( dates[edate] ))
     for astock in stocks:
+        if not astock == "IUSG":
+            continue
+
         try:
             first = dics[astock][sday]
         except:
@@ -108,15 +110,18 @@ for sdate in range(-1*(lens-didx),(-1*ayear)+1):
 
         if change > 2.0:
             change = 2.0
-#        print("change : {}".format( change ))
 
         if change < 1.00:
             negs[astock] += score
+
+        if change < 0.90:
+            print("astock: {} {} {} {} {}".format( astock, change, first, second, sday))
 
         vals[astock].append(change)
         if score == 2:
             vals[astock].append(change)
     testpoints += score
+raise SystemExit
 z.setp(latestAnnual, "latestAnnual")
 print (z.avg(thelist))
 print (statistics.median(thelist))
@@ -124,7 +129,6 @@ print (min(thelist))
 print (max(thelist))
 z.setp(whats, "whats")
 
-raise SystemExit
 #for test in range(testpoints):
 #    if not test % 100:
 #        print("test : {}".format( test ))
