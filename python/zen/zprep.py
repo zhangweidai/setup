@@ -11,7 +11,7 @@ from pandas_datareader import data as pdr
 z.listen()
 
 def setStockDays():
-    df = z.getCsv("SPY")
+    df = z.getCsv("IVV")
     dates = df["Date"].tolist()
     print("last date dates : {}".format( dates[-1]))
     z.setp(dates,"dates")
