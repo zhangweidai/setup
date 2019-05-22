@@ -922,6 +922,8 @@ def buyl(args, dated):
 
     dscore = whatAboutThese(z.getEtfList(forEtfs=True), dated=dated)
     getSortedStocks.highlight_score = dscore
+
+    return
     
     if not len(modes) == 1:
         print ("\nlowyearly")
