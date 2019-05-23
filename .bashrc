@@ -123,6 +123,7 @@ if [ -f ~/.bash_local ]; then
     . ~/.bash_local
 fi
 
+alias well='cd ~/setup2/python/zen; py bles.py'
 alias welltf='python3 ~/setup/python/tf_check.py'
 alias gomc='cd /mnt/c/Users/pzhang'
 export ANDROID_HOME='/mnt/c/Users/pzhang/AppData/Local/Android/Sdk'

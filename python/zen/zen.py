@@ -663,7 +663,7 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear,
         pass
 
     try:
-        msg = getCol().format(astock, price, 
+        values = [astock, price, 
             z.percentage(avgC, accurate=2), 
             z.percentage(median),
             probD, 
@@ -688,13 +688,15 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear,
             y1w,
             y1m,
             y1l,
-            ultrank)
+            ultrank]
+
+        msg = getCol().format(*values)
     except Exception as e:
         z.trace(e)
         return
 
     sorts.add((dscore,msg))
-    return dscore
+    return dscore, values
 
 def getUltRank(astock):
     ultdict = z.getp("ultdict")
@@ -725,8 +727,9 @@ def getCol():
     return " {0:<6} {1:>7} {2:>7} {3:>6} {4:>4} {5:>7} {6:>7} {7:>8} {8:>8} {9:>8} "\
            " {10:>7} {11:>6} {12:>6} {13:>7} {14:>4} {15:>6} {16:>6} {17:>5} {18:>6} {19:>8} {20:>7} {21:>8} {22:>7} {23:>8} {24:>8} {25:>8} {26:>5}"
            # chgT    chg1    chg3    live    etfc    recov   mcchg   beta    pe      largest etfrank div     mcrank  y1w     y1m     y1l     ultrank
-
-def whatAboutThese(stocks, lowprice = False, sell=False, ht=None, dated = None):
+buySaved = dict()
+def whatAboutThese(stocks, lowprice = False, sell=False, ht=None, dated = None, title = None):
+    global buySaved
     print(getCol().format("stock", "price", "avgC", "median", "probD", "avgD ", "avgG ", "d0" ,"d1 ", "d2 ", "chgT ", "chg1", "chg3", "live ", "etf ", "recov  ", "mcchg  ", "beta  ", "pe  ", "largest  ",  "erank  ", "div   ", "mcrnk  ","y1w","y1m", "y1l", "ultrank"))
 
     if not stocks:
@@ -739,11 +742,16 @@ def whatAboutThese(stocks, lowprice = False, sell=False, ht=None, dated = None):
     avgchanget = list()
     avgOneYear = list()
     highdscore = 0
-
+    vals = list()
     for idx, value in enumerate(stocks):
-        dscore = whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear, sellsl, lowprice = lowprice, sell=sell, dated = dated)
+        dscore, values = whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear, 
+                sellsl, lowprice = lowprice, sell=sell, dated = dated)
+        vals.append(values)
         if dscore and dscore > highdscore:
             highdscore = dscore
+
+    if title:
+        buySaved[title] = vals
 
     for astock in reversed(sorts):
         print(astock[1])
@@ -920,31 +928,32 @@ def buyl(args, dated):
     loadSortedEtf("BUY2")
     print ("\netfs")
 
-    dscore = whatAboutThese(z.getEtfList(forEtfs=True), dated=dated)
+    dscore = whatAboutThese(z.getEtfList(forEtfs=True), dated=dated, title = "Standard ETFS")
     getSortedStocks.highlight_score = dscore
 
-    return
+#    return
     
     if not len(modes) == 1:
         print ("\nlowyearly")
         rankstock = z.getp("lowyear")
-        whatAboutThese(rankstock, dated=dated)
+        whatAboutThese(rankstock, dated=dated, title = "Yearly Low")
+
 
         print ("\nranked")
         rankstock = z.getp("rankstock")
-        whatAboutThese(rankstock, dated=dated)
+        whatAboutThese(rankstock, dated=dated, title = "RankStocks")
 
         print ("\nranked2")
         rankstock = z.getp("ranked_stocks")
-        whatAboutThese(rankstock, dated=dated)
+        whatAboutThese(rankstock, dated=dated, title = "RankStocks2")
 
         print ("\nranked_ult")
         rankstock = z.getp("ultrank")
-        whatAboutThese(rankstock, dated=dated)
+        whatAboutThese(rankstock, dated=dated, title="RankUlt")
     
         print ("\netf extended")
         rankstock = z.getp("ranketf")
-        whatAboutThese(rankstock, dated=dated)
+        whatAboutThese(rankstock, dated=dated, title="ETFs")
 
 #        key = readchar.readkey()
 #        if key == "q":
@@ -956,6 +965,8 @@ def buyl(args, dated):
             whatAboutThese(divs, dated=dated)
         except:
             pass
+
+    z.setp(buySaved, "buySaved")
 
     usedate = dated or args.date
     for mode in modes:
@@ -970,6 +981,7 @@ def buyl(args, dated):
         print ("\narranged change")
         whatAboutThese(savedSort[-5:], dated=dated)
         whatAboutThese(savedSort[:5], dated=dated)
+
 
 
 goodmodes = ["Volume/low", "Price/low", "Var50/high", "Drops/high"]
@@ -1238,13 +1250,21 @@ def getLongEtfList():
         pass
     return ret
 
+def getPrevChange(astock, year):
+    dates = z.getp("dates")
+    date = dates[-252*year]
+    print("date : {}".format( date ))
+    return round(getPrice(astock)/ getPrice(astock, date),3)
+
 if __name__ == '__main__':
     import argparse
     import sys
     import zprep
     from termcolor import colored
+#    print (getPrevChange("BA", 1))
+#    print (getPrevChange("BA", 2))
+#    print (getPrevChange("BA", 3))
 
-#    print (plotProbSale("BA"))
 #    raise SystemExit
 
     getDropScore.cache = z.getp("dropcache")
