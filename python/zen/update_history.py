@@ -13,7 +13,7 @@ from pandas_datareader import data as pdr
 yf.pdr_override()
 problems = list()
 def getDataFromYahoo(astock, cdate):
-    print("astock: {}".format( astock))
+#    print("astock: {}".format( astock))
     global problems
     df = None
     try:
@@ -59,6 +59,7 @@ def update(where= "historical", problems = [], attempts=0, prices = dict()):
         if not idx % 100:
             print("idx : {}".format( idx ))
     
+#        print("path: {}".format( path))
         for row in csv.DictReader(open(path)):
             pass
         prices[astock] = row['Open'], row[closekey]

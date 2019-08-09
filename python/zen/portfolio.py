@@ -45,9 +45,9 @@ def fidelity(forselling=False, updating=False):
         if len(astock) >= 1 and astock not in skips:
 
             myportlist.append(astock)
-            cbprice = float(row['Cost Basis Per Share'].strip("$"))
 
             try:
+                cbprice = float(row['Cost Basis Per Share'].strip("$"))
                 count = float(row['Quantity'])
                 temp2 = float(row['Cost Basis Total'].strip("$"))
                 spentBasis += temp2
@@ -186,6 +186,7 @@ def getLatestFidelityCsv():
         fullpath = "{}/{}".format(parentdir, entry)
         tim = os.path.getmtime(fullpath)
         if tim > newest:
+            newest = tim
             cfile = fullpath
 
     print("fidelity file: {}".format( cfile))
@@ -204,9 +205,16 @@ def getSellStats(updating=False):
 
         if len(astock) >= 1 and astock not in skips:
             cprice = z.getPrice(astock)
-            last = lastSave[astock]
-            if cprice == last  or cprice > last:
+            try:
+                last = lastSave[astock]
+            except:
                 continue
+            try:
+                if cprice == last  or cprice > last:
+                    continue
+            except:
+                continue
+
             change = round(cprice / lastSave[astock], 3)
             print("astock: {} {}".format( astock , z.percentage(change)))
     

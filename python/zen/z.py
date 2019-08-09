@@ -258,6 +258,8 @@ def removeFromStocks(itemd):
         return
     stocks = getp("alls")
     dels = getp("deletes")
+    if not dels:
+        dels = set()
     for item in itemd:
         try:
             stocks.remove(item)

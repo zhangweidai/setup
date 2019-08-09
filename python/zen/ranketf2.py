@@ -1,18 +1,14 @@
-
 import z 
 import statistics
-
 from collections import defaultdict, deque
 from sortedcontainers import SortedSet
 import random
 import zen
 import csv
 import os
-stocks = zen.getLongEtfList()
 
-#problems = z.getp("etfproblems")
-dics = defaultdict(dict)
 def csvToDic(directory = "historical"):
+    dics = defaultdict(dict)
     path = z.getPath(directory)  
     listOfFiles = os.listdir(path)
     for idx,entry in enumerate(listOfFiles):
@@ -23,197 +19,130 @@ def csvToDic(directory = "historical"):
         path = z.getPath("{}/{}".format(directory, entry))
         for row in csv.DictReader(open(path)):
             date = row['Date']
+            if "201" not in date:
+                continue
             dics[astock][date] = float(row['Close'])
     z.setp(dics, "bigdic")
+    return dics
 
 #csvToDic(directory="ETF")
 #csvToDic()
 #raise SystemExit
-dics = z.getp("bigdic")
-
-#dics = z.getp("BUY2_P")
-testpoints = 0
-
-dates = z.getp("dates")
-num_days = len(dates)
-endi = (num_days-252)-1
-
-vals = defaultdict(list)
-negs = defaultdict(int)
-problems = set()
-
-stocks = dics.keys()
-#for astock in dics.keys():
-#    rank = zen.getMCRank(astock)
-#    if rank == "NA":
-#        continue
-#    if rank < 1200:
-#        stocks.append(astock)
-#didx = dates.index(sdate)
-
-sdate = "2013-01-02"
-didx = dates.index(sdate)
-print("didx : {}".format( didx ))
-lens = len(dates)
-ayear = 202
-#latestAnnual = dict()
-latestAnnual = z.getp("latestAnnual")
-thelist = list()
-whats = set()
-sdate_look = (-1  *  ayear ) 
-for sdate in range(-1*(lens-didx),(-1*ayear)+1):
-    edate = sdate + ayear - 1
-    sday = dates[sdate]
-    eday = dates[edate]
-    score = 1
-    if "2019" in eday:
-        score = 2
-#    print("sdate: {}".format( sdate))
-#print("sdate_look : {}".format( sdate_look ))
-#raise SystemExit
-#def dele():
-    for astock in stocks:
-        if not astock == "IUSG":
-            continue
-
-        try:
-            first = dics[astock][sday]
-        except:
+def doitagain(dics = None):
+    if not dics :
+        dics = z.getp("stocks_bigdic")
+    testpoints = 0
+    dates = z.getp("dates")
+    num_days = len(dates)
+    endi = (num_days-252)-1
+    vals = defaultdict(list)
+    negs = defaultdict(int)
+    problems = set()
+    stocks = dics.keys()
+    sdate = "2013-01-02"
+    didx = dates.index(sdate)
+    lens = len(dates)
+    ayear = 252
+    latestAnnual = z.getp("latestAnnual")
+    thelist = list()
+    whats = set()
+    sdate_look = (-1  *  ayear ) 
+    print("sdate_look : {}".format( sdate_look ))
+    for sdate in range(-1*(lens-didx),(-1*ayear)+1):
+        edate = sdate + ayear - 1
+        sday = dates[sdate]
+        eday = dates[edate]
+        score = 1
+        if "2019" in eday:
+            score = 2
+        for astock in stocks:
+#            if astock != "AMZN":
+#                continue
+    
             try:
-                sday = dates[sdate-1]
                 first = dics[astock][sday]
             except:
-                problems.add(astock)
-                continue
-        try:
-            second = dics[astock][eday]
-        except:
+                try:
+                    sday = dates[sdate-1]
+                    first = dics[astock][sday]
+                except:
+                    problems.add(astock)
+#                    print("sday: {}".format( sday))
+#                    print("astock: {}".format( astock))
+#                    exit()
+                    continue
             try:
-                eday = dates[edate-1]
                 second = dics[astock][eday]
             except:
-                problems.add(astock)
-                continue
-        change = round(second/first,4)
+                try:
+                    eday = dates[edate-1]
+                    second = dics[astock][eday]
+                except:
+                    problems.add(astock)
 
-        if sdate == sdate_look:
-            thelist.append(change)
-            latestAnnual[astock] = change
-
-            if change > 5.0:
-                whats.add(astock)
-                print("astock: {} {} {} {} {}".format( astock, change, first, second, sday))
-
+#                    print("2sday: {}".format( sday))
+#                    print("2astock: {}".format( astock))
+#                    exit()
+                    continue
+            change = round(second/first,4)
+    
+            if sdate == sdate_look:
+                thelist.append(change)
+                latestAnnual[astock] = change
+    
+                if change > 5.0:
+                    whats.add(astock)
+#                    print("astock: {} {} {} {} {}".format( astock, change, first, second, sday))
+    
+#            if astock in problems:
+#                continue
+    
+            if change > 2.0:
+                change = 2.0
+    
+            if change < 1.00:
+                negs[astock] += score
+    
+#            if change < 0.90:
+#                print("astock: {} {} {} {} {}".format( astock, change, first, second, sday))
+    
+            vals[astock].append(change)
+            if score == 2:
+                vals[astock].append(change)
+        testpoints += score
+    z.setp(latestAnnual, "latestAnnual")
+#    print (z.avg(thelist))
+#    print (statistics.median(thelist))
+#    print (min(thelist))
+#    print (max(thelist))
+    median = SortedSet()
+    lowest = SortedSet()
+    lowestdic = dict()
+    yearlydic = z.getp("yearlydic")
+    yearlyscore = SortedSet()
+    for astock,value in vals.items():
         if astock in problems:
             continue
-
-        if change > 2.0:
-            change = 2.0
-
-        if change < 1.00:
-            negs[astock] += score
-
-        if change < 0.90:
-            print("astock: {} {} {} {} {}".format( astock, change, first, second, sday))
-
-        vals[astock].append(change)
-        if score == 2:
-            vals[astock].append(change)
-    testpoints += score
-raise SystemExit
-z.setp(latestAnnual, "latestAnnual")
-print (z.avg(thelist))
-print (statistics.median(thelist))
-print (min(thelist))
-print (max(thelist))
-#z.setp(whats, "whats")
-#raise SystemExit
-#for test in range(testpoints):
-#    if not test % 100:
-#        print("test : {}".format( test ))
-#    first = random.randrange(starti, endi)
-#    second = first + 252
-#    fd = dates[first]
-##    print("fd : {}".format( fd ))
-#    sd = dates[second]
-##    print("sd : {}".format( sd ))
-#    for astock in stocks:
-#        if astock in problems:
-#            continue
-##        print("astock : {}".format( astock ))
-#        try:
-#            first = dics[astock][fd]
-#            change = round(dics[astock][sd] / first,4)
-##            print("change : {}".format( change ))
-#        except Exception as e:
-##            print("dics: {}".format( dics[astock]))
-##            print("first : {}".format( first ))
-##            print("astock: {}".format( astock))
-##            z.trace(e)
-#            problems.add(astock)
-##            exit()
-#            continue
-#
-##print("problems : {}".format( problems ))
-
-#z.setp(problems, "etfproblems")
-
-#ss = SortedSet()
-#for key,value in vals.items():
-#    avg = z.avg(value)
-#    ss.add((avg, key))
-#
-#save = ss[-15:]
-#z.setp(save, "ranketf2")
-#print(ss[-15:])
-#for item in ss[-15:]:
-#    try:
-#        print (item[1], round(negs[item[1]]/testpoints,3))
-#    except:
-#        pass
-
-median = SortedSet()
-lowest = SortedSet()
-lowestdic = dict()
-yearlydic = z.getp("yearlydic")
-#yearlydic = dict()
-yearlyscore = SortedSet()
-for astock,value in vals.items():
-    if astock in problems:
-        continue
-    y1m = statistics.median(value)
-    y1w = min(value)
-    lowest.add((y1w, astock))
-    median.add((y1m, astock))
-    yearlydic[astock] = (y1w, y1m)
-    score = (1 - (negs[astock]/testpoints)) * (y1w + y1m)
-    yearlyscore.add((score, astock))
-
-ultdict = dict()
-z.setp(yearlyscore[-30:],"ultrank")
-
-for idx, item in enumerate(reversed(yearlyscore)):
-    ultdict[item[1]] = idx
-
-#print("savedict: {}".format( savedict[-30:]))
-z.setp(ultdict, "ultdict")
-
-#z.setp(lowestdic,"lowestdic")
-z.setp(yearlydic,"yearlydic")
-print("lowest: {}".format( lowest[-20:]))
-print("median: {}".format( median[-20:]))
-
-z.setp(lowest[-20:],"lowyear")
-z.setp(lowest[-20:],"lowyear")
-
-#path = z.getPath("analysis/etfanalysis.csv")
-#with open(path, "w") as f:
-#    for item in ss:
-#        f.write("{},{}\n".format(item[1], item[0]))
-
-#save = ss[-15:]
-#z.setp(save, "ranketf2")
-#print(ss[-200:])
+        print("Working astock : {}".format( astock ))
+        y1m = statistics.median(value)
+        y1w = min(value)
+        lowest.add((y1w, astock))
+        median.add((y1m, astock))
+        yearlydic[astock] = (y1w, y1m)
+        score = (1 - (negs[astock]/testpoints)) * (y1w + y1m)
+        yearlyscore.add((score, astock))
+    
+    ultdict = dict()
+    print("yearlyscore: {}".format( yearlyscore))
+    z.setp(yearlyscore[-30:],"ultrank")
+    
+    for idx, item in enumerate(reversed(yearlyscore)):
+        ultdict[item[1]] = idx
+    
+    z.setp(ultdict, "ultdict")
+    z.setp(yearlydic,"yearlydic")
+    z.setp(lowest[-20:],"lowyear")
+    z.setp(lowest[-20:],"lowyear")
 
 def adjustedStockScore():
     yearly = list()
@@ -260,15 +189,9 @@ def saveranketf():
     print("ss2: {}".format( ss2[-5:]))
     z.setp(ss2[-5:], "ranketf")
 
-#saveranketf()
-#        try:
-#            print (
-#                item[1]
-#                , round(negs[item[1]]/testpoints,3))
-#        except:
-#            pass
+def regen():
+#    dics = csvToDic()
+    doitagain()
 
-#print(ss[:10])
-
-
-
+if __name__ == '__main__':
+    doitagain()

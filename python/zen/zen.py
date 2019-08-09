@@ -744,8 +744,11 @@ def whatAboutThese(stocks, lowprice = False, sell=False, ht=None, dated = None, 
     highdscore = 0
     vals = list()
     for idx, value in enumerate(stocks):
-        dscore, values = whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear, 
-                sellsl, lowprice = lowprice, sell=sell, dated = dated)
+        try:
+            dscore, values = whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear, 
+                    sellsl, lowprice = lowprice, sell=sell, dated = dated)
+        except:
+            continue
         vals.append(values)
         if dscore and dscore > highdscore:
             highdscore = dscore
@@ -904,11 +907,24 @@ def buyl(args, dated):
         import update_history
         try:
             latestprices = dict()
-            if update_history.update(prices = latestprices):
+            problems = [] 
+            if update_history.update(prices = latestprices, problems = problems):
+                if problems:
+                    print("problems: {}".format( problems))
+                    key = readchar.readkey()
+                    if key == "d":
+                        for pstock in problems:
+                            z.delStock(pstock)
+                        return
+#                    if key != "c":
+#                        return
+
                 print ("finished update history 1")
                 update_history.update(where= "ETF", prices=latestprices)
                 print ("finished update history 2")
                 z.setp(latestprices, "latestprices")
+                import ranketf2
+                ranketf2.regen()
 
                 if "2" in args.main:
                     import json_util
@@ -916,7 +932,7 @@ def buyl(args, dated):
                     diffOuts()
 
                 reloaddic()
-                threadprep.regenerateBUY()
+#                threadprep.regenerateBUY()
 
                 exit()
 
@@ -935,21 +951,28 @@ def buyl(args, dated):
     
     if not len(modes) == 1:
         print ("\nlowyearly")
-        rankstock = z.getp("lowyear")
-        whatAboutThese(rankstock, dated=dated, title = "Yearly Low")
+#        rankstock = z.getp("lowyear")
+#        whatAboutThese(rankstock, dated=dated, title = "Yearly Low")
 
-
-        print ("\nranked")
-        rankstock = z.getp("rankstock")
-        whatAboutThese(rankstock, dated=dated, title = "RankStocks")
-
-        print ("\nranked2")
-        rankstock = z.getp("ranked_stocks")
-        whatAboutThese(rankstock, dated=dated, title = "RankStocks2")
+#        print ("\nranked")
+#        rankstock = z.getp("rankstock")
+#        whatAboutThese(rankstock, dated=dated, title = "RankStocks")
+#
+#        print ("\nranked2")
+#        rankstock = z.getp("ranked_stocks")
+#        whatAboutThese(rankstock, dated=dated, title = "RankStocks2")
 
         print ("\nranked_ult")
         rankstock = z.getp("ultrank")
         whatAboutThese(rankstock, dated=dated, title="RankUlt")
+
+        print ("\nworst")
+        rankstock = z.getp("worstrank")
+        whatAboutThese(rankstock, dated=dated, title="WorstRank")
+
+        print ("\nLowest")
+        rankstock = z.getp("worstrank")
+        whatAboutThese(rankstock, dated=dated, title="LowestRank")
     
         print ("\netf extended")
         rankstock = z.getp("ranketf")
@@ -958,6 +981,7 @@ def buyl(args, dated):
 #        key = readchar.readkey()
 #        if key == "q":
 #            return
+        return
 
         try:
             print ("\ndiv extended")
@@ -1137,7 +1161,7 @@ def dropInvestigation():
     print("total: {}".format( downs))
     avgl=list()
     for i,astock in enumerate(order):
-        print("astock : {}".format( astock ))
+#        print("astock : {}".format( astock ))
         cprice = getPrice(astock)
         change = cprice/ bought[i] 
         print("change : {}".format( z.percentage(change)))
@@ -1351,7 +1375,7 @@ if __name__ == '__main__':
 #                    stocks = z.getConsider()
                 if args.s == "highest":
                     stocks = z.getp("highest").keys()
-                    print("stocks : {}".format( stocks ))
+#                    print("stocks : {}".format( stocks ))
                 if args.s == "etfs":
                     stocks = getLongEtfList()
                 whatAboutThese(stocks, dated=args.date)
