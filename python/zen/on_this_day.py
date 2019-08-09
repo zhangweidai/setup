@@ -34,8 +34,9 @@ for ayear in range(2, 18):
 
 for key,something in avgdict.items():
     maxv = round(max(something),4)
-    print("maxv : {}".format( maxv ))
     avg = round(sum(something)/len(something) ,4)
+
+    print("maxv : {}".format( maxv ))
     print("avg : {}".format( avg ))
     print("score : {}".format( round(avg + maxv,4)))
 

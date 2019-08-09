@@ -2,21 +2,20 @@ package com.example.pzhang222.helloworld;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.content.res.Resources;
+import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.util.DisplayMetrics;
+import android.util.Log;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.Gravity;
 import android.widget.Button;
 import android.widget.GridLayout;
-import android.graphics.Color;
-import android.content.res.Resources;
-import android.util.TypedValue;
-import android.util.Log;
 import android.widget.LinearLayout;
 import android.widget.Space;
 import android.widget.TextView;
@@ -24,11 +23,9 @@ import android.widget.TextView;
 import java.util.List;
 import java.util.Random;
 import java.util.Vector;
-import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends Activity
 {
-    private Long startTime_;
     private TextView score_;
     private TextView rounds_;
     private Boolean showingAnswer_ = false;
@@ -105,26 +102,24 @@ public class MainActivity extends Activity
 
         buttonList_.clear();
 
-        Resources r = getResources();
-        DisplayMetrics dm = r.getDisplayMetrics();
-//        Log.d("whatnow", Integer.toString(row));
-//        Log.d("whatnow", Integer.toString(columnCount_));
-        int width = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, btnWidth_, r.getDisplayMetrics());
+        Resources res = getResources();
+        DisplayMetrics dm = res.getDisplayMetrics();
+        int width = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, btnWidth_, res.getDisplayMetrics());
 
         int display = getResources().getDisplayMetrics().widthPixels;
-        int converted = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, display, r.getDisplayMetrics());
+        int converted = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, display, res.getDisplayMetrics());
         Log.d("whatnow", Integer.toString(display));
         Log.d("whatnow", Integer.toString(converted));
 
         display = getResources().getDisplayMetrics().heightPixels;
-        converted = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, display, r.getDisplayMetrics());
+        converted = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, display, res.getDisplayMetrics());
         Log.d("whatnow", Integer.toString(display));
         Log.d("whatnow", Integer.toString(converted));
 
         int sw = dm.widthPixels;
         int sh = dm.heightPixels;
 
-        converted = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, r.getDisplayMetrics());
+        converted = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 20, res.getDisplayMetrics());
         int adjust = row * converted;
         int margin = (sw + sh) / adjust;
 
@@ -132,23 +127,23 @@ public class MainActivity extends Activity
         int wx = (sw-(columnCount_ * 10)) /columnCount_;
 
         Button btn;
-        for (int i =0, c = 0, rr = 0; i < totalTiles_; i++, c++)
+        for (int icount = 0, col = 0, rr = 0; icount < totalTiles_; icount++, col++)
         { 
-            if (c == columnCount_)
+            if (col == columnCount_)
             { 
-                c = 0;
+                col = 0;
                 rr++;
             } 
 
             btn = new Button(this);
-            btn.setId(i);
+            btn.setId(icount);
             btn.setBackgroundColor(Color.LTGRAY);
             btn.setOnClickListener(tileClicked);
 
-            btn.setText(Integer.toString(i));
+            btn.setText(Integer.toString(icount));
             btn.setWidth(wx);
             btn.setHeight(hx);
-            retLayout.addView(btn, i);
+            retLayout.addView(btn, icount);
 
             GridLayout.LayoutParams param = new GridLayout.LayoutParams();
             param.height = GridLayout.LayoutParams.WRAP_CONTENT;
@@ -156,7 +151,7 @@ public class MainActivity extends Activity
             param.rightMargin = margin;
             param.topMargin = margin;
             param.setGravity(Gravity.CENTER_VERTICAL | Gravity.CENTER_HORIZONTAL);
-            param.columnSpec = GridLayout.spec(c);
+            param.columnSpec = GridLayout.spec(col);
             param.rowSpec = GridLayout.spec(rr);
 
             btn.setLayoutParams (param);
@@ -257,7 +252,6 @@ public class MainActivity extends Activity
 
                 createGameBoard(true);
 
-                startTime_ = System.currentTimeMillis();
                 startGame();
 
             }
@@ -276,23 +270,23 @@ public class MainActivity extends Activity
     {
         Log.d("retrying", "starting retry");
         answerStack_ = new Vector(retryStack_);
-        int i = 1;
+        int icount = 1;
         for (int var : answerStack_)
         {
             Log.d("retrying", String.format("Using %d", var));
             Button object;
             object = buttonList_.get(var);
-            object.setText(Integer.toString(i));
-            if (i == 1)
+            object.setText(Integer.toString(icount));
+            if (icount == 1)
                 object.setBackgroundColor(Color.GREEN);
-            ++i;
+            ++icount;
         }
     }
 
     private void startFromNew()
     {
         Log.d("joined", "starting new");
-        for (int i = 1; i <= recallCount_; ++i)
+        for (int icount = 1; icount <= recallCount_; ++icount)
         {
             int rand = 0;
             Button object;
@@ -303,12 +297,12 @@ public class MainActivity extends Activity
             } 
             while (!object.getText().equals(""));
             Log.d("myTag", String.format("added to answerStack_ %d", rand));
-            Log.d("myTag", Integer.toString(i));
+            Log.d("myTag", Integer.toString(icount));
             answerStack_.add(rand);
 
-            object.setText(Integer.toString(i));
+            object.setText(Integer.toString(icount));
 
-            if (i == 1)
+            if (icount == 1)
                 object.setBackgroundColor(Color.GREEN);
         }
 
@@ -325,9 +319,9 @@ public class MainActivity extends Activity
 
         // reset all to grey
         final int size = buttonList_.size();
-        for (int i = 0; i < size; ++i)
+        for (int icount = 0; icount < size; ++icount)
         {
-            Button object = buttonList_.get(i);
+            Button object = buttonList_.get(icount);
             object.setText("");
             object.setBackgroundColor(Color.LTGRAY);
         }
@@ -366,22 +360,21 @@ public class MainActivity extends Activity
 
     private void showAnswer()
     {
-
         showingAnswer_ = true;
-        for (int i =0, c = 0, rr = 0; i < totalTiles_; i++, c++)
+        for (int icount = 0, col = 0, rr = 0; icount < totalTiles_; icount++, col++)
         { 
-            if (c == columnCount_)
+            if (col == columnCount_)
             { 
-                c = 0;
+                col = 0;
                 rr++;
             } 
 
-            int cButtonId = buttonList_.get(i).getId();
+            int cButtonId = buttonList_.get(icount).getId();
             Log.d("myTag", Integer.toString(cButtonId));
             int answer = answerStack_.indexOf(cButtonId);
             if (answer != -1)
             {
-                buttonList_.get(i).setText(Integer.toString(answer + 1));
+                buttonList_.get(icount).setText(Integer.toString(answer + 1));
             }
         }
 
@@ -466,10 +459,6 @@ public class MainActivity extends Activity
 
                     getWindow().getDecorView().setBackgroundColor(Color.GREEN);
                     gameCount_ = 0;
-//                    Long endTime = System.currentTimeMillis();
-//                    Long duration = endTime - startTime_;
-//                    Long average = (duration / maxScore_);
-//                    score_.setText(String.format(("Average Time : %d"), average));
                 }
                 else
                     startGame();
@@ -480,9 +469,9 @@ public class MainActivity extends Activity
     private void hideAll()
     {
         final int size = buttonList_.size();
-        for (int i = 0; i < size; ++i)
+        for (int icount = 0; icount < size; ++icount)
         {
-            Button object = buttonList_.get(i);
+            Button object = buttonList_.get(icount);
             if (!object.getText().equals("") && isEasyMode())
             {
                 object.setBackgroundColor(Color.YELLOW);

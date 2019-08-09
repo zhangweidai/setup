@@ -125,6 +125,7 @@ fi
 
 alias well='cd ~/setup2/python/zen; py bles.py'
 alias welltf='python3 ~/setup/python/tf_check.py'
+alias gopf='cd /mnt/c/Program\ Files'
 alias gomc='cd /mnt/c/Users/pzhang'
 export ANDROID_HOME='/mnt/c/Users/pzhang/AppData/Local/Android/Sdk'
 alias go='source ~/setup/bin/go.bash'
@@ -153,6 +154,9 @@ alias goh="cds; cd python/zen_dump/holdings"
 alias god="cds; cd python/zen_dump"
 alias goc="cds; cd python/zen_dump/historical"
 alias gop="cds; cd python/zen_dump/pkl"
+alias goj="cds; cd java;"
+alias gok="cds; cd kotlin;"
+alias gokk="cd /home/zoe/git/kotlin-koans"
 alias ipy="ipython3"
 alias p="ipython3"
 alias python="python3"

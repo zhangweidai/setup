@@ -80,10 +80,6 @@ public class Settings extends Activity {
     {
         public void onClick(View view)
         {
-//             SharedPreferences sharedPref = Settings.this.getPreferences(Context.MODE_PRIVATE);
-//             SharedPreferences.Editor editor = sharedPref.edit();
-//             editor.putInt(getString(R.string.max_game_score), Integer.parseInt(eText.getText().toString()));
-//             editor.commit();
             Intent returnIntent = new Intent();
             returnIntent.putExtra("result", "5");
             CheckBox hardCheckBox = (CheckBox) findViewById(R.id.hardBox);
@@ -98,10 +94,6 @@ public class Settings extends Activity {
     {
         public void onClick(View view)
         {
-//             SharedPreferences sharedPref = Settings.this.getPreferences(Context.MODE_PRIVATE);
-//             SharedPreferences.Editor editor = sharedPref.edit();
-//             editor.putInt(getString(R.string.max_game_score), Integer.parseInt(eText.getText().toString()));
-//             editor.commit();
             Intent returnIntent = new Intent();
             returnIntent.putExtra("result", "10");
             CheckBox hardCheckBox = (CheckBox) findViewById(R.id.hardBox);
