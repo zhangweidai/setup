@@ -17,10 +17,10 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".SettingsActivity"
-            android:label="@string/title_activity_settings" />
-        <activity
             android:name=".Settings"
+            android:label="@string/title_activity_settings"></activity>
+        <activity
+            android:name=".Colors"
             android:label="@string/title_activity_settings"></activity>
     </application>
 
