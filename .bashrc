@@ -149,6 +149,7 @@ else
 fi
 alias goa="cds; cd python/zen_dump/analysis"
 alias go1="cds; cd python/zen"
+alias go2="cd /mnt/c/Users/Zoe/Documents/setup/java/HelloWorld/app/src/main/java/com/example/pzhang222/helloworld"
 alias gof="cds; cd python/zen_dump/final"
 alias goh="cds; cd python/zen_dump/holdings"
 alias god="cds; cd python/zen_dump"
@@ -171,6 +172,9 @@ alias wab="py zen.py wab"
 alias buyl="py zen.py buy --date=l"
 alias gbuy="py zen.py gbuy"
 alias gbuy2="py zen.py gbuy2"
+alias well='cd ~/gits/manim; python -m manim example_scenes.py SquareToCircle -pl; '
+alias well2='wsl-open /home/zoe/gits/manim/media/videos/example_scenes/2160p15/SquareToCircle.mp4'
+#alias xdg-open='wsl-open'
 #sudo -S true
 set bell-style none
 

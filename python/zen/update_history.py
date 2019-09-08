@@ -42,6 +42,7 @@ def getDataFromYahoo(astock, cdate):
     return df
 
 def update(where= "historical", problems = [], attempts=0, prices = dict()):
+    return True
 
     if attempts > 3:
         print ("tried too many times")

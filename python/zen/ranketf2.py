@@ -11,8 +11,11 @@ def csvToDic(directory = "historical"):
     dics = defaultdict(dict)
     path = z.getPath(directory)  
     listOfFiles = os.listdir(path)
+
+    print ("CsvToDic")
     for idx,entry in enumerate(listOfFiles):
-        if not idx % 100:
+
+        if not idx % 500:
             print("idx: {}".format( idx))
     
         astock = os.path.splitext(entry)[0]
@@ -47,7 +50,6 @@ def doitagain(dics = None):
     thelist = list()
     whats = set()
     sdate_look = (-1  *  ayear ) 
-    print("sdate_look : {}".format( sdate_look ))
     for sdate in range(-1*(lens-didx),(-1*ayear)+1):
         edate = sdate + ayear - 1
         sday = dates[sdate]
@@ -87,6 +89,14 @@ def doitagain(dics = None):
             change = round(second/first,4)
     
             if sdate == sdate_look:
+#                if astock == "ERI":
+#                    print("first: {}".format( first))
+#                    print("second: {}".format( second))
+#                    print("sdate_look: {}".format( sdate_look))
+#                    print("sdate : {}".format( sdate ))
+#                    print("change: {}".format( change))
+#                    exit()
+
                 thelist.append(change)
                 latestAnnual[astock] = change
     
@@ -110,6 +120,8 @@ def doitagain(dics = None):
             if score == 2:
                 vals[astock].append(change)
         testpoints += score
+
+    print ("Saving latestAnnual")
     z.setp(latestAnnual, "latestAnnual")
 #    print (z.avg(thelist))
 #    print (statistics.median(thelist))
@@ -123,7 +135,6 @@ def doitagain(dics = None):
     for astock,value in vals.items():
         if astock in problems:
             continue
-        print("Working astock : {}".format( astock ))
         y1m = statistics.median(value)
         y1w = min(value)
         lowest.add((y1w, astock))
@@ -133,7 +144,7 @@ def doitagain(dics = None):
         yearlyscore.add((score, astock))
     
     ultdict = dict()
-    print("yearlyscore: {}".format( yearlyscore))
+    print ("Saving ultrank")
     z.setp(yearlyscore[-30:],"ultrank")
     
     for idx, item in enumerate(reversed(yearlyscore)):

@@ -39,6 +39,7 @@ def saveData():
 
 
 def getClose(astock, sday, sdate, count = 3):
+    global dics
     if count == 0:
         return None
     try:
@@ -48,38 +49,42 @@ def getClose(astock, sday, sdate, count = 3):
         sday = dates[sdate]
         return getClose(astock, sday, sdate, count = count - 1)
 
-for sdate in range(-1*(lens-didx),(-1*ayear)+1):
-    edate = sdate + ayear - 1
-    sday = dates[sdate]
-    eday = dates[edate]
-    eyear = int(eday.split("-")[0]) - 2000
-    score = float(eyear)/10.0
-
-    for astock in stocks:
-        first = getClose(astock, sday, sdate)
-        second = getClose(astock, eday, edate)
-
-        if first == None or second == None:
-            continue
-
-        change = round(second/first,4)
-
-        if change > 2.0:
-            change = 2.0
-
-        if change < 1.00:
-            negs[astock] += (score * 2)
-            simple[astock] -= (score * score) 
-        else:
-            simple[astock] += score
-
-
-        vals[astock].append(change)
-
-        if "2018" in eday or "2019" in eday:
+def setTestpoints(lens, didx, ayear, dates, stocks):
+    global testpoints, vals, negs
+    testpoints = 0
+    for sdate in range(-1*(lens-didx),(-1*ayear)+1):
+        edate = sdate + ayear - 1
+        sday = dates[sdate]
+        eday = dates[edate]
+        eyear = int(eday.split("-")[0]) - 2000
+        score = float(eyear)/10.0
+    
+        for astock in stocks:
+            first = getClose(astock, sday, sdate)
+            second = getClose(astock, eday, edate)
+    
+            if first == None or second == None:
+                continue
+    
+            change = round(second/first,4)
+    
+            if change > 2.0:
+                change = 2.0
+    
+            if change < 1.00:
+                negs[astock] += (score * 2)
+                simple[astock] -= (score * score) 
+            else:
+                simple[astock] += score
+    
+    
             vals[astock].append(change)
-
-    testpoints += score
+    
+            if "2018" in eday or "2019" in eday:
+                vals[astock].append(change)
+    
+        testpoints += score
+        return vals
 
 #path = z.getPath("analysis/etfanalysis.csv")
 #with open(path, "w") as f:
@@ -91,6 +96,7 @@ for sdate in range(-1*(lens-didx),(-1*ayear)+1):
 #print(ss[-200:])
 
 def adjustedStockScore():
+    global negs
     yearly = list()
     ss2 = SortedSet()
     import util
@@ -114,6 +120,7 @@ def adjustedStockScore():
 
 
 def saveranketf():
+    global negs
     yearly = list()
     ss2 = SortedSet()
     import util
@@ -146,15 +153,18 @@ def saveranketf():
 #print(ss[:10])
 
 
-if __name__ == '__main__':
+dates = z.getp("dates")
+vals = None
+simple = defaultdict(float)
+negs = defaultdict(int)
+testpoints = 0
+def genStartOver():
+    global vals, dics, testpoints
+    saveData()
     dics = z.getp("stocks_bigdic")
-    testpoints = 0
-    dates = z.getp("dates")
     num_days = len(dates)
     endi = (num_days-252)-1
     vals = defaultdict(list)
-    simple = defaultdict(float)
-    negs = defaultdict(int)
     problems = set()
     stocks = dics.keys()
     sdate = "2013-01-02"
@@ -162,6 +172,8 @@ if __name__ == '__main__':
     lens = len(dates)
     ayear = 252
     
+    vals = setTestpoints(lens, didx, ayear, dates, stocks)
+
     median = SortedSet()
     lowest = SortedSet()
     lowestdic = dict()
@@ -209,16 +221,19 @@ if __name__ == '__main__':
     z.setp(simplescores[-30:],"simplerank")
     
     #raise SystemExit
-    
-    for idx, item in enumerate(reversed(yearlyscore)):
-        ultdict[item[1]] = idx
-    
-    #print("savedict: {}".format( savedict[-30:]))
-    z.setp(ultdict, "ultdict")
-    
-    #z.setp(lowestdic,"lowestdic")
-    z.setp(yearlydic,"yearlydic")
-    print("lowest: {}".format( lowest[-20:]))
-    print("median: {}".format( median[-20:]))
-    z.setp(lowest[-20:],"lowyear")
-    
+#    
+#    for idx, item in enumerate(reversed(yearlyscore)):
+#        ultdict[item[1]] = idx
+#    
+#    #print("savedict: {}".format( savedict[-30:]))
+#    z.setp(ultdict, "ultdict")
+#    
+#    #z.setp(lowestdic,"lowestdic")
+#    z.setp(yearlydic,"yearlydic")
+##    print("lowest: {}".format( lowest[-20:]))
+#    print("median: {}".format( median[-20:]))
+#    z.setp(lowest[-20:],"lowyear")
+#    
+
+if __name__ == '__main__':
+    genStartOver()

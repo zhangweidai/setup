@@ -488,6 +488,19 @@ def getMCRank(astock):
             pass
     return "NA"
 
+def getLongProbDown(astock):
+    try:
+        return getLongProbDown.dic[astock]
+    except:
+        try:
+            getLongProbDown.dic = z.getp("prob_down")
+            return getLongProbDown.dic[astock]
+        except Exception as e:
+            pass
+    return "NA"
+getLongProbDown.dic = None
+
+
 #skipss = ['CVET']
 savedSort = SortedSet()
 def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear, sellsl, lowprice = False, sell=False, ht=None, dated = None):
@@ -617,6 +630,8 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear,
     avgChanges.append(avgC)
     avgchanget.append(chgT)
 
+    longprobdown = getLongProbDown(astock)
+
     if mcchg and mcchg < 5.00:
         mcchg = z.percentage(mcchg)
     else:
@@ -662,6 +677,7 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear,
     except:
         pass
 
+
     try:
         values = [astock, price, 
             z.percentage(avgC, accurate=2), 
@@ -688,7 +704,8 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear,
             y1w,
             y1m,
             y1l,
-            ultrank]
+            ultrank, 
+            longprobdown]
 
         msg = getCol().format(*values)
     except Exception as e:
@@ -725,12 +742,12 @@ def getYearly(astock):
 def getCol():
     #        astock $price avgC   median probD  avgD  avgG    d0     d1     d2     
     return " {0:<6} {1:>7} {2:>7} {3:>6} {4:>4} {5:>7} {6:>7} {7:>8} {8:>8} {9:>8} "\
-           " {10:>7} {11:>6} {12:>6} {13:>7} {14:>4} {15:>6} {16:>6} {17:>5} {18:>6} {19:>8} {20:>7} {21:>8} {22:>7} {23:>8} {24:>8} {25:>8} {26:>5}"
-           # chgT    chg1    chg3    live    etfc    recov   mcchg   beta    pe      largest etfrank div     mcrank  y1w     y1m     y1l     ultrank
+           " {10:>7} {11:>6} {12:>6} {13:>7} {14:>4} {15:>6} {16:>6} {17:>5} {18:>6} {19:>8} {20:>7} {21:>8} {22:>7} {23:>8} {24:>8} {25:>8} {26:>5} {27:>5}"
+           # chgT    chg1    chg3    live    etfc    recov   mcchg   beta    pe      largest etfrank div     mcrank  y1w     y1m     y1l     ultrank longProbDown
 buySaved = dict()
 def whatAboutThese(stocks, lowprice = False, sell=False, ht=None, dated = None, title = None):
     global buySaved
-    print(getCol().format("stock", "price", "avgC", "median", "probD", "avgD ", "avgG ", "d0" ,"d1 ", "d2 ", "chgT ", "chg1", "chg3", "live ", "etf ", "recov  ", "mcchg  ", "beta  ", "pe  ", "largest  ",  "erank  ", "div   ", "mcrnk  ","y1w","y1m", "y1l", "ultrank"))
+    print(getCol().format("stock", "price", "avgC", "median", "probD", "avgD ", "avgG ", "d0" ,"d1 ", "d2 ", "chgT ", "chg1", "chg3", "live ", "etf ", "recov  ", "mcchg  ", "beta  ", "pe  ", "largest  ",  "erank  ", "div   ", "mcrnk  ","y1w","y1m", "y1l", "ultrank", "LongProbUp"))
 
     if not stocks:
         return
@@ -932,8 +949,11 @@ def buyl(args, dated):
                     diffOuts()
 
                 reloaddic()
+#                import startover_rank
+#                startover_rank.genStartOver()
 #                threadprep.regenerateBUY()
 
+                import prob_down_5_years
                 exit()
 
         except Exception as e:
@@ -966,13 +986,30 @@ def buyl(args, dated):
         rankstock = z.getp("ultrank")
         whatAboutThese(rankstock, dated=dated, title="RankUlt")
 
-        print ("\nworst")
-        rankstock = z.getp("worstrank")
-        whatAboutThese(rankstock, dated=dated, title="WorstRank")
+        print ("\nOther")
+        m1 = ["COST", "WMT", "NKE", "ECL", "TM", "TGT", "LOW", "NFLX", "AMZN", "GOOG", "AMD"]
+        whatAboutThese(m1, dated=dated, title="M1")
 
-        print ("\nLowest")
-        rankstock = z.getp("worstrank")
-        whatAboutThese(rankstock, dated=dated, title="LowestRank")
+        print ("\nM1")
+        m1 = ["PSXP", "DUK", "EBR", "NEE", "AWK", "NGG", "PPL", "D", "NVDA", "ATVI", "IBM", "TSM", "SAP", "CRM"]
+        whatAboutThese(m1, dated=dated, title="M1")
+
+        print ("\nM1-RE")
+        m1 = ["WPC", "VICI", "SBAC", "HPC", "PSA"]
+        whatAboutThese(m1, dated=dated, title="M1")
+
+        print ("\nM1-HC")
+        m1 = ["SNY", "NVS", "PFE", "ABBV", "TAK"]
+        whatAboutThese(m1, dated=dated, title="M1")
+                
+
+#        print ("\nworst")
+#        rankstock = z.getp("worstrank")
+#        whatAboutThese(rankstock, dated=dated, title="WorstRank")
+#
+#        print ("\nLowest")
+#        rankstock = z.getp("worstrank")
+#        whatAboutThese(rankstock, dated=dated, title="LowestRank")
     
         print ("\netf extended")
         rankstock = z.getp("ranketf")

@@ -230,6 +230,10 @@ fu! DebugExtension()
       norm bywoprint("
       :norm pA: {}".format( 
       :norm pA))
+   elseif expand('%:p') =~ ".java"
+      norm bywoLog.d("
+      :norm pA= ",
+      :norm pA);
    else
       norm bywo$writeln($strcat("Dbg f: ", "<C-R>% : <Esc>pA ", <Esc>pA));<Esc>
    endif 
