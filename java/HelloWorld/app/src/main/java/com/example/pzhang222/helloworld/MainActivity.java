@@ -35,13 +35,14 @@ public class MainActivity extends Activity
     private int btnWidth_ = 80;
     private int winCount_ = 0;
     private int gameCount_ = 0;
-    private int recallCount_ = 5;
+    private int recallCount_ = 6;
     private int totalTiles_ = 24;
     private int curGuessIdx_ = 0;
     private static List<Button> buttonList_ = new Vector<Button>();
     private static List<Integer> answerStack_ = new Vector<Integer>();
     private static List<Integer> retryStackBack_ = new Vector<Integer>();
     private static List<Integer> retryStack_ = new Vector<Integer>();
+    private static Intent intent2;
 
     @Override
     public void onCreate(Bundle savedInstanceState) 
@@ -51,6 +52,8 @@ public class MainActivity extends Activity
 
         Intent intent = new Intent(this, Settings.class);
         startActivityForResult(intent, 1);
+
+        intent2 = new Intent(this, Colors.class);
     }
 
     @Override
@@ -220,7 +223,6 @@ public class MainActivity extends Activity
 
     public void setHard()
     {
-        recallCount_ = recallCount_ + 1;
         columnCount_ = 5;
         totalTiles_ = 35;
         btnWidth_ = 65;
@@ -379,13 +381,13 @@ public class MainActivity extends Activity
         }
 
         retryStackBack_ = new Vector(modifiedAnswerStack());
-        missCount_++;
-        if (missCount_ > 4 && winCount_ > 1)
-        {
-            winCount_--;
-            missCount_ = 0;
-            score_.setText(String.format(("%d points / "), winCount_));
-        }
+//        missCount_++;
+//        if (missCount_ > 4 && winCount_ > 1)
+//        {
+////            winCount_--;
+////            missCount_ = 0;
+//            score_.setText(String.format(("%d points / "), winCount_));
+//        }
     }
 
 
@@ -448,6 +450,8 @@ public class MainActivity extends Activity
 
             if (curGuessIdx_ == recallCount_)
             {
+                startActivityForResult(intent2, 1);
+
                 winCount_ = winCount_ + 1;
                 score_.setText(String.format(("%d points / "), winCount_));
                 if (winCount_ >= maxScore_)
