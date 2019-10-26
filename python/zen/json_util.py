@@ -98,10 +98,21 @@ def parsePage(astock, update=False):
 import calendar
 import time
 from sortedcontainers import SortedSet
+def getStocksFromHistorical():
+    pattern = "*.csv"
+    holds = []
+    listOfFiles = os.listdir('../zen_dump/historical')  
+    for entry in listOfFiles:  
+        if fnmatch.fnmatch(entry, pattern):
+            holds.append(entry.split(".")[0])
+    return holds
+
+
 def saveOutstanding(update=False):
     z.getStocks.devoverride = "ITOT"
     dictionary = dict()
-    stocks = z.getStocks("ITOT")
+#    stocks = z.getStocks("ITOT")
+    stocks = getStocksFromHistorical()
 #    for astock in stocks:
     total_mcsorted = SortedSet()
     for idx, astock in enumerate(stocks):
@@ -324,8 +335,8 @@ def updateJsonCompany(astock):
     return name
 
 if __name__ == '__main__':
+    saveOutstanding(update=True)
     savMCIdx()
-#    saveOutstanding(update=False)
 #    zen.diffOuts()
 
 #    print(parsePage("WTW", update=False))

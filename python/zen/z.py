@@ -3,6 +3,12 @@ import pickle
 import pandas
 from collections import defaultdict
 from functools import lru_cache
+from sortedcontainers import SortedSet
+import statistics
+import csv
+import time
+
+closekey = "Adj Close"
 
 def getPath(path, allowmake = True):
     path = "{}/../zen_dump/{}".format(os.getcwd(), path)
@@ -11,7 +17,6 @@ def getPath(path, allowmake = True):
         os.makedirs(parent)
     return path
 
-closekey = "Adj Close"
 
 def getAdded():
     ret = set()
@@ -56,6 +61,8 @@ def getp(name, override="pkl"):
     getpd.add(name)
     try:
         path = getPath("{}/{}.pkl".format(override, name))
+        if not os.path.exists(path):
+            return None
         return pickle.load(open(path, "rb"))
     except:
         try:
@@ -70,10 +77,22 @@ gsave = False
 
 @atexit.register
 def goodbye():
+    if getpd:
+        print("\n---pickle report---")
+
+
+    savedSort = SortedSet()
+    for name in getpd:
+        path = getPath("{}/{}.pkl".format("pkl", name))
+        savedSort.add((os.stat(path).st_mtime, name))
+
+    for dat, name in savedSort:
+        modificationTime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(dat))
+        print("Modification time {} : {}".format(name, modificationTime))
+
     if not gsave:
         return
 
-    print("getpd: {}".format(getpd))
     for save in getpd:
         path = getPath("pkl/{}.pkl".format(save))
         newpath = getPath("pkl2/{}.pkl".format(save))
@@ -294,23 +313,37 @@ def delStock(astock, save=False):
     elif type(astock) is list:
         delStock.items = delStock.items + astock
     else:
-        delStock.items.append(astock)
-
-        path = getPath("historical/{}.csv".format(astock))
-        try:
-            os.remove(path)
-        except:
-            pass
-
-        path = getPath("csv/{}.csv".format(astock))
-        try:
-            os.remove(path)
-        except:
-            pass
+        astocklower = astock.lower()
+        pickl = getp(astocklower)
+        if not pickl:
+            delStock.items.append(astock)
+            path = getPath("historical/{}.csv".format(astock))
+            try:
+                os.remove(path)
+                print("removing path: {}".format( path))
+            except:
+                pass
+    
+            path = getPath("csv/{}.csv".format(astock))
+            try:
+                print("removing path: {}".format( path))
+                os.remove(path)
+            except:
+                pass
+        else:
+            delStock.items = pickl
+            for stock in pickl:
+                path = getPath("historical/{}.csv".format(stock))
+                try:
+                    os.remove(path)
+                    print("removing path: {}".format( path))
+                except:
+                    pass
 
     if save:
         removeFromStocks(delStock.items)
         clearFromEtfDics(delStock.items)
+
 delStock.items = []
 
 #delStock(getp("deletes"), save=True)
@@ -338,7 +371,9 @@ def debug(sig, frame):
 def listen():
     signal.signal(signal.SIGUSR1, debug)  # Register handler
 
-def getEtfList(forEtfs = False):
+def getEtfList(forEtfs = False, buys=False):
+    if buys:
+        return [ "ITOT" , "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV", "BNDX", "VEA", "VIG", "VNQ", "VOO", "VTI", "VTV", "VUG", "VIG"]
     if forEtfs:
         return [ "ITOT" , "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV"]
     return [ "IUSG", "IJH", "IJR", "IVV", "ITOT" ]
@@ -406,11 +441,35 @@ def getEtfPrice(astock, date):
             print("astock: {}".format( astock))
         return None
 
+def getAverageVolume(astock):
+
+    path = getPath("historical/{}.csv".format(astock))
+    if not os.path.exists(path):
+        raise SystemExit
+
+    dates = getp("dates")
+    startd = dates[-52]
+    avgs = list()
+    started = False
+    for row in csv.DictReader(open(path)):
+        if not started:
+            cdate = row['Date']
+            if cdate == startd:
+                started = True
+        else:
+            vol = float(row["Volume"])
+            avgs.append(vol)
+
+    return round(statistics.mean(avgs))
+
 #removeFromStocks(getCorruptStocks())
 if __name__ == '__main__':
     import sys
     import update_history
-    astock = sys.argv[2].upper()
+    try:
+        astock = sys.argv[2].upper()
+    except:
+        pass
     try:
         if len(sys.argv) > 1:
             if sys.argv[1] == "delete":

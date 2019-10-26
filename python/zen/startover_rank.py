@@ -9,6 +9,41 @@ import zen
 import csv
 import os
 
+okList = ["IVV", "IUSG", "USMV"]
+addrop = defaultdict(int)
+def averageDailyDrop(directory = "historical"):
+    global dics
+    path = z.getPath(directory)  
+    listOfFiles = os.listdir(path)
+    for idx,entry in enumerate(listOfFiles):
+        if not idx % 100:
+            print("idx: {}".format( idx))
+    
+        astock = os.path.splitext(entry)[0]
+        if astock not in okList:
+            continue
+        path = z.getPath("{}/{}".format(directory, entry))
+        print("path: {}".format( path))
+        for row in csv.DictReader(open(path)):
+            low = float(row['Low'])
+            op = float(row['Open'])
+            try:
+                avgDrop = round(float(row['Low'])/float(row['Open']),2)
+            except:
+                pass
+#            if avgDrop < 0.7:
+#                print("low : {}".format( low ))
+#                print("op : {}".format( op ))
+                
+#            drop = z.percentage(avgDrop, 1)
+#            if drop == "-0.0%" or drop == "0.0%":
+#                drop = "0"
+            addrop[avgDrop] += 1
+
+#averageDailyDrop("ETF")
+#print("drop : {}".format( addrop ))
+#exit()
+
 #problems = z.getp("etfproblems")
 dics = defaultdict(dict)
 def csvToDic(directory = "historical"):
@@ -27,6 +62,20 @@ def csvToDic(directory = "historical"):
                 continue
 
             dics[astock][date] = float(row['Close'])
+
+def etfToDic(directory = "ETF"):
+    global dics
+    path = z.getPath(directory)  
+    etfs = z.getEtfList(buys = True)
+    for entry in etfs:
+        path = z.getPath("{}/{}.csv".format(directory, entry))
+        for row in csv.DictReader(open(path)):
+            date = row['Date']
+            if "201" not in date:
+                continue
+
+            dics[astock][date] = float(row['Close'])
+
 
 def saveData():
     global dics

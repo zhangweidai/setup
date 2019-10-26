@@ -127,12 +127,14 @@ alias well='cd ~/setup2/python/zen; py bles.py'
 alias welltf='python3 ~/setup/python/tf_check.py'
 alias gopf='cd /mnt/c/Program\ Files'
 alias gomc='cd /mnt/c/Users/pzhang'
+export DL='/mnt/c/Users/zoe/Documents'
 export ANDROID_HOME='/mnt/c/Users/pzhang/AppData/Local/Android/Sdk'
 alias go='source ~/setup/bin/go.bash'
 alias py3='python3'
 alias py='python3'
 alias bpy='bpython'
 alias p='ipython'
+alias goz='cd /mnt/c/Users/Zoe/Desktop'
 
 export CSCOPE_DB='/usr/local/lib/python2.7/dist-packages/cscope.out'
 alias scopeme='find "$PWD/" -name "*.py" -o -iname "*.cfg" > cscope.files && cscope -bv -i cscope.files -f cscope.out'
@@ -169,11 +171,14 @@ alias sell="py zen.py sell"
 alias rsell="py zen.py rsell"
 alias download="py z.py download"
 alias wab="py zen.py wab"
+alias wabp="py zen.py wabp --s"
 alias buyl="py zen.py buy --date=l"
 alias gbuy="py zen.py gbuy"
 alias gbuy2="py zen.py gbuy2"
 alias well='cd ~/gits/manim; python -m manim example_scenes.py SquareToCircle -pl; '
+alias well='cd ~/gits/manim; python -m manim example_scenes.py AAA -pl; '
 alias well2='wsl-open /home/zoe/gits/manim/media/videos/example_scenes/2160p15/SquareToCircle.mp4'
+alias well2='wsl-open /home/zoe/gits/manim/media/videos/example_scenes/480p15/AAA.mp4'
 #alias xdg-open='wsl-open'
 #sudo -S true
 set bell-style none

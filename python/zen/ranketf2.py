@@ -132,6 +132,7 @@ def doitagain(dics = None):
     lowestdic = dict()
     yearlydic = z.getp("yearlydic")
     yearlyscore = SortedSet()
+    yearlyscore2 = SortedSet()
     for astock,value in vals.items():
         if astock in problems:
             continue
@@ -141,11 +142,16 @@ def doitagain(dics = None):
         median.add((y1m, astock))
         yearlydic[astock] = (y1w, y1m)
         score = (1 - (negs[astock]/testpoints)) * (y1w + y1m)
-        yearlyscore.add((score, astock))
+        rank = zen.getMCRank(astock)
+        if rank != "NA" and int(rank) < 678:
+            yearlyscore.add((score, astock))
+        elif rank != "NA" and int(rank) < 1178:
+            yearlyscore2.add((score, astock))
     
     ultdict = dict()
     print ("Saving ultrank")
     z.setp(yearlyscore[-30:],"ultrank")
+    z.setp(yearlyscore2[-30:],"ultrank2")
     
     for idx, item in enumerate(reversed(yearlyscore)):
         ultdict[item[1]] = idx

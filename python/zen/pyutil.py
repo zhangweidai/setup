@@ -6,7 +6,7 @@ try:
     from enum import IntFlag
 except:
     pass
-from util import getp, setp
+from z import getp, setp
 import logging
 import util
 

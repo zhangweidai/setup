@@ -22,9 +22,12 @@ def getDataFromYahoo(astock, cdate):
         try:
             df = pdr.get_data_yahoo([astock], start=cdate)
         except Exception as e:
-            z.trace(e)
+            #z.trace(e)
             problems.append(astock)
-#            raise SystemExit
+            if len(problems)>30:
+                print("didn't finish problems: {}".format( problems))
+                z.setp(problems, "problems")
+                raise SystemExit
             return None
     
     for idx in df.index:
@@ -41,8 +44,7 @@ def getDataFromYahoo(astock, cdate):
 
     return df
 
-def update(where= "historical", problems = [], attempts=0, prices = dict()):
-    return True
+def update(where= "historical", problems = [], attempts=0, prices = dict(), skips = list()):
 
     if attempts > 3:
         print ("tried too many times")
@@ -55,6 +57,8 @@ def update(where= "historical", problems = [], attempts=0, prices = dict()):
     listOfFiles = os.listdir(parentdir)
     for idx,entry in enumerate(listOfFiles):
         astock = os.path.splitext(entry)[0]
+        if astock in skips:
+            continue
         path = "{}/{}".format(parentdir,entry)
 
         if not idx % 100:

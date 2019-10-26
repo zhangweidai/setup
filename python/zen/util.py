@@ -283,11 +283,11 @@ def getCompanyNameFrom(astock, df):
         raise ValueError('NotFound.')
 
 def getCompanyName(astock):
-
     if astock not in getETF("ITOT"):
         if astock in getFromHoldings():
             return "ETF"
-        return None
+#        print ("sdfA")
+#        return None
 
     df = getETF.ret_df["ITOT"]
     try:
@@ -599,7 +599,11 @@ def getLiveChange(astock):
     live = getLiveData(astock)
     if not live:
         return None
-    return (float(live) / zen.getPrice(astock))
+    try:
+        return (float(live) / zen.getPrice(astock))
+    except:
+        return None
+
 getLiveChange.dev = 1
 
 from datetime import date, timedelta
@@ -1304,8 +1308,6 @@ def listen():
 
 if __name__ == '__main__':
     astock = "BA"
-    print (getLiveData(astock))
-    print (getLiveData(astock, 'sharesOutstanding'))
     calcPortfolio.latest = None
     #df = getCsv("BA")
     #print (pandas.Index(df["Date"]).get_loc("2018-12-28"))

@@ -16,6 +16,7 @@ from pyutil import Modes, Zen, settings
 import pyutil
 import os
 
+loadFrom = "bigdic"
 def deleteStock(astock, force=False):
     global idx, stocks, stock_count
     if not force:
@@ -28,11 +29,16 @@ def deleteStock(astock, force=False):
 #    resetStocks(update = True)
 
 def resetStocks(update=True):
-    global stocks, stock_count
+    global stocks, stock_count, loadFrom
     z.getCsv.download = False
-#    stocks = list(z.getStocks())
-    alls = z.getp("bigdic")
-    stocks = list(alls.keys())
+
+    alls = z.getp(loadFrom)
+    stocks = []
+    if type(alls) == dict:
+        stocks = list(alls.keys())
+    else:
+        stocks = list(alls)
+
 #    raise SystemExit
     stock_count = len(stocks)
     print("stock_count : {}".format( stock_count ))
@@ -290,7 +296,7 @@ def previ():
 
 marked = []
 def interpret(answer):
-    global idx, stocks, previdx, stock_count, setstart_date
+    global idx, stocks, previdx, stock_count, setstart_date, loadFrom
     print("answer: {}".format( answer))
     if not answer:
         return
@@ -327,6 +333,11 @@ def interpret(answer):
         util.loadBaseline(start=rebuild.recentIncrement)
         print (util.getStartDate())
         toggleCurrentMode(Modes.recent)
+
+    elif "load" in answer:
+        pckl = answer.split(" ")[1]
+        loadFrom = pckl
+        resetStocks()
 
     elif "delete" in answer:
         stock = getCurrentStock()
