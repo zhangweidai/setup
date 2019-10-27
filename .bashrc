@@ -179,6 +179,8 @@ alias well='cd ~/gits/manim; python -m manim example_scenes.py SquareToCircle -p
 alias well='cd ~/gits/manim; python -m manim example_scenes.py AAA -pl; '
 alias well2='wsl-open /home/zoe/gits/manim/media/videos/example_scenes/2160p15/SquareToCircle.mp4'
 alias well2='wsl-open /home/zoe/gits/manim/media/videos/example_scenes/480p15/AAA.mp4'
+alias well='cd ~/setup/csharp; mcs hello.cs; mono hello.exe'
+alias mko='cd ~/setup/csharp; mcs hello.cs'
 #alias xdg-open='wsl-open'
 #sudo -S true
 set bell-style none

@@ -198,6 +198,8 @@ fu! CommentStr()
       let g:comment_str = "//"
    elseif exten =~ "vim"
       let g:comment_str = "\""
+   elseif exten =~ "cs"
+      let g:comment_str = "//"
    elseif exten =~ "js"
       let g:comment_str = "//"
    elseif exten =~ "bat"

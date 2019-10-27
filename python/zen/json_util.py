@@ -334,9 +334,12 @@ def updateJsonCompany(astock):
 #        f.write("{},{},{}\n".format(astock, dividend, name))
     return name
 
-if __name__ == '__main__':
+def runmain():
     saveOutstanding(update=True)
     savMCIdx()
+
+if __name__ == '__main__':
+    runmain()
 #    zen.diffOuts()
 
 #    print(parsePage("WTW", update=False))

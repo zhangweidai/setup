@@ -13,6 +13,8 @@ import threadprep
 import portfolio
 import util
 import z 
+
+
 #
 #import atexit
 #import curses
@@ -123,6 +125,8 @@ def loadSortedEtf(etf = None):
     if etf:
         loadSortedEtf.etf = etf
     loaded = "{}_SS".format(loadSortedEtf.etf)
+    import traceback
+    traceback.print_stack()
     print("loaded : {}".format( loaded ))
     getSortedStocks.cdict = z.getp(loaded)  
 loadSortedEtf.etf = "IUSG"
@@ -489,14 +493,18 @@ def getMCRank(astock):
     return "NA"
 
 
-def getTargets(astock):
+def getTargets(astock, asint = False):
     try:
         vals = getTargets.dic[astock]
+        if asint:
+            return vals
         return "{} {}".format(vals[0], vals[1])
     except:
         try:
             getTargets.dic = z.getp("buyatdic")
             vals = getTargets.dic[astock]
+            if asint:
+                return vals
             return "{} {}".format(vals[0], vals[1])
         except Exception as e:
             pass
@@ -1021,7 +1029,7 @@ def buyl(args, dated):
             z.trace(e)
             exit()
 
-    loadSortedEtf("BUY2")
+    #loadSortedEtf("BUY2")
     print ("\netfs")
 
     dscore = whatAboutThese(z.getEtfList(forEtfs=True), dated=dated, title = "Standard ETFS")
@@ -1050,9 +1058,12 @@ def buyl(args, dated):
         rankstock = z.getp("ultrank2")
         whatAboutThese(rankstock, dated=dated, title="RankUlt2")
 
-        print ("\nOther")
-        m1 = ["COST", "WMT", "NKE", "ECL", "TM", "TGT", "LOW", "NFLX", "AMZN", "GOOG", "AMD"]
-        whatAboutThese(m1, dated=dated, title="M1")
+#        print ("\nOther")
+#        m1 = ["COST", "WMT", "NKE", "ECL", "TM", "TGT", "LOW", "NFLX", "AMZN", "GOOG", "AMD"]
+#        whatAboutThese(m1, dated=dated, title="M1")
+
+        print ("\nVolLow")
+        whatAboutThese(z.getp("sortedvolmcbegin"), dated=dated, title="LowVolMC")
 
 #        print ("\nM1")
 #        m1 = ["PSXP", "DUK", "EBR", "NEE", "AWK", "NGG", "PPL", "D", "NVDA", "ATVI", "IBM", "TSM", "SAP", "CRM"]
@@ -1066,9 +1077,9 @@ def buyl(args, dated):
 #        m1 = ["SNY", "NVS", "PFE", "ABBV", "TAK"]
 #        whatAboutThese(m1, dated=dated, title="M1")
                 
-        print ("\nBUY List")
-        m1 = ["TM", "BRKB", "WPG", "AVGO", "ATO"]
-        whatAboutThese(m1, dated=dated, title="BUY List")
+#        print ("\nBUY List")
+#        m1 = ["TM", "BRKB", "WPG", "AVGO", "ATO"]
+#        whatAboutThese(m1, dated=dated, title="BUY List")
 
 #        print ("\nworst")
 #        rankstock = z.getp("worstrank")
@@ -1085,21 +1096,21 @@ def buyl(args, dated):
 #        key = readchar.readkey()
 #        if key == "q":
 #            return
-        return
+#        return
 
-        try:
-            print ("\ndiv extended")
-            divs = z.getp("divset")[-30:]
-            whatAboutThese(divs, dated=dated)
-        except:
-            pass
+#        try:
+#            print ("\ndiv extended")
+#            divs = z.getp("divset")[-30:]
+#            whatAboutThese(divs, dated=dated)
+#        except:
+#            pass
 
-    z.setp(buySaved, "buySaved")
-
-    usedate = dated or args.date
-    for mode in modes:
-        whatAboutThisMode(mode, "low", usedate, dated)
-        whatAboutThisMode(mode, "high", usedate, dated)
+#    z.setp(buySaved, "buySaved")
+#
+#    usedate = dated or args.date
+#    for mode in modes:
+#        whatAboutThisMode(mode, "low", usedate, dated)
+#        whatAboutThisMode(mode, "high", usedate, dated)
 
 #        key = readchar.readkey()
 #        if key == "q":
@@ -1426,6 +1437,7 @@ if __name__ == '__main__':
     parser.add_argument('--save', default=None)
     parser.add_argument('--skips', default=None)
     parser.add_argument('--skipowned', default=None)
+    parser.add_argument('--updateall', default=None)
     args = parser.parse_args()
 
 #    if args.main[0] == "l":
@@ -1434,6 +1446,16 @@ if __name__ == '__main__':
 #        z.setp(args, "lastArgs_forGenerate_list")
 
     z.online.online = args.live
+    if args.updateall:
+        import json_util
+        json_util.runmain()
+
+        import buyat
+        buyat.runmain()
+
+        import startover_rank
+        startover_rank.genStartOver()
+        exit()
 
     z.getStocks.devoverride = args.etf.upper()
 

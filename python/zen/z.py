@@ -1,11 +1,12 @@
-import os
-import pickle
-import pandas
 from collections import defaultdict
 from functools import lru_cache
 from sortedcontainers import SortedSet
-import statistics
 import csv
+import fnmatch
+import os
+import pandas
+import pickle
+import statistics
 import time
 
 closekey = "Adj Close"
@@ -441,8 +442,24 @@ def getEtfPrice(astock, date):
             print("astock: {}".format( astock))
         return None
 
-def getAverageVolume(astock):
 
+def getAvgVolDic():
+    pattern = "*.csv"
+    holds = []
+    listOfFiles = os.listdir('../zen_dump/historical')  
+    savedSort = SortedSet()
+
+    for entry in listOfFiles:  
+        if fnmatch.fnmatch(entry, pattern):
+            astock = entry.split(".")[0]
+            savedSort.add((getAverageVolume(astock), astock))
+
+    setp(savedSort, "sortedvol")
+    print("savedSort: {}".format( savedSort))
+    setp(savedSort[-30:], "sortedvolbegin")
+    setp(savedSort[:30], "sortedvolend")
+
+def getAverageVolume(astock):
     path = getPath("historical/{}.csv".format(astock))
     if not os.path.exists(path):
         raise SystemExit
@@ -461,6 +478,32 @@ def getAverageVolume(astock):
             avgs.append(vol)
 
     return round(statistics.mean(avgs))
+import math
+
+def getAvgVolDicMc():
+    sortedvol = getp("sortedvol")
+    savedSort = SortedSet()
+    for astock in sortedvol:
+        try:
+            vol = astock[0]
+            astock = astock[1]
+            mc = int(zen.getMCRank(astock))
+            score = round((10000000000 * (500 - mc))/(math.sqrt(mc)*vol*vol),5)
+            if mc < 100 and mc > 10:
+                savedSort.add((score, astock))
+        except:
+            pass
+    print("savedSort: {}".format( savedSort))
+    setp(savedSort[-30:], "sortedvolmcbegin")
+    setp(savedSort[:30], "sortedvolmcend")
+
+def targetPercentage():
+    openOrders = [
+    (1,"ILMN",286),
+    (13,"T",33),
+    (4,"T",33),
+    (13,"T",33)
+    ]
 
 #removeFromStocks(getCorruptStocks())
 if __name__ == '__main__':
@@ -472,7 +515,12 @@ if __name__ == '__main__':
         pass
     try:
         if len(sys.argv) > 1:
-            if sys.argv[1] == "delete":
+            if sys.argv[1] == "genavgvol":
+                getAvgVolDic()
+            if sys.argv[1] == "genavgvolmc":
+                getAvgVolDicMc()
+
+            elif sys.argv[1] == "delete":
                 print("deleted astock : {}".format( astock ))
                 delStock(astock, True)
 
