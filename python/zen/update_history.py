@@ -17,7 +17,10 @@ def getDataFromYahoo(astock, cdate):
     global problems
     df = None
     try:
+        print("cdate: {}".format( cdate))
+        print("astock: {}".format( astock))
         df = pdr.get_data_yahoo([astock], start=cdate)
+        print("sdfa")
     except Exception as e:
         try:
             df = pdr.get_data_yahoo([astock], start=cdate)

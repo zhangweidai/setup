@@ -653,7 +653,7 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear,
             avgds = d2
 
     try:
-        dscore = getDisplaySortValue(probD,avgC, avgD, live, avgds, astock, chgT)
+        dscore = getDisplaySortValue(probD, avgC, avgD, live, avgds, astock, chgT)
     except:
         print("live: {}".format( live))
         print("avgds: {}".format( avgds))
@@ -774,7 +774,11 @@ def getUltRank(astock):
         return "NA"
     return 
 
-def getLastYearChange(astock, dated):
+def getLastYearChange(astock, dated = None):
+    if not dated:
+        dates = z.getp("dates")
+        dated = dates[-1]
+
     if modified_date:
         dates = z.getp("dates")
         startidx = dates.index(dated)-252
@@ -1065,6 +1069,12 @@ def buyl(args, dated):
         print ("\nVolLow")
         whatAboutThese(z.getp("sortedvolmcbegin"), dated=dated, title="LowVolMC")
 
+        print ("\nVolLow")
+        whatAboutThese(["CRUS", "ELF", "FB", "FIZZ", "IRBT", "JWN", "SWKS", "TPR", "TSLA", "UBER", "WYNN"], dated=dated, title="LowVolMC")
+
+        print ("\nDividend")
+        whatAboutThese(["KTB", "TU", "IBM", "IP", "STX", "LYB", "TRP", "D", "CAH", "SLF", "OMC", "PNW", "TD", "FTS"])
+
 #        print ("\nM1")
 #        m1 = ["PSXP", "DUK", "EBR", "NEE", "AWK", "NGG", "PPL", "D", "NVDA", "ATVI", "IBM", "TSM", "SAP", "CRM"]
 #        whatAboutThese(m1, dated=dated, title="M1")
@@ -1116,10 +1126,10 @@ def buyl(args, dated):
 #        if key == "q":
 #            return
 
-    if savedSort:
-        print ("\narranged change")
-        whatAboutThese(savedSort[-5:], dated=dated)
-        whatAboutThese(savedSort[:5], dated=dated)
+#    if savedSort:
+#        print ("\narranged change")
+#        whatAboutThese(savedSort[-5:], dated=dated)
+#        whatAboutThese(savedSort[:5], dated=dated)
 
 
 
@@ -1301,6 +1311,8 @@ def diffOuts():
     print("out1 : {}".format( out1 ))
     out2 = outs[-2]
     print("out2 : {}".format( out2 ))
+    out1 = os.path.basename(os.path.splitext(out1)[0])
+    out2 = os.path.basename(os.path.splitext(out2)[0])
     out1dic = z.getp(out1)
     out2dic = z.getp(out2)
     divset = SortedSet()
@@ -1568,3 +1580,4 @@ if __name__ == '__main__':
     except Exception as e:
         z.trace(e)
         pass
+

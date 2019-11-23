@@ -109,7 +109,7 @@ def getStocksFromHistorical():
 
 
 def saveOutstanding(update=False):
-    z.getStocks.devoverride = "ITOT"
+    z.getStocks.devoverride = "IVV"
     dictionary = dict()
 #    stocks = z.getStocks("ITOT")
     stocks = getStocksFromHistorical()
