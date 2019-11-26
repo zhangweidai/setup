@@ -57,7 +57,7 @@ def syp(data, name):
     pickle.dump(data, open(path, "wb"))
 
 getpd = set()
-@lru_cache(maxsize=20)
+@lru_cache(maxsize=30)
 def getp(name, override="pkl"):
     getpd.add(name)
     try:

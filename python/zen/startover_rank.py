@@ -8,6 +8,7 @@ import random
 import zen
 import csv
 import os
+import util
 
 okList = ["IVV", "IUSG", "USMV"]
 addrop = defaultdict(int)
@@ -46,22 +47,38 @@ def averageDailyDrop(directory = "historical"):
 
 #problems = z.getp("etfproblems")
 dics = defaultdict(dict)
-def csvToDic(directory = "historical"):
-    global dics
+r2dict = dict()
+def csvToDic(directory = "historical", generate_r2 = False):
+    global dics, r2dict
     path = z.getPath(directory)  
     listOfFiles = os.listdir(path)
+    last = list()
     for idx,entry in enumerate(listOfFiles):
         if not idx % 100:
             print("idx: {}".format( idx))
     
         astock = os.path.splitext(entry)[0]
+
         path = z.getPath("{}/{}".format(directory, entry))
         for row in csv.DictReader(open(path)):
             date = row['Date']
+
             if "201" not in date:
                 continue
 
-            dics[astock][date] = float(row['Close'])
+            close = float(row['Close'])
+
+            if generate_r2 and "2019" in date:
+                last.append(close)
+
+            dics[astock][date] = close
+
+        if generate_r2:
+            try:
+                r2dict[astock] = util.regress(last, rsquared=True)
+            except:
+                pass
+
 
 def etfToDic(directory = "ETF"):
     global dics
@@ -78,12 +95,13 @@ def etfToDic(directory = "ETF"):
 
 
 def saveData():
-    global dics
+    global dics, r2dict
     csvToDic(directory="ETF")
     z.setp(dics, "etf_bigdic")
     dics = defaultdict(dict)
-    csvToDic()
+    csvToDic(generate_r2 = True)
     z.setp(dics, "stocks_bigdic")
+    z.setp(r2dict, "r2dict")
 #    exit()
 
 
@@ -207,82 +225,9 @@ vals = None
 simple = defaultdict(float)
 negs = defaultdict(int)
 testpoints = 0
-def genStartOver():
-    global vals, dics, testpoints
-    saveData()
-    dics = z.getp("stocks_bigdic")
-    num_days = len(dates)
-    endi = (num_days-252)-1
-    vals = defaultdict(list)
-    problems = set()
-    stocks = dics.keys()
-    sdate = "2013-01-02"
-    didx = dates.index(sdate)
-    lens = len(dates)
-    ayear = 252
-    
-    vals = setTestpoints(lens, didx, ayear, dates, stocks)
-
-    median = SortedSet()
-    lowest = SortedSet()
-    lowestdic = dict()
-    #yearlydic = z.getp("yearlydic")
-    yearlydic = dict()
-    yearlyscore = SortedSet()
-    simplescores = SortedSet()
-    ivv = 0
-    maxvals = len(vals["IVV"])
-    print("maxvals : {}".format( maxvals ))
-    for astock,value in vals.items():
-        count = len(value)
-        ratio = count / maxvals
-        y1m = statistics.median(value)
-        y1w = min(value)
-        yearlydic[astock] = (y1w, y1m)
-        sub = (negs[astock]/testpoints)
-        score = (1 - sub) * (y1w + y1m)
-        if ratio < .7:
-            score = score * ratio
-        else:
-            try:
-                zen.getPrice(astock, dates[-1], openp = 'both')
-            except:
-                print ("could not find a price for {} {}".format(astock, dates[-1]))
-                continue
-    
-            lowest.add((y1w, astock))
-            median.add((y1m, astock))
-    
-        yearlyscore.add((round(score,3), astock))
-        simplescores.add((round(simple[astock] * ratio,3), astock))
-    
-    ultdict = dict()
-    print("yearlyscore: {}".format( yearlyscore))
-    z.setp(yearlyscore[-30:],"ultrank")
-    z.setp(yearlyscore[:12],"worstrank")
-    print ("ult")
-    print (yearlyscore[-30:])
-    print ("Worst")
-    print (yearlyscore[:12])
-    
-    print ("simple")
-    print (simplescores[-30:])
-    z.setp(simplescores[-30:],"simplerank")
-    
-    #raise SystemExit
-#    
-#    for idx, item in enumerate(reversed(yearlyscore)):
-#        ultdict[item[1]] = idx
-#    
-#    #print("savedict: {}".format( savedict[-30:]))
-#    z.setp(ultdict, "ultdict")
-#    
-#    #z.setp(lowestdic,"lowestdic")
-#    z.setp(yearlydic,"yearlydic")
-##    print("lowest: {}".format( lowest[-20:]))
-#    print("median: {}".format( median[-20:]))
-#    z.setp(lowest[-20:],"lowyear")
-#    
 
 if __name__ == '__main__':
-    genStartOver()
+    # normal
+    saveData()
+    #csvToDic(generate_r2 = True)
+
