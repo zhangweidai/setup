@@ -67,11 +67,20 @@ def getRangedDist(items):
 #print(getRangedDist(getTestItems()))
 #raise SystemExit
 
-def regress(items):
+def regress(items, rsquared=False):
     leng = len(items)
     if leng == 0:
-        print ("why is this empty")
+        if rsquared:
+            return "NA"
         return 0
+
+    if rsquared:
+        if leng < 151:
+            return "NA"
+        items = items[-150:]
+
+    leng = len(items)
+
     i = 0
     x = []
     for b in items:
@@ -83,6 +92,10 @@ def regress(items):
     sub = sum(items)/leng
 
     slope, intercept, r_value, p_value, std_err = stats.linregress(x, y)
+
+    if rsquared:
+        return round((r_value**2)*100,1)
+
     rs = (r_value**2)/2
     normalized_err = (std_err/sub)
     if normalized_err == 0:

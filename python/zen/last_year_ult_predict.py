@@ -8,7 +8,6 @@ import random
 import zen
 import csv
 import os
-import util
 
 okList = ["IVV", "IUSG", "USMV"]
 addrop = defaultdict(int)
@@ -47,45 +46,16 @@ def averageDailyDrop(directory = "historical"):
 
 #problems = z.getp("etfproblems")
 dics = defaultdict(dict)
-r2dict = dict()
-def csvToDic(directory = "historical", generate_r2 = False):
-    global dics, r2dict
+def csvToDic(directory = "historical"):
+    global dics
     path = z.getPath(directory)  
     listOfFiles = os.listdir(path)
-    last = list()
     for idx,entry in enumerate(listOfFiles):
         if not idx % 100:
             print("idx: {}".format( idx))
     
         astock = os.path.splitext(entry)[0]
-
         path = z.getPath("{}/{}".format(directory, entry))
-        for row in csv.DictReader(open(path)):
-            date = row['Date']
-
-            if "201" not in date:
-                continue
-
-            close = float(row['Close'])
-
-            if generate_r2 and "2019" in date:
-                last.append(close)
-
-            dics[astock][date] = close
-
-        if generate_r2:
-            try:
-                r2dict[astock] = util.regress(last, rsquared=True)
-            except:
-                pass
-
-
-def etfToDic(directory = "ETF"):
-    global dics
-    path = z.getPath(directory)  
-    etfs = z.getEtfList(buys = True)
-    for entry in etfs:
-        path = z.getPath("{}/{}.csv".format(directory, entry))
         for row in csv.DictReader(open(path)):
             date = row['Date']
             if "201" not in date:
@@ -93,15 +63,13 @@ def etfToDic(directory = "ETF"):
 
             dics[astock][date] = float(row['Close'])
 
-
 def saveData():
-    global dics, r2dict
+    global dics
     csvToDic(directory="ETF")
     z.setp(dics, "etf_bigdic")
     dics = defaultdict(dict)
-    csvToDic(generate_r2 = True)
+    csvToDic()
     z.setp(dics, "stocks_bigdic")
-    z.setp(r2dict, "r2dict")
 #    exit()
 
 
@@ -117,41 +85,31 @@ def getClose(astock, sday, sdate, count = 3):
         return getClose(astock, sday, sdate, count = count - 1)
 
 def setTestpoints(lens, didx, ayear, dates, stocks):
-    global testpoints, vals, negs
-    testpoints = 0
-    for sdate in range(-1*(lens-didx),(-1*ayear)+1):
+    global vals, negs
+    start = -1*(lens-didx)
+    end = (-2*ayear)+1
+    endTime = dates[end]
+    print("wabp last_year_ult_predict --date {}".format( endTime ))
+    for sdate in range(start, end):
         edate = sdate + ayear - 1
         sday = dates[sdate]
         eday = dates[edate]
-        eyear = int(eday.split("-")[0]) - 2000
-        score = float(eyear)/10.0
-    
+
         for astock in stocks:
             first = getClose(astock, sday, sdate)
             second = getClose(astock, eday, edate)
-    
-            if first == None or second == None:
+
+            if first == None or second == None or first < 15:
                 continue
     
             change = round(second/first,4)
     
             if change > 2.0:
                 change = 2.0
-    
-            if change < 1.00:
-                negs[astock] += (score * 2)
-                simple[astock] -= (score * score) 
-            else:
-                simple[astock] += score
-    
-    
+
             vals[astock].append(change)
     
-            if "2018" in eday or "2019" in eday:
-                vals[astock].append(change)
-    
-        testpoints += score
-        return vals
+#        return vals
 
 #path = z.getPath("analysis/etfanalysis.csv")
 #with open(path, "w") as f:
@@ -225,9 +183,77 @@ vals = None
 simple = defaultdict(float)
 negs = defaultdict(int)
 testpoints = 0
+def genStartOver():
+    global vals, dics, testpoints
+#    dics = z.getp("stocks_bigdic_demo")
+    dics = z.getp("stocks_bigdic")
+
+    num_days = len(dates)
+    problems = set()
+    stocks = dics.keys()
+    sdate = "2012-01-03"
+    didx = dates.index(sdate)
+    lens = len(dates)
+    ayear = 252
+    
+    vals = defaultdict(list)
+    setTestpoints(lens, didx, ayear, dates, stocks)
+
+    median = SortedSet()
+    lowest = SortedSet()
+    lowestdic = dict()
+    #yearlydic = z.getp("yearlydic")
+    yearlydic = dict()
+    yearlyscore = SortedSet()
+    simplescores = SortedSet()
+    combined = SortedSet()
+    ivv = 0
+    maxvals = len(vals["KO"])
+    for astock,value in vals.items():
+        count = len(value)
+        ratio = count / maxvals
+
+        if ratio < .78:
+            continue
+
+        y1a = round(statistics.mean(value),4)
+        y1m = statistics.median(value)
+        y1w = min(value)
+
+        score = (min(y1a , y1m) + y1w)/2
+        combined.add((score, astock))
+        continue
+
+    print (combined[-30:])
+    z.setp(combined[-30:], "last_year_ult_predict")
+    return
+
+    ultdict = dict()
+    print("yearlyscore: {}".format( yearlyscore))
+    z.setp(yearlyscore[:12],"worstrank")
+    print ("ult")
+    print (yearlyscore[-30:])
+    print ("Worst")
+    print (yearlyscore[:12])
+    
+    print ("simple")
+    print (simplescores[-30:])
+    z.setp(simplescores[-30:],"simplerank")
+    
+    #raise SystemExit
+#    
+#    for idx, item in enumerate(reversed(yearlyscore)):
+#        ultdict[item[1]] = idx
+#    
+#    #print("savedict: {}".format( savedict[-30:]))
+#    z.setp(ultdict, "ultdict")
+#    
+#    #z.setp(lowestdic,"lowestdic")
+#    z.setp(yearlydic,"yearlydic")
+##    print("lowest: {}".format( lowest[-20:]))
+#    print("median: {}".format( median[-20:]))
+#    z.setp(lowest[-20:],"lowyear")
+#    
 
 if __name__ == '__main__':
-    # normal
-    saveData()
-    #csvToDic(generate_r2 = True)
-
+    genStartOver()

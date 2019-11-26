@@ -12,6 +12,7 @@ import threadprep
 import portfolio
 import util
 import z 
+import table_print
 
 
 #
@@ -563,9 +564,9 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear,
             price = round(price,2)
             oprice = price
         except:
-            print("1no price dated: {}".format( dates[-2]))
-            print("1no price dated: {}".format( dated))
-            print("1no price astock : {}".format( astock ))
+#            print("1no price dated: {}".format( dates[-2]))
+#            print("1no price dated: {}".format( dated))
+#            print("1no price astock : {}".format( astock ))
             noprices.append(astock)
 #        raise SystemExit
 #        return
@@ -574,8 +575,8 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear,
         idx4 = -5 if not dated else dates.index(dated)-5
         o3price = round(getPrice(astock, dates[idx4]),3)
     except:
-        print("no price dated: {}".format( dated))
-        print("no price astock : {}".format( astock ))
+#        print("no price dated: {}".format( dated))
+#        print("no price astock : {}".format( astock ))
         noprices.append(astock)
 #        return
 
@@ -653,7 +654,7 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear,
             avgds = d2
 
     try:
-        dscore = getDisplaySortValue(probD,avgC, avgD, live, avgds, astock, chgT)
+        dscore = getDisplaySortValue(probD, avgC, avgD, live, avgds, astock, chgT)
     except:
         print("live: {}".format( live))
         print("avgds: {}".format( avgds))
@@ -683,10 +684,10 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear,
     else:
         mcchg = "NA"
 
-    if type(beta) == float:
-        beta = round(beta,2)
-    else:
-        beta = "NA"
+#    if type(beta) == float:
+#        beta = round(beta,2)
+#    else:
+#        beta = "NA"
         
     if type(pe) == float:
         pe = round(pe,1)
@@ -707,7 +708,7 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear,
 #        print("astock: {}".format( len(z.getp("ranklist"))))
         etfrank = "NA"
 
-
+    display_stock = None
     etfc = util.getEtfQualifications(astock, count=True)
     y1w, y1m = getYearly(astock)
     y1l = getLastYearChange(astock, dated)
@@ -718,53 +719,55 @@ def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear,
     chgH = getChgH(astock, price);
     try:
         if astock in myportlist:
-            astock = "*{}".format(astock)
+            display_stock = "*{}".format(astock)
             if args.skipowned:
                 return
         else:
-            astock = " {}".format(astock)
+            display_stock = " {}".format(astock)
     except:
         pass
 
 
+#            ("beta", beta),
     try:
-        values = [astock, price, 
-            z.percentage(avgC, accurate=2), 
-            z.percentage(median),
-            probD, 
-            z.percentage(avgD),
-            z.percentage(avgG),
-            z.percentage(d0),
-            z.percentage(d1),
-            z.percentage(d2),
-            z.percentage(chgT),
-            z.percentage(chg1),
-            z.percentage(chg3),
-            z.percentage(chgH),
-            z.percentage(live),
-            etfc, 
-            recov,
-            mcchg,
-            beta,
-            pe,
-            z.percentage(largest),
-            etfrank,
-            div,
-            mcrank,
-            y1w,
-            y1m,
-            y1l,
-            ultrank, 
-            longprobdown,
-            targets]
+        values = [
+            ("Stock", display_stock), 
+            ("live", z.percentage(live)),
+            ("Last", price), 
+            ("avgC", z.percentage(avgC, accurate=2)), 
+            ("median", z.percentage(median)),
+            ("probD", probD), 
+            ("avgD", z.percentage(avgD)),
+            ("avgG", z.percentage(avgG)),
+            ("d0", z.percentage(d0)),
+            ("d1", z.percentage(d1)),
+            ("d2", z.percentage(d2)),
+            ("chgT", z.percentage(chgT)),
+            ("chg1", z.percentage(chg1)),
+            ("chg3", z.percentage(chg3)),
+            ("chgH", z.percentage(chgH)),
+            ("etfc", etfc), 
+            ("recv", recov),
+            ("pe", pe),
+            ("r2", getR2(astock)),
+            ("larg", z.percentage(largest)),
+            ("etfrank", etfrank),
+            ("div", div),
+            ("mc", mcrank),
+            ("y1w", y1w),
+            ("y1m", y1m),
+            ("y1l", y1l),
+            ("probdown", longprobdown),
+            ("targets", targets)]
 
-        msg = getCol().format(*values)
+        table_print.store(values)
+
     except Exception as e:
         z.trace(e)
         return
 
-    sorts.add((dscore,msg))
-    return dscore, values
+#    sorts.add((dscore,msg))
+#    return dscore, values
 
 def getUltRank(astock):
     ultdict = z.getp("ultdict")
@@ -774,7 +777,20 @@ def getUltRank(astock):
         return "NA"
     return 
 
-def getLastYearChange(astock, dated):
+def getR2(astock):
+    dic = z.getp("r2dict")
+    try:
+        return dic[astock]
+    except:
+        pass
+    return "NA"
+
+
+def getLastYearChange(astock, dated = None):
+    if not dated:
+        dates = z.getp("dates")
+        dated = dates[-1]
+
     if modified_date:
         dates = z.getp("dates")
         startidx = dates.index(dated)-252
@@ -796,16 +812,9 @@ def getYearly(astock):
         return "NA", "NA"
     return z.percentage(one), z.percentage(two)
 
-def getCol():
-    #        astock $price avgC   median probD  avgD  avgG    d0     d1     d2     
-    return " {0:<6} {1:>7} {2:>7} {3:>6} {4:>4} {5:>7} {6:>7} {7:>8} {8:>8} {9:>8} "\
-           " {10:>7} {11:>6} {12:>6} {13:>7} {14:>7} {15:>4} {16:>6} {17:>6} {18:>5} {19:>6} {20:>8} {21:>7} {22:>8} {23:>7} {24:>8} {25:>8} {26:>8} {27:>5} {28:>5} {29:>10}"
-           # chgT    chg1    chg3    chgH    live    etfc    recov   mcchg   beta    pe      largest etfrank div     mcrank  y1w     y1m     y1l     ultrank longProbDown
 buySaved = dict()
 def whatAboutThese(stocks, lowprice = False, sell=False, ht=None, dated = None, title = None):
     global buySaved
-    print(getCol().format("stock", "price", "avgC", "median", "probD", "avgD ", "avgG ", "d0" ,"d1 ", "d2 ", "chgT ", "chg1", "chg3", "chgH", "live ", "etf ", "recov  ", "mcchg  ", "beta  ", "pe  ", "largest  ",  "erank  ", "div   ", "mcrnk  ","y1w","y1m", "y1l", "ultrank", "LongProbUp", "target"))
-
     if not stocks:
         return
 
@@ -819,24 +828,19 @@ def whatAboutThese(stocks, lowprice = False, sell=False, ht=None, dated = None, 
     vals = list()
     for idx, value in enumerate(stocks):
         try:
-#            skip = False
-#            if "ETF" in title:
-#                skip = True
-            dscore, values = whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear, 
+            whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear, 
                     sellsl, lowprice = lowprice, sell=sell, dated = dated)
-
-            vals.append(values)
-            if dscore and dscore > highdscore:
-                highdscore = dscore
-
         except:
             continue
 
-    if title:
-        buySaved[title] = vals
+    table_print.printTable()
+    table_print.clearTable()
 
-    for astock in reversed(sorts):
-        print(astock[1])
+#    if title:
+#        buySaved[title] = vals
+
+#    for astock in reversed(sorts):
+#        print(astock[1])
 
     if noprices:
         print("noprices: {}".format( noprices))
@@ -1022,6 +1026,9 @@ def buyl(args, dated):
                 import prob_down_5_years
                 prob_down_5_years.prob()
 
+                import gained_discount
+                gained_discount.dosomething()
+
                 exit()
 
         except Exception as e:
@@ -1038,17 +1045,6 @@ def buyl(args, dated):
 #    return
     
     if not len(modes) == 1:
-        print ("\nlowyearly")
-#        rankstock = z.getp("lowyear")
-#        whatAboutThese(rankstock, dated=dated, title = "Yearly Low")
-
-#        print ("\nranked")
-#        rankstock = z.getp("rankstock")
-#        whatAboutThese(rankstock, dated=dated, title = "RankStocks")
-#
-#        print ("\nranked2")
-#        rankstock = z.getp("ranked_stocks")
-#        whatAboutThese(rankstock, dated=dated, title = "RankStocks2")
 
         print ("\nranked_ult")
         rankstock = z.getp("ultrank")
@@ -1058,37 +1054,24 @@ def buyl(args, dated):
         rankstock = z.getp("ultrank2")
         whatAboutThese(rankstock, dated=dated, title="RankUlt2")
 
-#        print ("\nOther")
-#        m1 = ["COST", "WMT", "NKE", "ECL", "TM", "TGT", "LOW", "NFLX", "AMZN", "GOOG", "AMD"]
-#        whatAboutThese(m1, dated=dated, title="M1")
+        print ("\nOther")
+        m1 = ["COST", "WMT", "NKE", "FB", "MSFT", "TGT", "BABA", "NFLX", "AMZN", "GOOG", "AMD", "ADBE", "DIS", "KO", "TSLA", "WM", "BA", "JNJ", "BLK"]
+        whatAboutThese(m1, dated=dated, title="M1")
 
         print ("\nVolLow")
         whatAboutThese(z.getp("sortedvolmcbegin"), dated=dated, title="LowVolMC")
 
-#        print ("\nM1")
-#        m1 = ["PSXP", "DUK", "EBR", "NEE", "AWK", "NGG", "PPL", "D", "NVDA", "ATVI", "IBM", "TSM", "SAP", "CRM"]
-#        whatAboutThese(m1, dated=dated, title="M1")
-#
-#        print ("\nM1-RE")
-#        m1 = ["WPC", "VICI", "SBAC", "HPC", "PSA"]
-#        whatAboutThese(m1, dated=dated, title="M1")
-#
-#        print ("\nM1-HC")
-#        m1 = ["SNY", "NVS", "PFE", "ABBV", "TAK"]
-#        whatAboutThese(m1, dated=dated, title="M1")
-                
-#        print ("\nBUY List")
-#        m1 = ["TM", "BRKB", "WPG", "AVGO", "ATO"]
-#        whatAboutThese(m1, dated=dated, title="BUY List")
+        print ("\nDividend")
+        whatAboutThese(["KTB", "TU", "IBM", "IP", "STX", "LYB", "TRP", "D", "CAH", "SLF", "OMC", "PNW", "TD", "FTS"])
 
-#        print ("\nworst")
-#        rankstock = z.getp("worstrank")
-#        whatAboutThese(rankstock, dated=dated, title="WorstRank")
-#
-#        print ("\nLowest")
-#        rankstock = z.getp("worstrank")
-#        whatAboutThese(rankstock, dated=dated, title="LowestRank")
-    
+        print ("\ngained_discount")
+        rankstock = z.getp("gained_discount")
+        whatAboutThese(rankstock, dated=dated, title="gained_discount")
+
+        print ("\nlow_high_sort")
+        rankstock = z.getp("low_high_sort")
+        whatAboutThese(rankstock, dated=dated, title="low_high_sort")
+
 #        print ("\netf extended")
 #        rankstock = z.getp("ranketf")
 #        whatAboutThese(rankstock, dated=dated, title="ETFs")
@@ -1116,10 +1099,10 @@ def buyl(args, dated):
 #        if key == "q":
 #            return
 
-    if savedSort:
-        print ("\narranged change")
-        whatAboutThese(savedSort[-5:], dated=dated)
-        whatAboutThese(savedSort[:5], dated=dated)
+#    if savedSort:
+#        print ("\narranged change")
+#        whatAboutThese(savedSort[-5:], dated=dated)
+#        whatAboutThese(savedSort[:5], dated=dated)
 
 
 
@@ -1301,6 +1284,8 @@ def diffOuts():
     print("out1 : {}".format( out1 ))
     out2 = outs[-2]
     print("out2 : {}".format( out2 ))
+    out1 = os.path.basename(os.path.splitext(out1)[0])
+    out2 = os.path.basename(os.path.splitext(out2)[0])
     out1dic = z.getp(out1)
     out2dic = z.getp(out2)
     divset = SortedSet()
@@ -1452,9 +1437,9 @@ if __name__ == '__main__':
 
         import buyat
         buyat.runmain()
-
-        import startover_rank
-        startover_rank.genStartOver()
+#
+        import ranketf2
+        ranketf2.doitagain()
         exit()
 
     z.getStocks.devoverride = args.etf.upper()
@@ -1568,3 +1553,4 @@ if __name__ == '__main__':
     except Exception as e:
         z.trace(e)
         pass
+
