@@ -15,13 +15,12 @@ from collections import defaultdict
 z.getStocks.devoverride = "IVV"
 
 def Test1():
-    zen.setSortedDict.sorteddict = None
-    zen.setSortedDict.prices = defaultdict(dict)
-    zen.setSortedDict(usepkl = False)
+    print ("hello")
 
 #Test1()
 #print (zen.getPrice('AMD', '2019-03-26'))
 def Test2():
+    print ("hello")
     z.getp("sorteddict")
     z.getp("prices")
 
@@ -202,7 +201,7 @@ if __name__ == '__main__':
         names.append(method)
         answer = timeit.timeit("{}()".format(method), 
                     setup="from __main__ import {}".format(method),
-                    number=3)
+                    number=30)
         times.append(answer)
         print (round(answer,4))
 

@@ -20,7 +20,7 @@ public class DefaultDictionary<TKey, TValue> : Dictionary<TKey, TValue> where TV
 
 class HelloWorldWin 
 {
-    static void Main() 
+    public static void Main() 
     {
         Console.WriteLine("I came from the CSC compiler :D");
         string path = "/home/zoe/setup/python/zen/openorders";
@@ -79,3 +79,4 @@ class HelloWorldWin
 //        Console.WriteLine("\t" + i.Key.ToString());
     }
 }
+HelloWorldWin.Main();

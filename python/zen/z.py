@@ -4,7 +4,7 @@ from sortedcontainers import SortedSet
 import csv
 import fnmatch
 import os
-import pandas
+#import pandas
 import pickle
 import statistics
 import time
@@ -73,7 +73,6 @@ def getp(name, override="pkl"):
     return None
 
 import atexit
-from shutil import copyfile
 gsave = False
 
 @atexit.register
@@ -94,6 +93,7 @@ def goodbye():
     if not gsave:
         return
 
+    from shutil import copyfile
     for save in getpd:
         path = getPath("pkl/{}.pkl".format(save))
         newpath = getPath("pkl2/{}.pkl".format(save))
@@ -209,7 +209,6 @@ getStocks.sells = False
 #print (len(getStocks("IUSG|IVV")))
 #raise SystemExit
 
-import dask.dataframe as dd
 util = None
 def getCsv(astock, asPath=False, save=True):
 
@@ -268,7 +267,6 @@ def getLatestDate(etf="IUSG", final=""):
     pdate = str(datetime.datetime.fromtimestamp(t)).split(" ")[0]
     return pdate
 
-import zen
 def getPrice(*kwargs, **kwarg2s):
     return zen.getPrice(*kwargs, **kwarg2s)
 
@@ -507,6 +505,7 @@ def targetPercentage():
 
 #removeFromStocks(getCorruptStocks())
 if __name__ == '__main__':
+    import zen
     import sys
     import update_history
     try:

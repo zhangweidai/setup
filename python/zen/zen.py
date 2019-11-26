@@ -2,7 +2,6 @@ from random import sample, randint
 from functools import lru_cache
 from collections import defaultdict, deque
 from sortedcontainers import SortedSet
-import matplotlib.pyplot as plt
 import readchar
 import csv
 import dask_help
@@ -391,6 +390,7 @@ def getProbSale(astock, dated = None):
     return avgC, probD, avgD, statistics.median(avgG), change, statistics.median(avgl), largest
 
 def plotProbSale(astock):
+    import matplotlib.pyplot as plt
 
     path = z.getPath("historical/{}.csv".format(astock))
     if not os.path.exists(path):
@@ -538,7 +538,7 @@ def getChgH(astock, live):
 
 #skipss = ['CVET']
 savedSort = SortedSet()
-import download_financials
+#import download_financials
 def whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear, sellsl, lowprice = False, sell=False, ht=None, dated = None, skip = False):
     global savedSort
 
