@@ -66,16 +66,16 @@ def update(where= "historical", problems = [], attempts=0, prices = dict(), skip
         elif astock in skips:
             continue
 
-        path = "{}/{}".format(parentdir,entry)
-
         if not idx % 100:
             print("idx : {}".format( idx ))
     
 #        print("path: {}".format( path))
-        for row in csv.DictReader(open(path)):
-            pass
+#        for row in csv.DictReader(open(path)):
+#            pass
+        row = z.getPriceFromCsv(astock, return_row=True)
         prices[astock] = row['Open'], row[closekey]
 
+        path = z.getCsvPath(astock)
         t = os.path.getmtime(path)
         csvdate = datetime.datetime.fromtimestamp(t)
         csvday = csvdate.day

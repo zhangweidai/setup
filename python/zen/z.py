@@ -10,6 +10,7 @@ import statistics
 import time
 
 closekey = "Adj Close"
+YEAR = 2019
 
 def getPath(path, allowmake = True):
     path = "{}/../zen_dump/{}".format(os.getcwd(), path)
@@ -376,6 +377,23 @@ def getEtfList(forEtfs = False, buys=False):
     if forEtfs:
         return [ "ITOT" , "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV"]
     return [ "IUSG", "IJH", "IJR", "IVV", "ITOT" ]
+
+def getCsvPath(astock, year = YEAR):
+    path = getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
+    return path
+
+def getPriceFromCsv(astock, year = YEAR, date = None, return_row=False):
+    path = getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
+    if not date:
+        for row in csv.DictReader(open(path)):
+            pass
+        if return_row:
+            return row
+        return row[closekey]
+
+    for row in csv.DictReader(open(path)):
+        if row['Date'] == date:
+            return row[closekey]
 
 def avgp(lists, p=4):
     return percentage(sum(lists)/len(lists))
