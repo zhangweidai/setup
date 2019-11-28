@@ -53,7 +53,7 @@ def genUlt():
             ults.add(((y1w*2)+y1l,astock))
 
             mcrank = buy.getMCRank(astock)
-            if int(mcrank) > 340:
+            if int(mcrank) < 340:
                 consv_ults.add(((y1w*2)+y1l,astock))
         except:
             y1m = "NA"
