@@ -28,9 +28,15 @@ def printTable():
     for items in store.items:
         saveme = list()
         for j, individual in enumerate(items):
+            if not individual:
+                individual = "NA"
             ctitle = store.title[j]
             bar = "{:>" + "{}".format(headerWidths[ctitle]) + "}"
-            saveme.append(bar.format(individual))
+            try:
+                saveme.append(bar.format(individual))
+            except:
+                print ("problem with {} {}".format(ctitle, individual))
+                exit()
         print("  ".join(saveme))
 
 def clearTable():

@@ -91,6 +91,10 @@ def goodbye():
         modificationTime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(dat))
         print("Modification time {} : {}".format(name, modificationTime))
 
+    print ("\nSaved : ")
+    for name in savedd:
+        print(name)
+
     if not gsave:
         return
 
@@ -100,7 +104,9 @@ def goodbye():
         newpath = getPath("pkl2/{}.pkl".format(save))
         copyfile(path, newpath)
 
+savedd = set()
 def setp(data, name, override="pkl"):
+    savedd.add(name)
     path = getPath("{}/{}.pkl".format(override, name))
     if os.path.exists(path):
         os.remove(path)

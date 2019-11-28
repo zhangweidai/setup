@@ -116,7 +116,8 @@ def update(where= "historical", problems = [], attempts=0, prices = dict(), skip
             problems.append(astock)
 
     if where == "historical":
-        zprep.setStockDays() 
+        import buy 
+        buy.updateDates()
 
 #    if problems:
 #        attempts += 1

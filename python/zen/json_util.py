@@ -2,7 +2,6 @@ from util import *
 import urllib.request, json
 from bs4 import BeautifulSoup
 import z
-import zen
 
 def getMarketCapPage(astock):
     addy = "https://finance.yahoo.com/quote/{}/key-statistics?p={}".format(\
@@ -67,7 +66,7 @@ def parsePage(astock, update=False):
 
             elif nextone and "marketCap" in aline:
                 try:
-                    cap = round(int(more[i+2].split(",")[0])/billion,7)
+                    cap = round(int(more[i+2].split(",")[0])/billion,5)
                 except:
                     pass
 
@@ -112,7 +111,8 @@ def saveOutstanding(update=False):
     z.getStocks.devoverride = "IVV"
     dictionary = dict()
 #    stocks = z.getStocks("ITOT")
-    stocks = getStocksFromHistorical()
+#    stocks = getStocksFromHistorical()
+    stocks = z.getp("listofstocks")
 #    for astock in stocks:
     total_mcsorted = SortedSet()
     for idx, astock in enumerate(stocks):
@@ -276,24 +276,35 @@ def getJsonData(astock):
         return None, None
     price = float(data[astock]["Price"])
     lastDiv = round(float(data[astock]["LastDiv"])/float(price),4)
-    name = data[astock]["companyName"]
-    return lastDiv, name
+    cap = float(data[astock]["MktCap"])
+    return lastDiv, cap
 
 def saveJsonData(stocks, directory="all"):
     print ("Saving Json Data")
-    print (stocks)
 
+    from sortedcontainers import SortedSet
     data = dict()
-    for astock in stocks:
-        dividend, name = getJsonData(astock)
-        if name:
-            data[astock] = [dividend, name]
+    mcs = SortedSet()
+    for idx, astock in enumerate(stocks):
+        if not idx % 100:
+            print("idx: {}".format( idx))
 
-    import pandas
-    df = pandas.DataFrame.from_dict(data, orient = 'index', 
-            columns=["Dividend", "Name"])
-    path = getPath("analysis/json_{}.csv".format(directory))
-    df.to_csv(path)
+        try:
+            dividend, cap = getJsonData(astock)
+            data[astock] = [dividend, cap]
+            mcs.add((cap, astock))
+        except:
+            print("astock: {}".format( astock))
+            continue
+
+    z.setp(data, "div_mc_dic")
+    z.setp(mcs, "mc_set")
+#
+#    import pandas
+#    df = pandas.DataFrame.from_dict(data, orient = 'index', 
+#            columns=["Dividend", "Name"])
+#    path = getPath("analysis/json_{}.csv".format(directory))
+#    df.to_csv(path)
 
 def getData(filename, asList = False):
     path = filename
@@ -338,8 +349,42 @@ def runmain():
     saveOutstanding(update=True)
     savMCIdx()
 
+def remaining():
+    stocks = z.getp("listofstocks")
+    data = z.getp("div_mc_dic")
+#    m1 = ["COST", "WMT", "NKE", "FB", "MSFT"]
+    for astock in stocks:
+        try:
+            data[astock][1] = round(data[astock][1] / billion, 5)
+        except:
+            print("\nastock : {}".format( astock ))
+            try:
+                cap, beta, pe, div = parsePage(astock, update=True)
+                data[astock] = [div, cap]
+            except:
+                pass
+    z.setp(data, "div_mc_dict")
+
+def genMCRanking():
+    sortedlist = SortedSet()
+    stocks = z.getp("div_mc_dict")
+    for astock in stocks:
+        sortedlist.add((stocks[astock][1], astock))
+
+    sort = dict()
+    for i, pair in enumerate(reversed(sortedlist)):
+        astock = pair[1]
+        sort[astock] = [stocks[astock][0], i]
+
+    z.setp(sort, "mcdivdict")
+
+
+
 if __name__ == '__main__':
-    runmain()
+#    saveJsonData(z.getp("listofstocks"))
+#    remaining()
+    genMCRanking()
+#    runmain()
 #    zen.diffOuts()
 
 #    print(parsePage("WTW", update=False))

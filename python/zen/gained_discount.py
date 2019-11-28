@@ -1,12 +1,15 @@
 import math
-import zen
 import z
 import util
 from sortedcontainers import SortedSet
 import os
+import buy
+import statistics
 
 dates = z.getp("dates")
-ago500 = dates[-500]
+years = -1*252*3
+start = dates[years]
+ago500 = dates[-504]
 ago200 = dates[-200]
 ago190 = dates[-190]
 ago100 = dates[-100]
@@ -14,33 +17,76 @@ print("ago190 : {}".format( ago190 ))
 print("ago100 : {}".format( ago100 ))
 print("ago500 : {}".format( ago500 ))
 ago5 = dates[-13]
+close = z.closekey
+length = 252
+
+def genUlt():
+    stocks = z.getp("listofstocks")
+#    ago500 = dates[-30]
+    savedic = dict()
+    ults = SortedSet()
+    consv_ults = SortedSet()
+    for idx, astock in enumerate(stocks):
+        if not idx % 100:
+            print("idx: {}".format( idx))
+
+        changes = list()
+        seen = list()
+
+        for i, row in enumerate(buy.getRows(astock, start)):
+            c_close = float(row[z.closekey])
+            seen.append(c_close)
+            if len(seen) > length:
+                change1year = round(c_close/seen[i-length],3)
+                if change1year > 2.5:
+                    change1year = 2.5
+                changes.append(change1year)
+
+        try:
+            y1l = changes[-1]
+        except:
+            y1l = "NA"
+            
+        try:
+            y1m = statistics.median(changes)
+            y1w = min(changes)
+            ults.add(((y1w*2)+y1l,astock))
+
+            mcrank = buy.getMCRank(astock)
+            if int(mcrank) > 340:
+                consv_ults.add(((y1w*2)+y1l,astock))
+        except:
+            y1m = "NA"
+            y1w = "NA"
+
+        savedic[astock] = [y1w, y1m, y1l]
+
+    z.setp(ults[-30:], "ults30")
+    z.setp(consv_ults[-30:], "consv_ults30")
+    z.setp(savedic, "annuals");
+
 
 def dosomething():
     savedSort = SortedSet()
     low_high_sort = SortedSet()
-    parentdir = util.getPath("historical")
-    listOfFiles = os.listdir(parentdir)
-    for idx,entry in enumerate(listOfFiles):
+    stocks = z.getp("listofstocks")
+    for idx,astock in enumerate(stocks):
 
         if not idx % 100:
             print("idx: {}".format( idx))
 
         try:
-            astock = os.path.splitext(entry)[0]
-            mcrank = zen.getMCRank(astock)
+            mcrank = buy.getMCRank(astock)
             if int(mcrank) > 1234:
                 continue
-            ago500_price = zen.getPrice(astock, ago500)
-            ago200_price = zen.getPrice(astock, ago200)
-#            print("ago500_price : {}".format( ago500_price ))
-            ago5_price = zen.getPrice(astock, ago5)
-#            print("ago5_price : {}".format( ago5_price ))
-#            print("ago5_price : {}".format( ago5_price ))
-#            print("ago500_price : {}".format( ago500_price ))
-            last = zen.getPrice(astock)
+
+            ago500_price = buy.getPrice(astock, ago500)
+            ago200_price = buy.getPrice(astock, ago200)
+            ago5_price = buy.getPrice(astock, ago5)
+            last = buy.getPrice(astock)
             change1 = round(ago5_price/ago500_price,3)
 
-            ago190_price = zen.getPrice(astock, ago190)
+            ago190_price = buy.getPrice(astock, ago190)
             changelow = round(ago190_price/ago500_price,3)
             if changelow < 0.80:
                 change2 = round(last/ago190_price,3)
@@ -60,7 +106,7 @@ def dosomething():
                 continue
             score = round((change1) + (1-change2) * 1.41,5)
             savedSort.add((score, astock))
-        except:
+        except Exception as e:
             pass
 
     print("savedSort : {}".format( savedSort[-30:] ))
@@ -73,4 +119,5 @@ def dosomething():
 
 
 if __name__ == '__main__':
-    dosomething()
+#    dosomething()
+    genUlt()

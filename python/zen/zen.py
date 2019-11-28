@@ -4,30 +4,14 @@ from collections import defaultdict, deque
 from sortedcontainers import SortedSet
 import readchar
 import csv
-import dask_help
 import math
 import statistics
 import os
-import threadprep
 import portfolio
 import util
 import z 
 import table_print
 
-
-#
-#import atexit
-#import curses
-#stdscr = curses.initscr()  # initialise it
-#stdscr.clear()  # Clear the screen
-#@atexit.register
-#def goodbye():
-#    """ Reset terminal from curses mode on exit """
-#    curses.nocbreak()
-#    if stdscr:
-#        stdscr.keypad(0)
-#    curses.echo()
-#    curses.endwin()
 closekey = z.closekey
 keeping = 60
 discardlocation = int(keeping/2)
@@ -464,6 +448,7 @@ def setVolumeRanking():
 setVolumeRanking.latestvolumedic = None
 
 def poolQuery():
+    import dask_help
     z.getStocks.devoverride = "IUSG"
     setSortedDict(usepkl = True)
     modes = dask_help.getModes()
@@ -1021,7 +1006,6 @@ def buyl(args, dated):
 
                 import ranketf2
                 ranketf2.regen()
-#                threadprep.regenerateBUY()
 
                 import prob_down_5_years
                 prob_down_5_years.prob()
@@ -1448,6 +1432,7 @@ if __name__ == '__main__':
     if args.cat != "default":
         catl = [args.cat]
 
+    import threadprep
     modes = threadprep.getModes()
     if args.mode != "default":
         modes = [args.mode]
@@ -1461,6 +1446,7 @@ if __name__ == '__main__':
     print("date : {}".format( args.date ))
     args.catcount = int(args.catcount)
 
+    import dask_help
     dask_help.convertToDask.directory = "csv"
 
     myportlist = z.getp("myportlist")
