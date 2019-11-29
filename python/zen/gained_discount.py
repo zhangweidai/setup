@@ -24,11 +24,17 @@ def genUlt():
     stocks = z.getp("listofstocks")
 #    ago500 = dates[-30]
     savedic = dict()
-    ults = SortedSet()
-    consv_ults = SortedSet()
+
+    avg30c = SortedSet()
+    avg30 = SortedSet()
+    worst30c = SortedSet()
+
     for idx, astock in enumerate(stocks):
         if not idx % 100:
             print("idx: {}".format( idx))
+
+        if idx > 100:
+            continue
 
         changes = list()
         seen = list()
@@ -50,19 +56,23 @@ def genUlt():
         try:
             y1m = statistics.median(changes)
             y1w = min(changes)
-            ults.add(((y1w*2)+y1l,astock))
+            score = (y1w*2)+y1m
+            avg30.add((score,astock))
 
-            mcrank = buy.getMCRank(astock)
-            if int(mcrank) < 340:
-                consv_ults.add(((y1w*2)+y1l,astock))
+#            mcrank = buy.getMCRank(astock)
+#            if int(mcrank) < 420:
+            avg30c.add((score,astock))
+            worst30c.add((y1l,astock))
         except:
             y1m = "NA"
             y1w = "NA"
 
         savedic[astock] = [y1w, y1m, y1l]
 
-    z.setp(ults[-30:], "ults30")
-    z.setp(consv_ults[-30:], "consv_ults30")
+    z.setp(avg30[-30:], "avg30", printdata = True)
+    z.setp(avg30c[-30:], "avg30c", printdata = True)
+    z.setp(worst30c[:30], "worst30c", printdata = True)
+    z.setp(worst30c[-30:], "best30c", printdata = True)
     z.setp(savedic, "annuals");
 
 

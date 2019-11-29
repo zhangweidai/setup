@@ -105,11 +105,13 @@ def goodbye():
         copyfile(path, newpath)
 
 savedd = set()
-def setp(data, name, override="pkl"):
+def setp(data, name, override="pkl", printdata = False):
     savedd.add(name)
     path = getPath("{}/{}.pkl".format(override, name))
     if os.path.exists(path):
         os.remove(path)
+    if printdata:
+        print (" {} : {} \n".format(name, data))
     pickle.dump(data, open(path, "wb"))
 
 def getCorruptStocks():

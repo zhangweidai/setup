@@ -2,6 +2,7 @@ import z
 import csv
 from collections import defaultdict
 import table_print
+import statistics
 import os
 
 start = 57
@@ -69,8 +70,10 @@ getPrice.last = None
 getPrice.recent = dict()
 
 def getFiles(astock, date):
-    for year in getYears(date):
-        yield z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
+    yield z.getPath("historical/{}.csv".format(astock))
+#    return
+#    for year in getYears(date):
+#        yield z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
 
 def getYears(date):
     away_year = int(date.split("-")[0])
@@ -152,12 +155,12 @@ def getLastYearChange(astock, dated = None):
 def getYearly2(astock):
     try:
         one, two, three = getYearly2.dic[astock]
-        return z.percentage(one), z.percentage(two), z.percentage(three)
+        return z.percentage(one), z.percentage(two), three
     except:
         getYearly2.dic = z.getp("annuals")
         try:
             one, two, three = getYearly2.dic[astock]
-            return z.percentage(one), z.percentage(two), z.percentage(three)
+            return z.percentage(one), z.percentage(two), three
         except:
             return "NA", "NA", "NA"
 getYearly2.dic = None
@@ -199,6 +202,7 @@ def single(value, avgOneYear):
     values = list()
     lowFromHigh = HIGHEST
     high = 0
+    mins = list()
     for i, row in enumerate(getRows(astock, dates[-1*start])):
         c_open = float(row['Open'])
         if not firstPrice:
@@ -224,14 +228,17 @@ def single(value, avgOneYear):
             daysAgoValue = seen[i-daysAgo5]
             change5 = c_close/daysAgoValue
             avg5Change.append(change5)
+            if change5 < 1:
+                mins.append(change5)
 
-    y1w, y1m = getYearly(astock)
-    y1l = getLastYearChange(astock)
+#    y1w, y1m = getYearly(astock)
+#    y1l = getLastYearChange(astock)
+
+    y1w2, y1m2, y1l = getYearly2(astock)
+
     if y1l != "NA":
         avgOneYear.append(y1l)
         y1l = z.percentage(y1l)
-
-    y1w2, y1m2, y1l2 = getYearly2(astock)
 #
 #    try:
 #        beta, pe, mcchg, div = getChangeStats(astock)
@@ -248,6 +255,8 @@ def single(value, avgOneYear):
         mc = "NA"
         div = "NA"
 
+    mindrop = round(statistics.mean(mins) * c_close,2)
+    maxdrop = round(min(mins) * c_close,2)
     values = [
         ("Stock", inPortfolio(astock)),
         ("Price", c_close),
@@ -261,13 +270,12 @@ def single(value, avgOneYear):
         ("d18_64", z.percentage(getDropScore(astock, "2018-07-11", 64))),
         ("mc", mc),
         ("div", div),
-        ("y1w", y1w),
-        ("y1m", y1m),
+        ("y1w", y1w2),
+        ("y1m", y1m2),
         ("y1l", y1l),
-        ("y1w2", y1w2),
-        ("y1m2", y1m2),
-        ("y1l2", y1l2),
-        ("probdown", getLongProbDown(astock))
+        ("probdown", getLongProbDown(astock)),
+        ("MeanDrop", mindrop),
+        ("MaxDrop", maxdrop)
         ]
     table_print.store(values)
 
@@ -298,52 +306,6 @@ def multiple(stocks, title = None):
         yearone = "NA"
     print ("Annual Change {}".format(yearone))
 
-def whatAboutThese(stocks, lowprice = False, sell=False, ht=None, dated = None, title = None):
-    global buySaved
-    if not stocks:
-        return
-
-    sorts = SortedSet()
-    sellsl = list()
-    noprices = list()
-    avgChanges = list()
-    avgchanget = list()
-    avgOneYear = list()
-    highdscore = 0
-    vals = list()
-    for idx, value in enumerate(stocks):
-        try:
-            whatAboutThisOne(value, sorts, noprices, avgChanges, avgchanget, avgOneYear, 
-                    sellsl, lowprice = lowprice, sell=sell, dated = dated)
-        except:
-            continue
-
-    table_print.printTable()
-    table_print.clearTable()
-
-#    if title:
-#        buySaved[title] = vals
-
-#    for astock in reversed(sorts):
-#        print(astock[1])
-
-    if noprices:
-        print("noprices: {}".format( noprices))
-
-    if sell:
-        print("sellsl")
-        print(sellsl)
-
-    if avgChanges:
-        total = z.avgp(avgchanget)
-        try:
-            yearone = z.avgp(avgOneYear)
-        except:
-            yearone = "NA"
-        print ("Average 52 day change {} - Total change {} - Annual Change {}".format(z.avgp(avgChanges), total, yearone))
-
-    return highdscore
-
 if __name__ == '__main__':
     myportlist = z.getp("myportlist")
     getDropScore.cache = z.getp("newdropcache")
@@ -352,23 +314,24 @@ if __name__ == '__main__':
 
     multiple(z.getEtfList(forEtfs=True), title = "Standard ETFS")
 
-    multiple("ults30")
-    multiple("consv_ults30")
-
-    multiple("ultrank")
-
-    multiple("ultrank2")
+    multiple("avg30c")
+    multiple("best30c")
+    multiple("worst30c")
+#    multiple("ults30")
+#    multiple("consv_ults30")
+#    multiple("ultrank")
+#    multiple("ultrank2")
 
     m1 = ["COST", "WMT", "NKE", "FB", "MSFT", "TGT", "BABA", "NFLX", "AMZN", "GOOG", "AMD", "ADBE", "DIS", "KO", "TSLA", "WM", "BA", "JNJ", "BLK"]
     multiple(m1, title="Other")
 
-    multiple("sortedvolmcbegin")
-
+#    multiple("sortedvolmcbegin")
+#
     multiple("gained_discount")
-
     multiple("low_high_sort")
-
-    multiple("worst30")
+#
+#    multiple("worst30")
 
     print ("57 days ago was : {}".format(dates[-1*start]))
     z.setp(getDropScore.cache, "newdropcache")
+

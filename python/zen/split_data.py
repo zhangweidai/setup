@@ -41,7 +41,7 @@ def num_of_days_checks():
         if i < 218:
             print("astock: {} {} ".format( astock, i))
 if __name__ == '__main__':
-#    split()
-    num_of_days_checks()
+    split()
+#    num_of_days_checks()
 #    path = z.getPath("historical/KO.csv")
 #    process("KO", path)
