@@ -70,10 +70,10 @@ getPrice.last = None
 getPrice.recent = dict()
 
 def getFiles(astock, date):
-    yield z.getPath("historical/{}.csv".format(astock))
+#    yield z.getPath("historical/{}.csv".format(astock))
 #    return
-#    for year in getYears(date):
-#        yield z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
+    for year in getYears(date):
+        yield z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
 
 def getYears(date):
     away_year = int(date.split("-")[0])
@@ -257,6 +257,11 @@ def single(value, avgOneYear):
 
     mindrop = round(statistics.mean(mins) * c_close,2)
     maxdrop = round(min(mins) * c_close,2)
+
+    d13_30, around = getDropScore(astock, "2013-03-19", 30)
+    d17_45, around = getDropScore(astock, "2017-05-25", 45)
+    d18_64, around = getDropScore(astock, "2018-07-11", 64)
+
     values = [
         ("Stock", inPortfolio(astock)),
         ("Price", c_close),
@@ -265,9 +270,9 @@ def single(value, avgOneYear):
         ("last5", z.percentage(avg5Change[-1])),
         ("{}chg".format(start), z.percentage((c_close/firstPrice))),
         ("FromHigh", z.percentage((lowFromHigh/high))),
-        ("d13_30", z.percentage(getDropScore(astock, "2013-03-19", 30))),
-        ("d17_45", z.percentage(getDropScore(astock, "2017-05-25", 45))),
-        ("d18_64", z.percentage(getDropScore(astock, "2018-07-11", 64))),
+        ("d13_30", d13_30),
+        ("d17_45", d17_45),
+        ("d18_64", d18_64),
         ("mc", mc),
         ("div", div),
         ("y1w", y1w2),
@@ -332,6 +337,6 @@ if __name__ == '__main__':
 #
 #    multiple("worst30")
 
-    print ("57 days ago was : {}".format(dates[-1*start]))
+    print ("57 days ago was : {} \tLatest {}".format(dates[-1*start], dates[-1]))
     z.setp(getDropScore.cache, "newdropcache")
 

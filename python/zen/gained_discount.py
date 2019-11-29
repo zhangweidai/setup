@@ -33,9 +33,6 @@ def genUlt():
         if not idx % 100:
             print("idx: {}".format( idx))
 
-        if idx > 100:
-            continue
-
         changes = list()
         seen = list()
 
@@ -59,10 +56,10 @@ def genUlt():
             score = (y1w*2)+y1m
             avg30.add((score,astock))
 
-#            mcrank = buy.getMCRank(astock)
-#            if int(mcrank) < 420:
-            avg30c.add((score,astock))
-            worst30c.add((y1l,astock))
+            mcrank = buy.getMCRank(astock)
+            if int(mcrank) < 420:
+                avg30c.add((score,astock))
+                worst30c.add((y1l,astock))
         except:
             y1m = "NA"
             y1w = "NA"

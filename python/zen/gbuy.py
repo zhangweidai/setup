@@ -69,8 +69,8 @@ if __name__ == '__main__':
 #            import startover_rank
 #            startover_rank.saveData()
 
-            import ranketf2
-            ranketf2.regen()
+#            import ranketf2
+#            ranketf2.regen()
 
             import prob_down_5_years
             prob_down_5_years.prob()
@@ -78,9 +78,9 @@ if __name__ == '__main__':
             import gained_discount
             gained_discount.dosomething()
 
-            generateWorst30()
-            import buyat
-            buyat.runmain()
+#            generateWorst30()
+#            import buyat
+#            buyat.runmain()
 
             exit()
 

@@ -1,5 +1,9 @@
 import z
+import buy
+close = z.closekey
 def prob():
+    global close
+
     dates = z.getp("dates")
     lens = len(dates)
     sdate = "2014-01-02"
@@ -10,15 +14,29 @@ def prob():
     
     month3 = lens-int(3.8*(ayear/12)) 
     month3 = dates[month3]
+
     
-    dics = z.getp("stocks_bigdic")
-    stocks = dics.keys()
+#    dics = z.getp("stocks_bigdic")
+    stocks = z.getp("listofstocks")
+    print("stocks : {}".format( len(stocks) ))
+    starting = "2014-01-02"
     sdate = "2014-01-02"
     
     prob_down = dict()
     problems = set()
     monDict = dict()
-    for astock in stocks:
+    print("sdate: {}".format( starting))
+    for idx, astock in enumerate(stocks):
+        if not idx % 100:
+            print("idx: {}".format( idx))
+
+        cdict = dict()
+        try:
+            for row in buy.getRows(astock, starting):
+                cdict[row['Date']] = float(row[close])
+        except:
+            continue
+
         above = 0
         total = 0
         month3Starting = False
@@ -30,11 +48,11 @@ def prob():
             eday = dates[edate]
     
             try:
-                second = dics[astock][eday]
+                second = cdict[eday]
             except:
                 try:
                     eday = dates[edate-1]
-                    second = dics[astock][eday]
+                    second = cdict[eday]
                 except Exception as e:
                     if foundsomething:
                         problems.add(astock)
@@ -47,11 +65,11 @@ def prob():
                 month3High = second
     
             try:
-                first = dics[astock][sday]
+                first = cdict[sday]
             except:
                 try:
                     sday = dates[sdate-1]
-                    first = dics[astock][sday]
+                    first = cdict[sday]
                     foundsomething = True
                 except Exception as e:
                     continue
@@ -69,8 +87,10 @@ def prob():
             continue
     
     print ("saving prob_down")
-    z.setp(prob_down, "prob_down")
+    z.setp(prob_down, "prob_down", printdata=True)
     z.setp(problems, "problems")
     z.setp(monDict, "monDict")
     print("prob_down_problems : {}".format( len(problems) ))
     
+if __name__ == '__main__':
+    prob()
