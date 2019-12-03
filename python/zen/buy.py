@@ -73,8 +73,17 @@ getPrice.recent = dict()
 def getFiles(astock, date = "2000"):
 #    yield z.getPath("historical/{}.csv".format(astock))
 #    return
+    added = False
     for year in getYears(date):
-        yield z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
+        apath = z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
+        if os.path.exists(apath):
+            added = True
+            yield apath
+
+    if not added:
+        apath = z.getPath("historical/{}.csv".format(astock))
+        if os.path.exists(apath):
+            yield apath
 
 def getYears(date):
     away_year = int(date.split("-")[0])
@@ -89,9 +98,6 @@ def getYears(date):
 def getRows(astock, date):
     date_year = date.split("-")[0]
     for apath in getFiles(astock, date):
-
-        if not os.path.exists(apath):
-            continue
 
         started = False
         for row in csv.DictReader(open(apath)):
