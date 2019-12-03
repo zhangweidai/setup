@@ -173,7 +173,11 @@ alias download="py z.py download"
 alias wab="py zen.py wab"
 alias wabp="py zen.py wabp --s"
 alias buyl="py zen.py buy --date=l"
-alias gbuy="py zen.py gbuy"
+alias gbuy="py gbuy.py"
+alias owned="py buy.py --mode=owned"
+alias order="py buy.py --mode=order"
+alias mc="py buy.py --mode=mc"
+alias notes="py buy.py --mode=notes"
 alias gbuy2="py zen.py gbuy2"
 alias well='cd ~/gits/manim; python -m manim example_scenes.py SquareToCircle -pl; '
 alias well='cd ~/gits/manim; python -m manim example_scenes.py AAA -pl; '

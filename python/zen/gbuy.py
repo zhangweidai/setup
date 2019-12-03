@@ -1,5 +1,6 @@
 import z
 import buy
+import os
 from sortedcontainers import SortedSet
 
 def generateWorst30():
@@ -34,55 +35,79 @@ def generateWorst30():
     z.setp(answer, "worst30")
 
 
-generateWorst30()
-exit()
-
+#generateWorst30()
+#exit()
 if __name__ == '__main__':
+    import argparse
     import update_history
+    import csv
+    import datetime
     try:
         latestprices = dict()
         problems = [] 
         skips = list()
 #        if args.skips:
 #            skips = z.getp("problems")
+        stocks = z.getp("listofstocks")
+        print("stocks : {}".format( len(stocks) ))
+        if "IVV" in stocks:
+            print("stocks : ")
 
-        if update_history.update(prices = latestprices, problems=problems, skips=skips):
-            if problems:
-                print("problems: {}".format( problems))
-                key = readchar.readkey()
-                if key == "d":
-                    for pstock in problems:
-                        z.delStock(pstock)
+        import datetime
+        now = datetime.datetime.now()
+        missed = 0
+        for astock in stocks:
+            print("astock : {}".format( astock ))
+
+            apath = z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, str(now.year)))
+            if not os.path.exists(apath):
+                continue
+
+            t = os.path.getmtime(apath)
+            csvdate = datetime.datetime.fromtimestamp(t)
+            csvday = csvdate.day
+            csvmonth = csvdate.month
+            ttoday = datetime.date.today().day
+            tmonth = datetime.date.today().month
+
+            if csvday >= ttoday and tmonth == csvmonth:
+                continue
+
+            for row in csv.DictReader(open(apath)):
+                pass
+            date = row['Date']
+
+            df = update_history.getDataFromYahoo(astock, date)
+            if df is None:
+                print("problem downloading: {}".format( astock))
+                missed += 1
+                if missed > 5:
                     exit()
+                continue
+            missed = 0
+            with open(apath, "a") as f:
+                for idx in df.index:
+                    cdate = str(idx.to_pydatetime()).split(" ")[0]
+                    opend = df.at[idx, "Open"]
+                    high = df.at[idx, "High"]
+                    low = df.at[idx, "Low"]
+                    closed = df.at[idx, "Close"]
+                    adj = df.at[idx, "Adj Close"]
+                    vol = df.at[idx, "Volume"]
+                    added = True
+                    f.write("{},{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, adj, vol))
 
-            print ("finished update history 1")
-            update_history.update(where= "ETF", prices=latestprices)
-            print ("finished update history 2")
-            z.setp(latestprices, "latestprices")
+        import prob_down_5_years
+        prob_down_5_years.prob()
 
-#            if "2" in args.main:
-#                import json_util
-#                json_util.saveOutstanding(update=True)
-#                diffOuts()
+        import gained_discount
+        gained_discount.dosomething()
 
-#            reloaddic()
-#            import startover_rank
-#            startover_rank.saveData()
-
-#            import ranketf2
-#            ranketf2.regen()
-
-            import prob_down_5_years
-            prob_down_5_years.prob()
-
-            import gained_discount
-            gained_discount.dosomething()
-
+        print("problems : {}".format( problems ))
 #            generateWorst30()
 #            import buyat
 #            buyat.runmain()
 
-            exit()
 
     except Exception as e:
         print ("problem with gbuy")

@@ -28,15 +28,21 @@ def genUlt():
     avg30c = SortedSet()
     avg30 = SortedSet()
     worst30c = SortedSet()
-
+    prices = list()
     for idx, astock in enumerate(stocks):
+#        if astock != "NTDOY":
+#            continue
+
         if not idx % 100:
             print("idx: {}".format( idx))
 
+
         changes = list()
         seen = list()
-
+        first = None
         for i, row in enumerate(buy.getRows(astock, start)):
+            if i  == 0:
+                first = row
             c_close = float(row[z.closekey])
             seen.append(c_close)
             if len(seen) > length:
@@ -55,21 +61,25 @@ def genUlt():
             y1w = min(changes)
             score = (y1w*2)+y1m
             avg30.add((score,astock))
+        except Exception as e:
+            y1m = "NA"
+            y1w = "NA"
 
+        try:
             mcrank = buy.getMCRank(astock)
-            if int(mcrank) < 420:
+            if int(mcrank) < 420 or c_close >= 200:
                 avg30c.add((score,astock))
                 worst30c.add((y1l,astock))
         except:
-            y1m = "NA"
-            y1w = "NA"
+            prices.append(c_close)
+            pass
 
         savedic[astock] = [y1w, y1m, y1l]
 
     z.setp(avg30[-30:], "avg30", printdata = True)
     z.setp(avg30c[-30:], "avg30c", printdata = True)
-    z.setp(worst30c[:30], "worst30c", printdata = True)
-    z.setp(worst30c[-30:], "best30c", printdata = True)
+    z.setp(worst30c[:30], "worst30c")
+    z.setp(worst30c[-30:], "best30c")
     z.setp(savedic, "annuals");
 
 
@@ -124,7 +134,26 @@ def dosomething():
 #    print("savedSort : {}".format( savedSort[:2] ))
 #        z.breaker(5)
 
+def delstock(astock):
+    try:
+        data = z.getp("div_mc_dict")
+        del(data[astock])
+        z.setp(data, "div_mc_dict")
+    except:
+        pass
+
+    import split_data
+    afile = z.getPath("historical/{}.csv".format(astock))
+    if os.path.exists(afile):
+        os.remove(afile)
+    for afile in buy.getFiles(astock):
+        if os.path.exists(afile):
+            os.remove(afile)
+            print("afile : {}".format( afile ))
+    split_data.setlistofstocks()
 
 if __name__ == '__main__':
 #    dosomething()
-    genUlt()
+    delstock("ROX")
+#    genUlt()
+

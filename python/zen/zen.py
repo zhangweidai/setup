@@ -1392,22 +1392,6 @@ if __name__ == '__main__':
 #    raise SystemExit
 #    poolQuery()
 #    raise SystemExit
-    parser = argparse.ArgumentParser()
-    parser.add_argument('main' , nargs='?', default="buy")
-    parser.add_argument('--mode', default="default")
-    parser.add_argument('--etf', default="IUSG")
-    parser.add_argument('--date', default=getLastDate())
-    parser.add_argument('--live', default=False, action="store_true")
-    parser.add_argument('--cat', default="default")
-    parser.add_argument('--catcount', default=7)
-    parser.add_argument('--typed', default="low")
-    parser.add_argument('--ht', default=None)
-    parser.add_argument('--s', default=None)
-    parser.add_argument('--save', default=None)
-    parser.add_argument('--skips', default=None)
-    parser.add_argument('--skipowned', default=None)
-    parser.add_argument('--updateall', default=None)
-    args = parser.parse_args()
 
 #    if args.main[0] == "l":
 #        args = z.getp("lastArgs_forGenerate_list")

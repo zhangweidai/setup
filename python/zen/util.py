@@ -587,7 +587,7 @@ def getLiveData(astock, key = "price", andkey = None):
     if not z.online():
         return None
     try:
-#        print("downloading astock: {}".format( astock))
+        print("downloading astock: {}".format( astock))
         astockdf = pdr.get_quote_yahoo([astock])
         getLiveData.cached[astock] = astockdf
         z.syp(astockdf, "{}".format(astock))

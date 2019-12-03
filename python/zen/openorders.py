@@ -7,10 +7,34 @@ with open("openorders", "r") as f:
 import z
 import zen
 
+orders = defaultdict(list)
+tory = False
+torys = list()
+for aline in bar:
+    if "Z03895009" in aline:
+        tory = True
+    tokens = aline.split("\t")
+    for token in tokens:
+        if "Buy " not in token:
+            continue
+        items = token.split(" ")
+        count = int(items[1])
+        astock = items[4]
+        price = float(items[7][1:].replace(",", ""))
+        value = count * price
+        orders[astock].append((value, price))
+        if tory:
+            torys.append(astock)
+        
+z.setp(torys, "torys")
+z.setp(orders, "orders", printdata=True)
+exit()
+
 sorteds = SortedSet()
 dics = defaultdict(int)
 total = 0
 probdics = defaultdict(int)
+orders = defaultdict(list)
 for aline in bar:
     tokens = aline.split("\t")
     for token in tokens:

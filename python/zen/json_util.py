@@ -2,6 +2,7 @@ from util import *
 import urllib.request, json
 from bs4 import BeautifulSoup
 import z
+import buy
 
 def getMarketCapPage(astock):
     addy = "https://finance.yahoo.com/quote/{}/key-statistics?p={}".format(\
@@ -29,6 +30,7 @@ def parsePage(astock, update=False):
         live = z.getp(astock, override="yahoo_mc")
 
     if live is None or update:
+        print("downloading astock: {}".format( astock))
         live = getMarketCapPage(astock)
         z.setp(live, astock, override="yahoo_mc")
 #        live = z.getp(astock, override="yahoo")
@@ -51,7 +53,6 @@ def parsePage(astock, update=False):
         line = line.strip()
         more = line.split(":")
         for i,aline in enumerate(more):
-#            print("aline : {}".format( aline ))
 
             if lookingfor in aline:
                 nextone = True
@@ -66,13 +67,15 @@ def parsePage(astock, update=False):
 
             elif nextone and "marketCap" in aline:
                 try:
-                    cap = round(int(more[i+2].split(",")[0])/billion,5)
-                except:
+                    if not cap:
+                        cap = round(int(more[i+2].split(",")[0])/billion,5)
+                except Exception as e:
                     pass
 
             elif nextone and "trailingAnnualDividendYield" in aline:
                 try:
-                    dividend=float(more[i+2].split(",")[0])
+                    if not dividend:
+                        dividend=float(more[i+2].split(",")[0])
                 except:
                     pass
 
@@ -92,6 +95,7 @@ def parsePage(astock, update=False):
 
     if cap:
         return (cap, beta, pe, dividend)
+    print ("didint find cap for {}".format(astock))
     return True
 
 import calendar
@@ -369,20 +373,102 @@ def genMCRanking():
     sortedlist = SortedSet()
     stocks = z.getp("div_mc_dict")
     for astock in stocks:
+        if astock in ['TMK', 'MCHI', 'WAGE', 'USRT', 'USD', 'VICL', "SPY", "IVV", "VIG"]:
+            continue
         sortedlist.add((stocks[astock][1], astock))
 
     sort = dict()
+    savesort = SortedSet()
     for i, pair in enumerate(reversed(sortedlist)):
         astock = pair[1]
         sort[astock] = [stocks[astock][0], i]
+        savesort.add((i, astock))
 
     z.setp(sort, "mcdivdict")
+    z.setp(savesort, "mcsortedlist")
+
+
+import os
+def iterateStocks():
+    dic = z.getp("mcdivdict")
+    stocks = z.getp("listofstocks")
+    parent = z.getPath("yahoo_mc")
+    data = z.getp("div_mc_dict")
+    for astock in stocks:  
+        try:
+            if dic[astock][1] > 1000:
+                continue
+        except:
+            pass
+        fpath = "{}/{}.pkl".format(parent, astock)
+        t = os.path.getmtime(fpath)
+        csvdate = datetime.datetime.fromtimestamp(t)
+        csvmonth = csvdate.month
+        if csvmonth != 12:
+            continue
+
+
+#        path = z.getPath("yahoo_mc/{}.pkl".format(astock))
+#        if os.path.exists(path):
+#            continue
+        try:
+            print("astock: {}".format( astock))
+            cap, beta, pe, div = parsePage(astock, update=True)
+            if cap > 10000:
+                cap = cap / billion
+            data[astock] = [div, round(cap,5)]
+        except Exception as e:
+#            z.trace(e)
+#            print ("roblem")
+#            exit()
+            pass
+    z.setp(data, "div_mc_dict")
+    print("data: {}".format( data['NTDOY']))
+    print("data: {}".format( data['TM']))
+    print("data: {}".format( data['MSFT']))
+    print("data: {}".format( data['BA']))
+    print("data: {}".format( data['KO']))
+    print("data: {}".format( data['X']))
+    print("data: {}".format( data['GPRO']))
+
+def updateOldYahoos():
+    parent = z.getPath("yahoo_mc")
+    listOfFiles = os.listdir(parent)
+
+    data = z.getp("div_mc_dic")
+    for entry in listOfFiles:  
+        pattern = "*.pkl"
+        if fnmatch.fnmatch(entry, pattern):
+#            fpath = "{}/{}".format(parent, entry)
+#            t = os.path.getmtime(fpath)
+#            csvdate = datetime.datetime.fromtimestamp(t)
+#            csvmonth = csvdate.month
+#            if csvmonth == 11:
+#                continue
+#
+            astock = os.path.splitext(entry)[0]
+#            print("fpath : {} {} ".format( fpath, csvdate))
+            try:
+                cap, beta, pe, div = parsePage(astock)
+                if astock == "TM" or astock == "NTDOY":
+                    print("{} cap: {}".format( astock , cap))
+
+                data[astock] = [div, round(cap,5)]
+            except Exception as e:
+#                z.trace(e)
+#                exit()
+                pass
+
+    z.setp(data, "div_mc_dict")
 
 
 
 if __name__ == '__main__':
+#    updateOldYahoos()
+#    iterateStocks()
 #    saveJsonData(z.getp("listofstocks"))
 #    remaining()
+
     genMCRanking()
 #    runmain()
 #    zen.diffOuts()

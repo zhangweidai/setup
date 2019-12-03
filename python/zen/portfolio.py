@@ -28,6 +28,7 @@ def getTrainingMotif():
 import z
 import csv
 import zen
+from collections import defaultdict
 
 skips = ["FNSXX", "VTRLX", "BLNK", "BLCN"]
 def fidelity(forselling=False, updating=False):
@@ -37,6 +38,7 @@ def fidelity(forselling=False, updating=False):
     current_pv = 0
     need = False
     myportlist = list()
+    ports = defaultdict(int)
     for row in csv.DictReader(open(getLatestFidelityCsv())):
         astock = row['Symbol'] 
         if "*" in astock:
@@ -47,6 +49,8 @@ def fidelity(forselling=False, updating=False):
             myportlist.append(astock)
 
             try:
+                c_value = float(row['Current Value'].strip("$"))
+                ports[astock] = round(ports[astock] + c_value,2)
                 cbprice = float(row['Cost Basis Per Share'].strip("$"))
                 count = float(row['Quantity'])
                 temp2 = float(row['Cost Basis Total'].strip("$"))
@@ -98,6 +102,7 @@ def fidelity(forselling=False, updating=False):
         z.setp(fidelity.lastSave, "lastsaveprice")
 
     z.setp(myportlist,"myportlist")
+    z.setp(ports,"ports", printdata=True)
 
     return round(current_pv/spentBasis,4), spentBasis, current_pv
 
@@ -177,7 +182,9 @@ def worthNow(port):
     return round(value,3)
             
 import os
+second = False
 def getLatestFidelityCsv():
+    global second
     import fnmatch
     parentdir = "/mnt/c/Users/Zoe/Downloads"
     if not os.path.exists(parentdir):
@@ -187,6 +194,11 @@ def getLatestFidelityCsv():
     newest = 0
     cfile = None
     for entry in listOfFiles:  
+#        if second and "_2" not in entry:
+#            continue
+#        elif "_1" not in entry:
+#            continue
+
         if "Portfolio" not in entry:
             continue
         if ".csv" not in entry:
@@ -199,10 +211,11 @@ def getLatestFidelityCsv():
 
     print("fidelity file: {}".format( cfile))
     os.system("chmod 777 {}".format(cfile) )
-    return cfile
+    yield cfile
 
 def getSellStats(updating=False):
     fidelity(forselling=True, updating=updating)
+    return
     lastSave = z.getp("lastsaveprice")
     myportlist = list()
     for row in csv.DictReader(open(getLatestFidelityCsv())):
@@ -226,16 +239,47 @@ def getSellStats(updating=False):
             change = round(cprice / lastSave[astock], 3)
             print("astock: {} {}".format( astock , z.percentage(change)))
     
-if __name__ == '__main__':
-    import sys
-    update = None
-    try:
-        if sys.argv[1][0] == "u":
-            update = True
-    except:
-        pass
 
-    getSellStats(updating=update)
+def simple():
+    global ports, second
+    for path in getLatestFidelityCsv():
+        print("path : {}".format( path ))
+        for row in csv.DictReader(open(path)):
+            astock = row['Symbol'] 
+            if "*" in astock:
+                continue
+
+            if astock == "FIVE":
+                print ("HIH>>>>???")
+            if len(astock) >= 1 and astock not in skips:
+                c_value = float(row['Current Value'].strip("$"))
+                ports[astock] = round(ports[astock] + c_value,2)
+    
+        if second:
+            z.setp(ports,"ports", printdata=True)
+
+        os.rename(path, path.replace("csv", "txt"))
+
+ports = None
+def getPorts():
+    global ports, second
+    ports = defaultdict(int)
+    simple()
+    second = True
+    simple()
+
+
+if __name__ == '__main__':
+    getPorts()
+#    import sys
+#    update = None
+#    try:
+#        if sys.argv[1][0] == "u":
+#            update = True
+#    except:
+#        pass
+#
+#    getSellStats(updating=update)
 #    vals = fidelity(forselling)
 #    print("vals : {}".format( vals ))
 #    print("vals : {}".format( z.percentage(vals[0])))

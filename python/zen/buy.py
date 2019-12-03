@@ -5,7 +5,8 @@ import table_print
 import statistics
 import os
 
-start = 57
+#start = 37
+start = 107
 dates = z.getp("dates")
 
 def getChangeStats(astock, idx=1):
@@ -69,7 +70,7 @@ def getPrice(astock, date = dates[-1], openp=False):
 getPrice.last = None
 getPrice.recent = dict()
 
-def getFiles(astock, date):
+def getFiles(astock, date = "2000"):
 #    yield z.getPath("historical/{}.csv".format(astock))
 #    return
     for year in getYears(date):
@@ -126,7 +127,10 @@ def getDropScore(astock, startd, length):
 
     seen = list()
     changes = list()
+    dayone = "*"
     for i, row in enumerate(getRows(astock, startd)):
+        if i == 0 and startd == row['Date']:
+            dayone = ""
         c_open = float(row['Open'])
         c_close = float(row[z.closekey])
 
@@ -137,8 +141,9 @@ def getDropScore(astock, startd, length):
             changes.append(change5)
 
     minc = min(changes)
-    getDropScore.cache[astock][startd] = round(minc,4)
-    return minc
+    ret = "{}{}".format(dayone, z.percentage(round(minc,4)))
+    getDropScore.cache[astock][startd] = ret
+    return ret
 
 def getLastYearChange(astock, dated = None):
     if not dated:
@@ -165,30 +170,28 @@ def getYearly2(astock):
             return "NA", "NA", "NA"
 getYearly2.dic = None
 
-def getYearly(astock):
-    try:
-        one, two = getYearly.dic[astock]
-        return z.percentage(one), z.percentage(two)
-    except:
-        getYearly.dic = z.getp("yearlydic")
-        try:
-            one, two = getYearly.dic[astock]
-            return z.percentage(one), z.percentage(two)
-        except:
-            return "NA", "NA"
-getYearly.dic = None
+def portFolioValue(astock):
+    if astock in portFolioValue.dict:
+        return round(portFolioValue.dict[astock])
+    return ""
+
 def inPortfolio(astock):
-    try:
-        if astock in myportlist:
-            return "*{}".format(astock)
-    except:
-        pass
+    if (portFolioValue(astock)):
+        return "*{}".format(astock)
     return astock
+
+def getOrder(astock):
+    global orders
+    if astock not in orders:
+        return "NA"
+    return orders[astock][0]
+
 #print (getPrice("KO", "2019-01-09"))
 #
 #exit()
 HIGHEST = 10000
 def single(value, avgOneYear):
+    global torys
 
     if type(value) is tuple:
         astock = value[1]
@@ -203,25 +206,27 @@ def single(value, avgOneYear):
     lowFromHigh = HIGHEST
     high = 0
     mins = list()
+    c_close = None
     for i, row in enumerate(getRows(astock, dates[-1*start])):
         c_open = float(row['Open'])
         if not firstPrice:
             firstPrice = c_open
         c_close = float(row[z.closekey])
 
-        if c_open > high:
-            high = c_open
-            lowFromHigh = HIGHEST
+        if i < start - 10:
+            if c_open > high:
+                high = c_open
+                lowFromHigh = HIGHEST
 
-        if c_open < lowFromHigh:
-            lowFromHigh = c_open
+            if c_open < lowFromHigh:
+                lowFromHigh = c_open
 
-        if c_close > high:
-            high = c_close
-            lowFromHigh = HIGHEST
+            if c_close > high:
+                high = c_close
+                lowFromHigh = HIGHEST
 
-        if c_close < lowFromHigh:
-            lowFromHigh = c_close
+            if c_close < lowFromHigh:
+                lowFromHigh = c_close
 
         seen.append(c_close)
         if len(seen) >= daysAgo5:
@@ -231,45 +236,66 @@ def single(value, avgOneYear):
             if change5 < 1:
                 mins.append(change5)
 
-#    y1w, y1m = getYearly(astock)
-#    y1l = getLastYearChange(astock)
-
     y1w2, y1m2, y1l = getYearly2(astock)
 
     if y1l != "NA":
         avgOneYear.append(y1l)
         y1l = z.percentage(y1l)
-#
-#    try:
-#        beta, pe, mcchg, div = getChangeStats(astock)
-#        div = round(div,3)
-#    except Exception as e:
-#        beta, pe, mcchg, div = None, None, None, None
-#        div = " NA"
 
+    mc = "NA"
     try:
         both = getMCDiv(astock)
         mc = both[1]
-        div = both[0]
+        div = round(both[0]*100,3)
     except:
-        mc = "NA"
         div = "NA"
+
+    prev_close = c_close
+    if args.live:
+        try:
+            live = util.getLiveData(astock, key = "price")
+            if not live:
+                print("NO LIVE astock: {}".format( astock))
+            c_close = live if live else c_close
+        except Exception as e:
+            z.trace(e)
+            exit()
+            
 
     mindrop = round(statistics.mean(mins) * c_close,2)
     maxdrop = round(min(mins) * c_close,2)
 
-    d13_30, around = getDropScore(astock, "2013-03-19", 30)
-    d17_45, around = getDropScore(astock, "2017-05-25", 45)
-    d18_64, around = getDropScore(astock, "2018-07-11", 64)
+    d13_30 = getDropScore(astock, "2013-03-19", 30)
+    d17_45 = getDropScore(astock, "2017-05-25", 45)
+    d18_64 = getDropScore(astock, "2018-07-11", 64)
 
+    lastchange = "{}chg".format(start)
+    fromtop = "{}drop".format(start)
+    fromtopgain = "{}gain".format(start)
+    try:
+        name = companies[astock][0][0:17]
+    except:
+        name = ""
+        
+    order = getOrder(astock)
+    orderstr = ""
+    orderchange = 0
+    if order != "NA":
+        orderstr = round(order[0])
+        orderchange = order[1]/c_close
+        if astock in torys:
+            name += "_T"
+     
     values = [
         ("Stock", inPortfolio(astock)),
+        ("Name", name),
         ("Price", c_close),
-        ("avg5", z.avgp(avg5Change)),
-        ("min5", z.percentage(min(avg5Change))),
-        ("last5", z.percentage(avg5Change[-1])),
-        ("{}chg".format(start), z.percentage((c_close/firstPrice))),
-        ("FromHigh", z.percentage((lowFromHigh/high))),
+        ("avg5", z.avg(avg5Change)),
+        ("min5", min(avg5Change)),
+        ("last5", avg5Change[-1]),
+        (lastchange, (c_close/firstPrice)),
+        (fromtop, (lowFromHigh/high)),
+        (fromtopgain, (c_close/lowFromHigh)),
         ("d13_30", d13_30),
         ("d17_45", d17_45),
         ("d18_64", d18_64),
@@ -280,14 +306,27 @@ def single(value, avgOneYear):
         ("y1l", y1l),
         ("probdown", getLongProbDown(astock)),
         ("MeanDrop", mindrop),
-        ("MaxDrop", maxdrop)
+        ("MaxDrop", maxdrop),
+        ("Owned", portFolioValue(astock)),
+        ("Orders", orderstr),
+        ("OrderChange", orderchange)
         ]
+
+    if args.live:
+        values.append(("Last", (c_close/prev_close)))
+
     table_print.store(values)
+    table_print.use_percentages = ["avg5", "min5", "last5", fromtop, lastchange, fromtopgain, "OrderChange"]
+
+    if args.live:
+        table_print.use_percentages.append("Last")
 
 #single("IVV")
 #exit()
 
+problems = set()
 def multiple(stocks, title = None):
+    global problems
 
     if type(stocks) is str:
         if not title:
@@ -298,7 +337,12 @@ def multiple(stocks, title = None):
     for idx, value in enumerate(stocks):
         try:
             single(value, avgOneYear)
-        except:
+        except Exception as e:
+            if type(value) is tuple:
+                astock = value[1]
+            else:
+                astock = value
+            problems.add(astock)
             continue
 
     print ("\n=== " , title , "===")
@@ -310,12 +354,57 @@ def multiple(stocks, title = None):
     except:
         yearone = "NA"
     print ("Annual Change {}".format(yearone))
+    print ("Problems {}".format(", ".join(problems)))
 
+args = None
+import util
 if __name__ == '__main__':
-    myportlist = z.getp("myportlist")
+    import argparse
+
+
+    portFolioValue.dict = z.getp("ports")
+    companies = z.getp("company")
+    orders = z.getp("orders")
+    torys = z.getp("torys")
+
+#    myportlist = z.getp("myportlist")
     getDropScore.cache = z.getp("newdropcache")
     if getDropScore.cache is None:
         getDropScore.cache = defaultdict(dict)
+    getDropScore.cache = defaultdict(dict)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mode', default="default")
+    parser.add_argument('--live', default=False)
+
+    args = parser.parse_args()
+
+    z.online.online = args.live
+
+    if args.mode == "owned":
+        multiple(portFolioValue.dict.keys(), "owned")
+        z.setp(problems, "problems")
+        exit()
+
+    if "order" in args.mode:
+        multiple(orders.keys(), title = "Orders")
+        exit()
+
+    if "notes" in args.mode:
+        multiple(['CLX', 'MTN', 'NOW', 'SGEN', 'TGT', "IBB"], title = "notes")
+#
+#        bar = list()
+#        single("PLD",bar)
+#        table_print.printTable()
+#        table_print.clearTable()
+
+        exit()
+
+    if "mc" in args.mode:
+        items = z.getp("mcsortedlist")
+        multiple(items[:30], title = "MC1")
+        multiple(items[30:60], title = "MC2")
+        exit()
 
     multiple(z.getEtfList(forEtfs=True), title = "Standard ETFS")
 
@@ -334,9 +423,17 @@ if __name__ == '__main__':
 #
     multiple("gained_discount")
     multiple("low_high_sort")
+
+    multiple(orders.keys(), title = "Orders")
+    z.setp(problems, "problems")
+
+#    multiple(portFolioValue.dict.keys(), "owned")
+    from sortedcontainers import SortedSet
+    print (SortedSet(portFolioValue.dict.keys()))
+#    multiple(util.getETF("IUSG"), title = "IVV")
 #
 #    multiple("worst30")
 
-    print ("57 days ago was : {} \tLatest {}".format(dates[-1*start], dates[-1]))
+    print ("{} days ago was : {} \tLatest {}".format(start, dates[-1*start], dates[-1]))
     z.setp(getDropScore.cache, "newdropcache")
 

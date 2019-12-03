@@ -23,11 +23,11 @@ def getDataFromYahoo(astock, cdate):
         try:
             df = pdr.get_data_yahoo([astock], start=cdate)
         except Exception as e:
-            #z.trace(e)
+#            z.trace(e)
             problems.append(astock)
             if len(problems)>30:
                 print("didn't finish problems: {}".format( problems))
-                z.setp(problems, "problems")
+#                z.setp(problems, "problems")
                 raise SystemExit
             return None
     
