@@ -49,10 +49,6 @@ if __name__ == '__main__':
 #        if args.skips:
 #            skips = z.getp("problems")
         stocks = z.getp("listofstocks")
-        print("stocks : {}".format( len(stocks) ))
-        if "IVV" in stocks:
-            print("stocks : ")
-
         import datetime
         now = datetime.datetime.now()
         missed = 0
@@ -71,12 +67,14 @@ if __name__ == '__main__':
             tmonth = datetime.date.today().month
 
             if csvday >= ttoday and tmonth == csvmonth:
+                missed = 0
                 continue
 
             for row in csv.DictReader(open(apath)):
                 pass
             date = row['Date']
 
+            print("date: {}".format( date))
             df = update_history.getDataFromYahoo(astock, date)
             if df is None:
                 print("problem downloading: {}".format( astock))

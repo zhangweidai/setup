@@ -18,13 +18,15 @@ for aline in bar:
         if "Buy " not in token:
             continue
         items = token.split(" ")
-        count = int(items[1])
-        astock = items[4]
-        price = float(items[7][1:].replace(",", ""))
-        value = count * price
-        orders[astock].append((value, price))
-        if tory:
-            torys.append(astock)
+        for i,token in enumerate(items):
+            if token == 'Buy':
+                count = int(items[i+1])
+                astock = items[i+4]
+                price = float(items[i+7][1:].replace(",", ""))
+                value = count * price
+                orders[astock].append((value, price))
+                if tory:
+                    torys.append(astock)
         
 z.setp(torys, "torys")
 z.setp(orders, "orders", printdata=True)

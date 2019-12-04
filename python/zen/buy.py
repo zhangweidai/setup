@@ -320,12 +320,14 @@ def single(value, avgOneYear):
 
     if args.live:
         values.append(("Last", (c_close/prev_close)))
+    else:
+        values.append(("Last", (c_close/seen[-2])))
 
     table_print.store(values)
     table_print.use_percentages = ["avg5", "min5", "last5", fromtop, lastchange, fromtopgain, "OrderChange"]
 
-    if args.live:
-        table_print.use_percentages.append("Last")
+#    if args.live:
+    table_print.use_percentages.append("Last")
 
 #single("IVV")
 #exit()
@@ -395,7 +397,7 @@ if __name__ == '__main__':
         exit()
 
     if "notes" in args.mode:
-        multiple(['CLX', 'MTN', 'NOW', 'SGEN', 'TGT', "IBB"], title = "notes")
+        multiple(['CLX', 'MTN', 'NOW', 'SGEN', 'TGT', "IBB", "IDA"], title = "notes")
 #
 #        bar = list()
 #        single("PLD",bar)
