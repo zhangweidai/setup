@@ -351,8 +351,7 @@ def multiple(stocks, title = None):
             problems.add(astock)
             continue
 
-    print ("\n=== " , title , "===")
-    table_print.printTable()
+    table_print.printTable(title)
     table_print.clearTable()
 
     try:
@@ -366,7 +365,6 @@ args = None
 import util
 if __name__ == '__main__':
     import argparse
-
 
     portFolioValue.dict = z.getp("ports")
     companies = z.getp("company")
@@ -412,33 +410,30 @@ if __name__ == '__main__':
         multiple(items[30:60], title = "MC2")
         exit()
 
-    multiple(z.getEtfList(forEtfs=True), title = "Standard ETFS")
+    try:
+        multiple(z.getEtfList(forEtfs=True), title = "Standard ETFS")
 
-    multiple("avg30c")
-    multiple("best30c")
-    multiple("worst30c")
-#    multiple("ults30")
-#    multiple("consv_ults30")
-#    multiple("ultrank")
-#    multiple("ultrank2")
+        multiple("avg30c")
+        multiple("best30c")
+        multiple("worst30c")
+    except:
+        pass
 
     m1 = ["COST", "WMT", "NKE", "FB", "MSFT", "TGT", "BABA", "NFLX", "AMZN", "GOOG", "AMD", "ADBE", "DIS", "KO", "TSLA", "WM", "BA", "JNJ", "BLK"]
     multiple(m1, title="Other")
 
-#    multiple("sortedvolmcbegin")
-#
-    multiple("gained_discount")
-    multiple("low_high_sort")
+    try:
+        multiple("gained_discount")
+        multiple("low_high_sort")
 
-    multiple(orders.keys(), title = "Orders")
-    z.setp(problems, "problems")
+        multiple(orders.keys(), title = "Orders")
+        z.setp(problems, "problems")
 
-#    multiple(portFolioValue.dict.keys(), "owned")
-    from sortedcontainers import SortedSet
-    print (SortedSet(portFolioValue.dict.keys()))
-#    multiple(util.getETF("IUSG"), title = "IVV")
-#
-#    multiple("worst30")
+#        multiple(portFolioValue.dict.keys(), "owned")
+        from sortedcontainers import SortedSet
+        print (SortedSet(portFolioValue.dict.keys()))
+    except:
+        pass
 
     print ("{} days ago was : {} \tLatest {}".format(start, dates[-1*start], dates[-1]))
     z.setp(getDropScore.cache, "newdropcache")

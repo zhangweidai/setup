@@ -653,16 +653,27 @@ def plot(astock, start = None, end = None):
             values.append(c_close)
             ldates.append(row['Date'])
 
+#    print (dir(ax))
+#    print ("Fig")
+#    print (dir(fig))
     ax.plot(values)
+    ax.grid(color='grey', linestyle=':', linewidth=1)
+
+    label = "hello"
+    plt.annotate(label, # this is the text
+                 (50,270), # this is the point to label
+                 textcoords="offset points", # how to position the text
+                 xytext=(0,10), # distance from text to points (x,y)
+                 ha='center') # horizontal alignment can be left, right or center
 
     num_dates = len(ldates)
     print("ldates: {}".format( ldates[-1]))
 #    print(round(num_dates/25))
     xranges = [i for i in range(0, num_dates, round(num_dates/9))]
-    xranges.append(num_dates-1)
+#    xranges.append(num_dates-1)
 
     xlabels = ["{}\n({})".format(i, ldates[i]) for i in xranges]
-    xlabels.append("{}\n({})".format(num_dates-1, ldates[-1]))
+#    xlabels.append("{}\n({})".format(num_dates-1, ldates[-1]))
 
     ax.set_title("{} {}".format(astock, start))
     ax.set_xticklabels(xlabels)
@@ -673,6 +684,13 @@ def plot(astock, start = None, end = None):
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--stock', default="IVV")
+    astock = None
+    args = parser.parse_args()
+    astock = args.stock
+
     currentMode = Modes.none
     savedxdata = None
     dates = z.getp("dates") 
@@ -683,4 +701,4 @@ if __name__ == "__main__":
     else:
         plt.rcParams["figure.figsize"] = [11,8]
 
-    plot("BA")
+    plot(astock)

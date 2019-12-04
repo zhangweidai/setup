@@ -1,23 +1,46 @@
 from colorama import Fore, Back, Style
 from collections import defaultdict
+import statistics
 import z
 
-use_percentages = None
+cidx = 0
+use_percentages = list()
+currentsort = 0
 
 def store(values):
+    global cidx
     res = list(zip(*values))
     if not store.title:
         store.title = res[0]
-    store.items.append(res[1])
-store.items = list()
+    store.items[cidx].append(res[1])
+store.items = defaultdict(list)
 store.title = None
 
-def printTable():
+from sortedcontainers import SortedSet
+def getItems():
+    global currentsort
+
+    if currentsort >= len(store.items[cidx]):
+        currentsort = 0
+
+    ret = SortedSet()
+    for item in store.items[cidx]:
+        ret.add((item[currentsort], item))
+
+    realret = list()
+    for item in ret:
+        realret.append(item[1])
+    return realret
+
+def printTable(tablename ="default"):
+    global cidx
     headerWidths = defaultdict(int)
+
+    print ("\n=== " , tablename , "===")
 
     # determine headerWidths
     dics = defaultdict(list)
-    for items in store.items:
+    for items in store.items[cidx]:
         for j, individual in enumerate(items):
             dics[j].append(individual)
             ctitle = store.title[j]
@@ -30,23 +53,30 @@ def printTable():
 
     mm = dict()
     for key in dics.keys():
+        ctitle = store.title[key]
         try:
             m1 = min(dics[key])
             m2 = max(dics[key])
-            mm[key] = (m1,m2)
+            avg = round(statistics.mean(dics[key]),2)
+
+            width = len(str(avg))
+            if width > headerWidths[ctitle]:
+                headerWidths[ctitle] = width
+            mm[key] = (m1,m2, avg)
         except:
+            mm[key] = ("NA","NA", "NA")
             pass
         
 
     headeritems = list()
-    for headerName in store.title:
-        width = headerWidths[headerName]
+    for ctitle in store.title:
+        width = headerWidths[ctitle]
         bar = "{:>" + "{}".format(width) + "}"
-        headeritems.append(bar.format(headerName[:width]))
+        headeritems.append(bar.format(ctitle[:width]))
 
     print(Fore.GREEN + Style.BRIGHT + "  ".join(headeritems) + Style.RESET_ALL)
 
-    for x,items in enumerate(store.items):
+    for x,items in enumerate(getItems()):
         saveme = list()
         have = False
 
@@ -102,18 +132,80 @@ def printTable():
         else:
             print(Back.LIGHTBLACK_EX + "  ".join(saveme) + Style.RESET_ALL)
 
+    avgs = list()
+    for i,ctitle in enumerate(store.title):
+        width = headerWidths[ctitle]
+        bar = "{:>" + "{}".format(width) + "}"
+        val = "AVG"
+        if i >= 1:
+            val = mm[i][2]
+        avgs.append(bar.format(val))
+
+    print(Fore.GREEN + Style.BRIGHT + "  ".join(avgs) + Style.RESET_ALL)
+
+
+def initiate():
+    global cidx
+    global currentsort
+    import readchar
+    import os
+
+    os.system("clear")
+    printTable()
+
+    key = readchar.readkey()
+    while (key != "q"):
+        if key == "p":
+            cidx -= 1
+            if cidx not in store.items:
+                cidx = 0
+            os.system("clear")
+            printTable()
+
+        elif key == "n":
+            cidx += 1
+            if cidx not in store.items:
+                cidx = 0
+            os.system("clear")
+            printTable()
+
+        elif int(key):
+            currentsort = int(key) - 1
+            os.system("clear")
+            printTable()
+
+        key = readchar.readkey()
+
 def clearTable():
-    store.items = list()
+    global cidx
+    cidx += 1
+#    store.items = list()
 
 if __name__ == '__main__':
+    values = [
+        ("Title",  "b"),
+        ("Title1", 3),
+        ("Title2", 220.00)]
+    store(values)
+    values = [
+        ("Title",  "name2"),
+        ("Title1", 23),
+        ("Title2", 3220.00)]
+    store(values)
+    values = [
+        ("Title",  "a"),
+        ("Title1", 123),
+        ("Title2", 20.00)]
+    store(values)
     printTable()
     clearTable()
-    
-    store(values)
-    
     values = [
-        ("Title",  "25%"),
-        ("Title1", "b"),
-        ("Title2", 220.00)]
-    
+        ("Title",  "huh"),
+        ("Title1", 123),
+        ("Title2", 20.00)]
+    store(values)
     printTable()
+
+    initiate()
+
+
