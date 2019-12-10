@@ -95,11 +95,14 @@ if __name__ == '__main__':
                     added = True
                     f.write("{},{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, adj, vol))
 
+        buy.updateDates()
+
         import prob_down_5_years
         prob_down_5_years.prob()
 
         import gained_discount
         gained_discount.dosomething()
+        gained_discount.genUlt()
 
         print("problems : {}".format( problems ))
 #            generateWorst30()

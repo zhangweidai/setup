@@ -241,7 +241,7 @@ def getSellStats(updating=False):
     
 
 def simple():
-    global ports, second
+    global ports, second, mine, tory
     for path in getLatestFidelityCsv():
         print("path : {}".format( path ))
         for row in csv.DictReader(open(path)):
@@ -249,21 +249,29 @@ def simple():
             if "*" in astock:
                 continue
 
-            if astock == "FIVE":
-                print ("HIH>>>>???")
             if len(astock) >= 1 and astock not in skips:
+                if second:
+                    tory.append(astock)
+                else:
+                    mine.append(astock)
                 c_value = float(row['Current Value'].strip("$"))
                 ports[astock] = round(ports[astock] + c_value,2)
     
         if second:
             z.setp(ports,"ports", printdata=True)
+            z.setp(mine, "mine")
+            z.setp(tory, "tory")
 
         os.rename(path, path.replace("csv", "txt"))
 
 ports = None
+tory = None
+mine = None
 def getPorts():
-    global ports, second
+    global ports, second, ports, tory, mine
     ports = defaultdict(int)
+    mine = list()
+    tory = list()
     simple()
     second = True
     simple()

@@ -165,15 +165,15 @@ def getLastYearChange(astock, dated = None):
 
 def getYearly2(astock):
     try:
-        one, two, three = getYearly2.dic[astock]
-        return z.percentage(one), z.percentage(two), three
+        one, two, three, four = getYearly2.dic[astock]
+        return z.percentage(one), z.percentage(two), three, four
     except:
         getYearly2.dic = z.getp("annuals")
         try:
-            one, two, three = getYearly2.dic[astock]
-            return z.percentage(one), z.percentage(two), three
+            one, two, three, four = getYearly2.dic[astock]
+            return z.percentage(one), z.percentage(two), three, four
         except:
-            return "NA", "NA", "NA"
+            return "NA", "NA", "NA", "NA"
 getYearly2.dic = None
 
 def portFolioValue(astock):
@@ -197,7 +197,7 @@ def getOrder(astock):
 #exit()
 HIGHEST = 10000
 def single(value, avgOneYear):
-    global torys
+    global torys, mine, tory
 
     if type(value) is tuple:
         astock = value[1]
@@ -242,11 +242,14 @@ def single(value, avgOneYear):
             if change5 < 1:
                 mins.append(change5)
 
-    y1w2, y1m2, y1l = getYearly2(astock)
+    y1w2, y1m2, y1l, y1l2 = getYearly2(astock)
 
     if y1l != "NA":
         avgOneYear.append(y1l)
         y1l = z.percentage(y1l)
+
+    if y1l2 != "NA":
+        y1l2 = z.percentage(y1l2)
 
     mc = "NA"
     try:
@@ -291,6 +294,10 @@ def single(value, avgOneYear):
         orderchange = order[1]/c_close
         if astock in torys:
             name += "_T"
+    if astock in mine:
+        name = "(m)" + name
+    if astock in tory:
+        name = "(t)" + name
      
     values = [
         ("Stock", inPortfolio(astock)),
@@ -309,6 +316,7 @@ def single(value, avgOneYear):
         ("div", div),
         ("y1w", y1w2),
         ("y1m", y1m2),
+        ("y1l2", y1l2),
         ("y1l", y1l),
         ("probdown", getLongProbDown(astock)),
         ("MeanDrop", mindrop),
@@ -372,6 +380,8 @@ if __name__ == '__main__':
     companies = z.getp("company")
     orders = z.getp("orders")
     torys = z.getp("torys")
+    tory = z.getp("tory")
+    mine = z.getp("mine")
 
 #    myportlist = z.getp("myportlist")
     getDropScore.cache = z.getp("newdropcache")
@@ -398,8 +408,16 @@ if __name__ == '__main__':
         table_print.initiate()
         exit()
 
+    if "rand" in args.mode:
+        bar = z.getp("listofstocks")
+        import random
+        multiple([bar[random.randint(1,len(bar))] for b in range(0,10)])
+        table_print.initiate()
+        exit()
+        
     if "notes" in args.mode:
-        multiple(['CLX', 'MTN', 'NOW', 'SGEN', 'TGT', "IBB", "IDA"], title = "notes")
+        multiple(['CLX', 'MTN', 'NOW', 'SGEN', 'TGT', "IBB", "IDA", "IGM", "IHI", "MTUM", "PEP"], title = "notes")
+        multiple("newstuff")
         table_print.initiate()
         exit()
 
@@ -422,7 +440,7 @@ if __name__ == '__main__':
     except:
         pass
 
-    m1 = ["COST", "WMT", "NKE", "FB", "MSFT", "TGT", "BABA", "NFLX", "AMZN", "GOOG", "AMD", "ADBE", "DIS", "KO", "TSLA", "WM", "BA", "JNJ", "BLK"]
+    m1 = ["COST", "WMT", "NKE", "FB", "MSFT", "TGT", "BABA", "NFLX", "AMZN", "GOOG", "AMD", "ADBE", "DIS", "KO", "TSLA", "WM", "BA", "JNJ", "BLK", "VMW"]
     multiple(m1, title="Other")
 
     try:
