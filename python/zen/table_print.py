@@ -32,18 +32,29 @@ def getItems():
         realret.append(item[1])
     return realret
 
+mm = dict()
+titles = dict()
 def printTable(tablename ="default"):
-    global cidx
+    global cidx, mm
     headerWidths = defaultdict(int)
 
-    print ("\n=== " , tablename , "===")
+    if cidx not in titles:
+        titles[cidx] = tablename
+    print ("\n=== " , titles[cidx] , "===")
 
     # determine headerWidths
     dics = defaultdict(list)
+    print("cidx: {}".format( cidx))
     for items in store.items[cidx]:
         for j, individual in enumerate(items):
-            dics[j].append(individual)
             ctitle = store.title[j]
+            if type(individual) is str and "%" in individual:
+                try:
+                    dics[j].append(float(individual.split("%")[0]))
+                except:
+                    pass
+            elif type(individual) is not str:
+                dics[j].append(individual)
             width = len(str(individual))
             if ctitle in use_percentages:
                 width = len(str(round(individual,2))) + 3
@@ -55,9 +66,9 @@ def printTable(tablename ="default"):
     for key in dics.keys():
         ctitle = store.title[key]
         try:
-            m1 = min(dics[key])
-            m2 = max(dics[key])
-            avg = round(statistics.mean(dics[key]),2)
+            m1 = round(min(dics[key]),3)
+            m2 = round(max(dics[key]),3)
+            avg = round(statistics.mean(dics[key]),3)
 
             width = len(str(avg))
             if width > headerWidths[ctitle]:
@@ -66,7 +77,7 @@ def printTable(tablename ="default"):
         except:
             mm[key] = ("NA","NA", "NA")
             pass
-        
+    
 
     headeritems = list()
     for ctitle in store.title:
@@ -136,10 +147,20 @@ def printTable(tablename ="default"):
     for i,ctitle in enumerate(store.title):
         width = headerWidths[ctitle]
         bar = "{:>" + "{}".format(width) + "}"
-        val = "AVG"
+        val = ""
         if i >= 1:
-            val = mm[i][2]
-        avgs.append(bar.format(val))
+            try:
+                val = mm[i][2]
+            except:
+                val = ""
+
+        try:
+            if ctitle in use_percentages:
+                avgs.append(bar.format(z.percentage(val)))
+            else:
+                avgs.append(bar.format(val))
+        except:
+            pass
 
     print(Fore.GREEN + Style.BRIGHT + "  ".join(avgs) + Style.RESET_ALL)
 
@@ -150,29 +171,33 @@ def initiate():
     import readchar
     import os
 
+    cidx = 0
     os.system("clear")
     printTable()
 
     key = readchar.readkey()
     while (key != "q"):
-        if key == "p":
-            cidx -= 1
-            if cidx not in store.items:
-                cidx = 0
-            os.system("clear")
-            printTable()
+        try:
+            if key == "p":
+                cidx -= 1
+                if cidx not in store.items:
+                    cidx = 0
+                os.system("clear")
+                printTable()
 
-        elif key == "n":
-            cidx += 1
-            if cidx not in store.items:
-                cidx = 0
-            os.system("clear")
-            printTable()
+            elif key == "n":
+                cidx += 1
+                if cidx not in store.items:
+                    cidx = 0
+                os.system("clear")
+                printTable()
 
-        elif int(key):
-            currentsort = int(key) - 1
-            os.system("clear")
-            printTable()
+            elif int(key):
+                currentsort = int(key) - 1
+                os.system("clear")
+                printTable()
+        except:
+            pass
 
         key = readchar.readkey()
 

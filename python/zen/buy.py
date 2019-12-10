@@ -321,12 +321,14 @@ def single(value, avgOneYear):
 
     if args.live:
         values.append(("Last", (c_close/prev_close)))
+    else:
+        values.append(("Last", (c_close/seen[-2])))
 
     table_print.store(values)
     table_print.use_percentages = ["avg5", "min5", "last5", fromtop, lastchange, fromtopgain, "OrderChange"]
 
-    if args.live:
-        table_print.use_percentages.append("Last")
+#    if args.live:
+    table_print.use_percentages.append("Last")
 
 #single("IVV")
 #exit()
@@ -389,26 +391,27 @@ if __name__ == '__main__':
     if args.mode == "owned":
         multiple(portFolioValue.dict.keys(), "owned")
         z.setp(problems, "problems")
+        table_print.initiate()
         exit()
 
     if "order" in args.mode:
         multiple(orders.keys(), title = "Orders")
+        table_print.initiate()
         exit()
 
     if "notes" in args.mode:
-        multiple(['CLX', 'MTN', 'NOW', 'SGEN', 'TGT', "IBB"], title = "notes")
-#
-#        bar = list()
-#        single("PLD",bar)
-#        table_print.printTable()
-#        table_print.clearTable()
-
+        multiple(['CLX', 'MTN', 'NOW', 'SGEN', 'TGT', "IBB", "IDA"], title = "notes")
+        table_print.initiate()
         exit()
 
     if "mc" in args.mode:
         items = z.getp("mcsortedlist")
         multiple(items[:30], title = "MC1")
         multiple(items[30:60], title = "MC2")
+        multiple(items[210:240], title = "MC1")
+        multiple(items[240:270], title = "MC2")
+        multiple(items[270:300], title = "MC3")
+        table_print.initiate()
         exit()
 
     try:
@@ -438,4 +441,6 @@ if __name__ == '__main__':
 
     print ("{} days ago was : {} \tLatest {}".format(start, dates[-1*start], dates[-1]))
     z.setp(getDropScore.cache, "newdropcache")
+
+    table_print.initiate()
 

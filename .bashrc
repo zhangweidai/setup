@@ -177,6 +177,7 @@ alias gbuy="py gbuy.py"
 alias owned="py buy.py --mode=owned"
 alias order="py buy.py --mode=order"
 alias mc="py buy.py --mode=mc"
+alias live="py buy.py --live=True"
 alias notes="py buy.py --mode=notes"
 alias gbuy2="py zen.py gbuy2"
 alias well='cd ~/gits/manim; python -m manim example_scenes.py SquareToCircle -pl; '
