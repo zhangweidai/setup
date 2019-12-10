@@ -82,6 +82,7 @@ def getFiles(astock, date = "2000"):
 
     if not added:
         apath = z.getPath("historical/{}.csv".format(astock))
+        print("apath : {}".format( apath ))
         if os.path.exists(apath):
             yield apath
 
@@ -95,7 +96,7 @@ def getYears(date):
         away_year += 1
     yield away_year
 
-def getRows(astock, date):
+def getRows(astock, date = "2000"):
     date_year = date.split("-")[0]
     for apath in getFiles(astock, date):
 
