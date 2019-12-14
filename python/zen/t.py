@@ -20,7 +20,6 @@ def Test1():
 #Test1()
 #print (zen.getPrice('AMD', '2019-03-26'))
 def Test2():
-    print ("hello")
     z.getp("sorteddict")
     z.getp("prices")
 

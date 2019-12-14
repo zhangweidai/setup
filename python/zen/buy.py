@@ -65,13 +65,13 @@ def getMCDiv(astock):
             return getMCDiv.dic[astock]
         except:
             pass
-    return ["NA", "NA"]
+    return ["NA", 3999]
 
 def getMCRank(astock):
     try:
         return getMCDiv(astock)[1]
     except:
-        return "NA"
+        return 3999
 
 
 def setVolRankDict():
@@ -477,9 +477,9 @@ if __name__ == '__main__':
     z.online.online = args.live
 
     if args.mode == "special":
-        setVolRankDict()
-        multiple("hvollrank")
-        multiple("hvollrank1")
+#        setVolRankDict()
+        multiple("y1l2_big")
+        multiple("y1l2_small")
         table_print.initiate()
         exit()
 
