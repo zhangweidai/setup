@@ -40,6 +40,7 @@ def fidelity(forselling=False, updating=False):
     myportlist = list()
     ports = defaultdict(int)
     for row in csv.DictReader(open(getLatestFidelityCsv())):
+
         astock = row['Symbol'] 
         if "*" in astock:
             continue
@@ -183,6 +184,28 @@ def worthNow(port):
             
 import os
 second = False
+from sortedcontainers import SortedSet
+
+def getFidelities():
+    import fnmatch
+    parentdir = "/mnt/c/Users/Zoe/Downloads"
+    if not os.path.exists(parentdir):
+        parentdir = "/mnt/c/Users/pzhang/Downloads"
+
+    listOfFiles = os.listdir(parentdir)
+    bar = SortedSet()
+    for entry in listOfFiles:  
+        if "Portfolio" not in entry:
+            continue
+        if ".csv" not in entry:
+            continue
+        fullpath = "{}/{}".format(parentdir, entry)
+        tim = os.path.getmtime(fullpath)
+        bar.add((tim, fullpath))
+        os.system("chmod 777 {}".format(fullpath) )
+    return bar
+
+
 def getLatestFidelityCsv():
     global second
     import fnmatch
@@ -239,42 +262,104 @@ def getSellStats(updating=False):
             change = round(cprice / lastSave[astock], 3)
             print("astock: {} {}".format( astock , z.percentage(change)))
     
+import buy
+def simple(path, dontknow, etfs, total):
+    global ports, second, mine, tory, sset
 
-def simple():
-    global ports, second, mine, tory
-    for path in getLatestFidelityCsv():
-        print("path : {}".format( path ))
-        for row in csv.DictReader(open(path)):
-            astock = row['Symbol'] 
-            if "*" in astock:
-                continue
+    print("path : {}".format( path ))
+    for row in csv.DictReader(open(path)):
+        isetf = False
+        astock = row['Description'] 
+        try:
+            if " ETF" in astock:
+                isetf = True
+        except:
+            pass
 
-            if len(astock) >= 1 and astock not in skips:
-                if second:
-                    tory.append(astock)
-                else:
-                    mine.append(astock)
-                c_value = float(row['Current Value'].strip("$"))
-                ports[astock] = round(ports[astock] + c_value,2)
-    
-        if second:
-            z.setp(ports,"ports", printdata=True)
-            z.setp(mine, "mine")
-            z.setp(tory, "tory")
+        astock = row['Symbol'] 
+        if "*" in astock:
+            continue
 
-        os.rename(path, path.replace("csv", "txt"))
+        if len(astock) >= 1 and astock not in skips:
+            
+            if second:
+                tory.append(astock)
+            else:
+                mine.append(astock)
+
+            c_value = float(row['Current Value'].strip("$"))
+            total += c_value
+
+            if not isetf:
+                try:
+                    mc = buy.getMCRank(astock)
+                    binid = mc // 50
+                    sset[binid] += c_value
+                except Exception as e:
+                    print("astock: {} {}".format( astock, c_value))
+                    dontknow += c_value
+                    pass
+            else:
+                etfs += c_value
+
+            ports[astock] = round(ports[astock] + c_value,2)
+    return dontknow, etfs, total
+
 
 ports = None
 tory = None
 mine = None
+sset = None
 def getPorts():
-    global ports, second, ports, tory, mine
+    paths = getFidelities()
+    if len(paths) != 2:
+        print ("not enough files")
+        exit()
+
+    global ports, second, ports, tory, mine, sset
     ports = defaultdict(int)
     mine = list()
     tory = list()
-    simple()
+    sset = defaultdict(int)
+
+    total = 0
+    dontknow = 0
+    etfs = 0
+
+    dontknow, etfs, total = simple(paths[0][1], dontknow, etfs, total)
+    print("total : {}".format( total ))
     second = True
-    simple()
+    total2 = 0
+    dontknow, etfs, total2 = simple(paths[1][1], dontknow, etfs, total2)
+    print("total2 : {}".format( total2 ))
+    total += total2
+
+#    z.setp(ports,"ports")
+#    z.setp(mine, "mine")
+#    z.setp(tory, "tory")
+    print("dontknow : {}".format( dontknow ))
+
+    skeys = sorted(sset.keys())
+    print("total: {}".format( total))
+    for akey in skeys:
+        res = round(round(sset[akey] / total,3) * 100,2)
+        dkey = "{}-{}".format(akey*50, (akey+1)*50)
+        print(" {:>10} {:>6}% {:>6}".format( dkey, res, round(sset[akey]) ))
+
+    try:
+        res = round(dontknow / total,3) * 100
+        print(" {:>10} {:>6}% {:>6}".format( "dontknow", res, round(dontknow) ))
+    except:
+        pass
+
+    try:
+        res = round(round(etfs / total,3) * 100,2)
+        print(" {:>10} {:>6}% {:>6}".format( "etfs", res, round(etfs)))
+    except:
+        pass
+
+    z.setp(sset, "mcranges")
+
 
 
 if __name__ == '__main__':

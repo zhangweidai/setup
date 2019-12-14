@@ -4,6 +4,7 @@ from collections import defaultdict
 import table_print
 import statistics
 import os
+from sortedcontainers import SortedSet
 
 #start = 37
 start = 107
@@ -32,7 +33,28 @@ def getLongProbDown(astock):
     return "NA"
 getLongProbDown.dic = None
 
+def sortedSetToRankDict(saveas, sset, reverse=False, printdata = False):
+    sort = dict()
+    if reverse:
+        for i, pair in enumerate(reversed(sset)):
+            astock = pair[1]
+            sort[astock] = i
+    else:
+        for i, pair in enumerate(sset):
+            astock = pair[1]
+            sort[astock] = i
+    z.setp(sort, saveas, printdata=printdata)
 
+
+#    sortedSetToRankDict("bar", sset, True, True)
+
+#bar = SortedSet()
+#bar.add((123,"astock"))
+#bar.add((13,"bstock"))
+#bar.add((213,"cstock"))
+#sortedSetToRankDict("bar", bar, True, True)
+#sortedSetToRankDict("bar", bar, False, True)
+#exit()
 
 def getMCDiv(astock):
     try:
@@ -50,6 +72,47 @@ def getMCRank(astock):
         return getMCDiv(astock)[1]
     except:
         return "NA"
+
+
+def setVolRankDict():
+    stocks = z.getp("listofstocks")
+#    stocks = ["BA", "AMD", "KO"]
+    dates = z.getp("dates")
+    sset = SortedSet()
+    sset1 = SortedSet()
+    for astock in stocks:
+        try:
+            rank = getMCRank(astock)
+            if rank > 1000:
+                continue
+
+        except:
+            continue
+
+#        if len(astock) != 4:
+#            continue
+        
+        avg = list()
+        for i, arow in enumerate(getRows(astock, dates[-117])):
+            avg.append(int(arow['Volume']))
+            if i > 10:
+                break
+        try:
+            avgv = statistics.mean(avg)
+            if avgv > 100099:
+                sset1.add((avgv, astock))
+                if len(sset1) > 30:
+                    sset1.remove(sset1[-1])
+            sset.add((avgv, astock))
+            if len(sset) > 30:
+                sset.remove(sset[0])
+        except:
+            pass
+
+    z.setp(sset, "hvollrank", True)
+    z.setp(sset1, "hvollrank1", True)
+#    for pair in reversed(sset):
+#        print("pair : {}".format( pair ))
 
 
 def getPrice(astock, date = dates[-1], openp=False):
@@ -198,7 +261,7 @@ def getOrder(astock):
 #exit()
 HIGHEST = 10000
 def single(value, avgOneYear):
-    global torys, mine, tory
+    global torys, mine, tory, prob_discount
 
     if type(value) is tuple:
         astock = value[1]
@@ -299,7 +362,11 @@ def single(value, avgOneYear):
         name = "(m)" + name
     if astock in tory:
         name = "(t)" + name
-     
+
+    try:
+        disc = prob_discount[astock] 
+    except:
+        disc = ""
     values = [
         ("Stock", inPortfolio(astock)),
         ("Name", name),
@@ -319,7 +386,8 @@ def single(value, avgOneYear):
         ("y1m", y1m2),
         ("y1l2", y1l2),
         ("y1l", y1l),
-        ("probdown", getLongProbDown(astock)),
+        ("probup", getLongProbDown(astock)),
+        ("discount", disc),
         ("MeanDrop", mindrop),
         ("MaxDrop", maxdrop),
         ("Owned", portFolioValue(astock)),
@@ -352,6 +420,14 @@ def multiple(stocks, title = None):
 
     avgOneYear = list()
     for idx, value in enumerate(stocks):
+        if args.helpers:
+            if type(value) is tuple:
+                astock = value[1]
+            else:
+                astock = value
+            if not astock.startswith(args.helpers):
+                continue
+
         try:
             single(value, avgOneYear)
         except Exception as e:
@@ -377,26 +453,35 @@ import util
 if __name__ == '__main__':
     import argparse
 
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mode', default="default")
+    parser.add_argument('--live', default=False)
+    parser.add_argument('helpers', type=str, nargs='?', default = [])
+    args = parser.parse_args()
+    if args.helpers:
+        args.helpers = args.helpers[0].upper()
+
     portFolioValue.dict = z.getp("ports")
     companies = z.getp("company")
     orders = z.getp("orders")
     torys = z.getp("torys")
     tory = z.getp("tory")
     mine = z.getp("mine")
-
-#    myportlist = z.getp("myportlist")
+    prob_discount = z.getp("prob_down_5_10")
     getDropScore.cache = z.getp("newdropcache")
     if getDropScore.cache is None:
         getDropScore.cache = defaultdict(dict)
     getDropScore.cache = defaultdict(dict)
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--mode', default="default")
-    parser.add_argument('--live', default=False)
-
-    args = parser.parse_args()
-
     z.online.online = args.live
+
+    if args.mode == "special":
+        setVolRankDict()
+        multiple("hvollrank")
+        multiple("hvollrank1")
+        table_print.initiate()
+        exit()
 
     if args.mode == "owned":
         multiple(portFolioValue.dict.keys(), "owned")
@@ -417,8 +502,9 @@ if __name__ == '__main__':
         exit()
         
     if "notes" in args.mode:
-        multiple(['CLX', 'MTN', 'NOW', 'SGEN', 'TGT', "IBB", "IDA", "IGM", "IHI", "MTUM", "PEP"], title = "notes")
+        multiple(['CLX', 'MTN', 'NOW', 'SGEN', 'TGT', "IBB", "IDA", "IGM", "IHI", "MTUM", "PEP", "PLCE"], title = "notes")
         multiple("newstuff")
+        multiple("probs_added_up")
         table_print.initiate()
         exit()
 
@@ -452,7 +538,6 @@ if __name__ == '__main__':
         z.setp(problems, "problems")
 
 #        multiple(portFolioValue.dict.keys(), "owned")
-        from sortedcontainers import SortedSet
         print (SortedSet(portFolioValue.dict.keys()))
     except:
         pass

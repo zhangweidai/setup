@@ -162,8 +162,7 @@ def printTable(tablename ="default"):
         except:
             pass
 
-    print(Fore.GREEN + Style.BRIGHT + "  ".join(avgs) + Style.RESET_ALL)
-
+    print(Fore.GREEN + Style.BRIGHT + "  ".join(avgs) + Style.RESET_ALL  + "\n" +str(len(store.items[cidx])))
 
 def initiate():
     global cidx

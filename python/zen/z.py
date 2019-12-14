@@ -105,7 +105,7 @@ def goodbye():
         copyfile(path, newpath)
 
 savedd = set()
-def setp(data, name, override="pkl", printdata = False):
+def setp(data, name, printdata = False, override="pkl"):
     savedd.add(name)
     path = getPath("{}/{}.pkl".format(override, name))
     if os.path.exists(path):

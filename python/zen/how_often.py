@@ -150,12 +150,15 @@ def proc(astock, target = .95, timeallowed = 10):
                     break
         except:
             pass
-    return round(prob/len(seen),3)
+    return round(prob/len(seen),2)
 
 def doem():
     saveem = dict()
     stocks = z.getp("listofstocks")
-    for astock in stocks:
+    for idx, astock in enumerate(stocks):
+        if not idx % 100:
+            print("idx: {}".format( idx))
+
         try:
             saveem[astock] = proc(astock)
         except:
