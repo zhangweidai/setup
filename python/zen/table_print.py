@@ -2,10 +2,13 @@ from colorama import Fore, Back, Style
 from collections import defaultdict
 import statistics
 import z
+import buy
 
 cidx = 0
 use_percentages = list()
 currentsort = 0
+ivv = 0
+iusg = 0
 
 def store(values):
     global cidx
@@ -36,7 +39,7 @@ mm = dict()
 titles = dict()
 dates = z.getp("dates")
 def printTable(tablename ="default"):
-    global cidx, mm
+    global cidx, mm, ivv, iusg
     headerWidths = defaultdict(int)
 
     if cidx not in titles:
@@ -163,7 +166,13 @@ def printTable(tablename ="default"):
         except:
             pass
 
-    print(Fore.GREEN + Style.BRIGHT + "  ".join(avgs) + Style.RESET_ALL  + "\n" +str(len(store.items[cidx])))
+    print(Fore.GREEN + Style.BRIGHT + "  ".join(avgs) + Style.RESET_ALL  + "\nStocks Shown: " +str(len(store.items[cidx])))
+    if not ivv:
+        bar, bar, ivv, bar = buy.getYearly2("IVV")
+        bar, bar, iusg, bar = buy.getYearly2("IUSG")
+        ivv = z.percentage(ivv)
+        iusg = z.percentage(iusg)
+    print("IVV:  {}\nIUSG: {}".format(ivv, iusg))
 
 def initiate():
     global cidx

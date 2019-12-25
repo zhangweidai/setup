@@ -52,8 +52,8 @@ def genUlt():
             seen.append(c_close)
             if len(seen) > length:
                 change1year = round(c_close/seen[i-length],3)
-                if change1year > 2.5:
-                    change1year = 2.5
+                if change1year > 3.2:
+                    change1year = 3.2
                 changes.append(change1year)
 
         try:

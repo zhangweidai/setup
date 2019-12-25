@@ -73,6 +73,7 @@ def getMCDiv(astock):
     return ["NA", 3999]
 
 def getMCRank(astock):
+    return getFrom("latestmc", astock)
     try:
         return getMCDiv(astock)[1]
     except:
