@@ -75,12 +75,12 @@ def getp(name, override="pkl"):
 
 import atexit
 gsave = False
+gsavedir = None
 
 @atexit.register
 def goodbye():
     if getpd:
         print("\n---pickle report---")
-
 
     savedSort = SortedSet()
     for name in getpd:
@@ -94,17 +94,22 @@ def goodbye():
         modificationTime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(dat))
         print("Modification time {} : {}".format(name, modificationTime))
 
+
     print ("\nSaved : ")
     for name in savedd:
         print(name)
 
-    if not gsave:
+    setp(getpd, "getpd")
+
+    if not gsave or gsavedir:
         return
 
     from shutil import copyfile
     for save in getpd:
         path = getPath("pkl/{}.pkl".format(save))
         newpath = getPath("pkl2/{}.pkl".format(save))
+        if gsavedir:
+            newpath = "{}/{}.pkl".format(gsavedir, save)
         copyfile(path, newpath)
 
 savedd = set()
