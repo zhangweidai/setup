@@ -5,6 +5,11 @@ import table_print
 import statistics
 import os
 from sortedcontainers import SortedSet
+# mc 30.00B to 1.54T
+# mc 7.5B to 30.00B 
+# mc 2.7B to 7.5B
+# mc 0 to 2.7B 
+
 
 #start = 37
 start = 107
@@ -38,11 +43,11 @@ def sortedSetToRankDict(saveas, sset, reverse=False, printdata = False):
     if reverse:
         for i, pair in enumerate(reversed(sset)):
             astock = pair[1]
-            sort[astock] = i
+            sort[astock] = i + 1
     else:
         for i, pair in enumerate(sset):
             astock = pair[1]
-            sort[astock] = i
+            sort[astock] = i + 1
     z.setp(sort, saveas, printdata=printdata)
 
 
@@ -81,39 +86,38 @@ def setVolRankDict():
     sset = SortedSet()
     sset1 = SortedSet()
     for astock in stocks:
-        try:
-            rank = getMCRank(astock)
-            if rank > 1000:
-                continue
-
-        except:
-            continue
-
-#        if len(astock) != 4:
+#        try:
+#            rank = getMCRank(astock)
+#            if rank > 1000:
+#                continue
+#        except:
 #            continue
-        
+
         avg = list()
         for i, arow in enumerate(getRows(astock, dates[-117])):
-            avg.append(int(arow['Volume']))
-            if i > 10:
+            try:
+                avg.append(int(arow['Volume']))
+                if i > 10:
+                    break
+            except:
                 break
         try:
-            avgv = statistics.mean(avg)
-            if avgv > 100099:
-                sset1.add((avgv, astock))
-                if len(sset1) > 30:
-                    sset1.remove(sset1[-1])
+            avgv = round(statistics.mean(avg))
+#            if avgv > 100099:
+#                sset1.add((avgv, astock))
+#                if len(sset1) > 30:
+#                    sset1.remove(sset1[-1])
             sset.add((avgv, astock))
-            if len(sset) > 30:
-                sset.remove(sset[0])
+#            if len(sset) > 30:
+#                sset.remove(sset[0])
         except:
             pass
 
-    z.setp(sset, "hvollrank", True)
-    z.setp(sset1, "hvollrank1", True)
+#    z.setp(sset, "hvollrank", True)
+    sortedSetToRankDict("voldic", sset, reverse=True)
+#    z.setp(sset1, "hvollrank1", True)
 #    for pair in reversed(sset):
 #        print("pair : {}".format( pair ))
-
 
 def getPrice(astock, date = dates[-1], openp=False):
     year = date.split("-")[0]
@@ -210,6 +214,8 @@ def getDropScore(astock, startd, length):
             change5 = c_close/daysAgoValue
             changes.append(change5)
 
+    if not changes:
+        return ""
     minc = min(changes)
     ret = "{}{}".format(dayone, z.percentage(round(minc,4)))
     getDropScore.cache[astock][startd] = ret
@@ -256,12 +262,37 @@ def getOrder(astock):
         return "NA"
     return orders[astock][0]
 
+dic = dict()
+def getFrom(name, astock, default=0):
+#    if astock == "MSFT":
+#        bar =  dic[name][astock]
+#        print("bar : {}".format( bar ))
+    try:
+        return dic[name][astock]
+    except:
+        if name not in dic.keys():
+            dic[name] = z.getp(name)
+            try:
+                return dic[name][astock]
+            except:
+                pass
+    return default
+
+def getRsi(ups, downs):
+    total = len(ups) + len(downs) + 1
+    m1 = sum(ups)/total
+    m2 = sum(downs)/total
+    return round(100-(100/(1+ (m1/m2))),1)
+
+
+
 #print (getPrice("KO", "2019-01-09"))
 #
 #exit()
 HIGHEST = 10000
+dict2 = None
 def single(value, avgOneYear):
-    global torys, mine, tory, prob_discount
+    global torys, mine, tory, prob_discount, dict2
 
     if type(value) is tuple:
         astock = value[1]
@@ -277,8 +308,16 @@ def single(value, avgOneYear):
     high = 0
     mins = list()
     c_close = None
+    rup = list()
+    rdown = list()
+    prev = None
+
     for i, row in enumerate(getRows(astock, dates[-1*start])):
-        c_open = float(row['Open'])
+        try:
+            c_open = float(row['Open'])
+        except:
+            return
+
         if not firstPrice:
             firstPrice = c_open
         c_close = float(row[z.closekey])
@@ -298,6 +337,15 @@ def single(value, avgOneYear):
             if c_close < lowFromHigh:
                 lowFromHigh = c_close
 
+        if i > start - 13:
+            change = round(c_close/prev,5)
+            if change > 1.0:
+                rup.append(change)
+            else:
+                rdown.append(change)
+
+        prev = c_close
+
         seen.append(c_close)
         if len(seen) >= daysAgo5:
             daysAgoValue = seen[i-daysAgo5]
@@ -305,6 +353,11 @@ def single(value, avgOneYear):
             avg5Change.append(change5)
             if change5 < 1:
                 mins.append(change5)
+
+    if not c_close:
+        return
+
+    rsi = getRsi(rup, rdown)
 
     y1w2, y1m2, y1l, y1l2 = getYearly2(astock)
 
@@ -333,10 +386,12 @@ def single(value, avgOneYear):
         except Exception as e:
             z.trace(e)
             exit()
-            
 
-    mindrop = round(statistics.mean(mins) * c_close,2)
-    maxdrop = round(min(mins) * c_close,2)
+    mindrop = "NA"
+    maxdrop = "NA"
+    if mins:
+        mindrop = round(statistics.mean(mins) * c_close,2)
+        maxdrop = round(min(mins) * c_close,2)
 
     d13_30 = getDropScore(astock, "2013-03-19", 30)
     d17_45 = getDropScore(astock, "2017-05-25", 45)
@@ -367,6 +422,21 @@ def single(value, avgOneYear):
         disc = prob_discount[astock] 
     except:
         disc = ""
+
+    try:
+        y1wm2 = round(dict2[astock],2)
+    except:
+        y1wm2 = "NA"
+
+    try:
+        volr = single.voldic[astock]
+    except:
+        try:
+            single.voldic = z.getp("voldic")
+            volr = single.voldic[astock]
+        except:
+            volr = "NA"
+
     values = [
         ("Stock", inPortfolio(astock)),
         ("Name", name),
@@ -378,9 +448,12 @@ def single(value, avgOneYear):
         (fromtop, (lowFromHigh/high)),
         (fromtopgain, (c_close/lowFromHigh)),
         ("d13_30", d13_30),
-        ("d17_45", d17_45),
         ("d18_64", d18_64),
-        ("mc", mc),
+        ("rsi", rsi),
+        ("rsiid", getFrom("rsi_indicator_dic", astock)),
+        ("fcf", getFrom("fcfdic", astock)),
+        ("mc", getFrom("latestmc", astock, "")),
+        ("volr", volr),
         ("div", div),
         ("y1w", y1w2),
         ("y1m", y1m2),
@@ -431,6 +504,7 @@ def multiple(stocks, title = None):
         try:
             single(value, avgOneYear)
         except Exception as e:
+            z.trace(e)
             if type(value) is tuple:
                 astock = value[1]
             else:
@@ -453,13 +527,14 @@ import util
 if __name__ == '__main__':
     import argparse
 
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', default="default")
     parser.add_argument('--live', default=False)
     parser.add_argument('helpers', type=str, nargs='?', default = [])
     args = parser.parse_args()
+    savedhelper = None
     if args.helpers:
+        savedhelper = args.helpers
         args.helpers = args.helpers[0].upper()
 
     portFolioValue.dict = z.getp("ports")
@@ -469,6 +544,7 @@ if __name__ == '__main__':
     tory = z.getp("tory")
     mine = z.getp("mine")
     prob_discount = z.getp("prob_down_5_10")
+    dict2 = z.getp("y1wm2");
     getDropScore.cache = z.getp("newdropcache")
     if getDropScore.cache is None:
         getDropScore.cache = defaultdict(dict)
@@ -478,9 +554,19 @@ if __name__ == '__main__':
 
     if args.mode == "special":
 #        setVolRankDict()
-        multiple("y1l2_big")
-        multiple("y1l2_small")
+#        multiple("y1wm2_big")
+#        multiple("y1wm2_small")
+
+        multiple("worst_smallcalp")
+        multiple("best_smallcalp")
+#        multiple("y1l2_big")
+#        multiple("y1l2_small")
         table_print.initiate()
+        exit()
+
+    if args.mode == "single":
+        multiple([savedhelper.upper()], "single")
+#        table_print.initiate()
         exit()
 
     if args.mode == "owned":
@@ -491,6 +577,11 @@ if __name__ == '__main__':
 
     if "order" in args.mode:
         multiple(orders.keys(), title = "Orders")
+#        table_print.initiate()
+        exit()
+
+    if "benchmark" in args.mode:
+        multiple(z.getEtfList(forEtfs=True), title = "Standard ETFS")
         table_print.initiate()
         exit()
 
@@ -502,14 +593,19 @@ if __name__ == '__main__':
         exit()
         
     if "notes" in args.mode:
-        multiple(['CLX', 'MTN', 'NOW', 'SGEN', 'TGT', "IBB", "IDA", "IGM", "IHI", "MTUM", "PEP", "PLCE"], title = "notes")
-        multiple("newstuff")
-        multiple("probs_added_up")
-        table_print.initiate()
+#        multiple(['NVMI', 'CASS', 'SP', 'RILY', 'GTY', "CKH", "CMCO", "CNXN", "BFS", "WMK", "KOP", "CENT", "LORL", "TTEC", "MTSC"], title = "fidelity_s1")
+#        multiple(['ADES', 'MNLO', 'QTRX', 'REGI', 'SRRK'])
+        multiple(['DHI'])
+#        multiple(['CLX', 'MTN', 'NOW', 'SGEN', 'TGT', "IBB", "IDA", "IGM", "IHI", "MTUM", "PEP", "PLCE"], title = "notes")
+#        multiple("newstuff")
+#        multiple("probs_added_up")
+#        table_print.initiate()
         exit()
 
     if "mc" in args.mode:
-        items = z.getp("mcsortedlist")
+        wlp_sorted_mc = z.getp("wlp_sorted_mc")
+        items = wlp_sorted_mc[dates[-252]]
+        items = sorted(items, reverse=True)
         multiple(items[:30], title = "MC1")
         multiple(items[30:60], title = "MC2")
         multiple(items[210:240], title = "MC1")

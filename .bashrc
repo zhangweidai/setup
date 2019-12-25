@@ -1,7 +1,7 @@
 # ~/.bashrc: executed by bash(1) for non-login shells.
 # see /usr/share/doc/bash/examples/startup-files (in the package bash-doc)
 # for examples
-
+# find -name -type f -exec cp '{}' inner/ \;
 # If not running interactively, don't do anything
 case $- in
     *i*) ;;
@@ -127,6 +127,7 @@ alias well='cd ~/setup2/python/zen; py bles.py'
 alias welltf='python3 ~/setup/python/tf_check.py'
 alias gopf='cd /mnt/c/Program\ Files'
 alias gomc='cd /mnt/c/Users/pzhang'
+alias gomc2='cd /mnt/c/Users/Zoe'
 export DL='/mnt/c/Users/zoe/Documents'
 export ANDROID_HOME='/mnt/c/Users/pzhang/AppData/Local/Android/Sdk'
 alias go='source ~/setup/bin/go.bash'
@@ -155,7 +156,7 @@ alias go2="cd /mnt/c/Users/Zoe/Documents/setup/java/HelloWorld/app/src/main/java
 alias gof="cds; cd python/zen_dump/final"
 alias goh="cds; cd python/zen_dump/holdings"
 alias god="cds; cd python/zen_dump"
-alias goc="cds; cd python/zen_dump/historical"
+alias goc="cds; cd python/zen_dump/split"
 alias gop="cds; cd python/zen_dump/pkl"
 alias goj="cds; cd java;"
 alias gok="cds; cd kotlin;"
@@ -177,7 +178,10 @@ alias gbuy="py gbuy.py"
 alias owned="py buy.py --mode=owned"
 alias order="py buy.py --mode=order"
 alias mc="py buy.py --mode=mc"
+alias bench="py buy.py --mode=benchmark"
 alias live="py buy.py --live=True"
+alias single="py buy.py --mode=single"
+alias special="py buy.py --mode=special"
 alias notes="py buy.py --mode=notes"
 alias gbuy2="py zen.py gbuy2"
 alias well='cd ~/gits/manim; python -m manim example_scenes.py SquareToCircle -pl; '

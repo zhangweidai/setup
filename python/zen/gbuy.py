@@ -84,7 +84,11 @@ if __name__ == '__main__':
                 continue
             missed = 0
             with open(apath, "a") as f:
+                first = True
                 for idx in df.index:
+                    if first:
+                        first = False
+                        continue
                     cdate = str(idx.to_pydatetime()).split(" ")[0]
                     opend = df.at[idx, "Open"]
                     high = df.at[idx, "High"]

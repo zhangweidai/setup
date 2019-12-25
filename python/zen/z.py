@@ -85,7 +85,10 @@ def goodbye():
     savedSort = SortedSet()
     for name in getpd:
         path = getPath("{}/{}.pkl".format("pkl", name))
-        savedSort.add((os.stat(path).st_mtime, name))
+        try:
+            savedSort.add((os.stat(path).st_mtime, name))
+        except:
+            pass
 
     for dat, name in savedSort:
         modificationTime = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(dat))

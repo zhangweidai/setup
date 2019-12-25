@@ -34,13 +34,14 @@ def getItems():
 
 mm = dict()
 titles = dict()
+dates = z.getp("dates")
 def printTable(tablename ="default"):
     global cidx, mm
     headerWidths = defaultdict(int)
 
     if cidx not in titles:
         titles[cidx] = tablename
-    print ("\n=== " , titles[cidx] , "===")
+    print ("\n=== " , titles[cidx] , dates[-1], "===")
 
     # determine headerWidths
     dics = defaultdict(list)

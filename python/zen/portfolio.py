@@ -1,5 +1,6 @@
 # Import pandas
 import pandas as pd
+import buy
 import os
 import util
 #"Account Name/Number","Symbol","Description","Quantity","Last Price","Last Price Change","Current Value","Today's Gain/Loss Dollar","Today's Gain/Loss Percent","Total Gain/Loss Dollar","Total Gain/Loss Percent","Cost Basis Per Share","Cost Basis Total","Type"
@@ -186,6 +187,46 @@ import os
 second = False
 from sortedcontainers import SortedSet
 
+def getFidDumps():
+    import fnmatch
+    parentdir = "/mnt/c/Users/Zoe/Downloads"
+    if not os.path.exists(parentdir):
+        parentdir = "/mnt/c/Users/pzhang/Downloads"
+
+    listOfFiles = os.listdir(parentdir)
+    bar = SortedSet()
+    dic = dict()
+    for entry in listOfFiles:  
+        if "screener_resul" not in entry:
+            continue
+        fullpath = "{}/{}".format(parentdir, entry)
+        print("fullpath : {}".format( fullpath ))
+        xl = pd.ExcelFile(fullpath)
+        df = xl.parse(xl.sheet_names[0])
+        vals = df.columns.values
+#        print("vals : {}".format( vals[0] ))
+#        print("vals: {}".format( vals))
+#        print (list(vals).index("Symbol"))
+        cashidx =  list(vals).index("Free Cash Flow")
+#        syms = df[vals[0]].tolist()[1:]
+#        count = df[vals[4]].tolist()[1:]
+        for i, row in enumerate(df.values):
+            astock = row[0]
+            if type(astock) is float:
+                continue
+            if " " in astock or "/" in astock:
+                continue
+
+            fl = float(row[cashidx])
+            bar.add((fl, astock))
+            dic[astock] = fl
+
+    buy.sortedSetToRankDict("fcfdic", bar, reverse=True)
+    z.setp(dic, "fcfdic2")
+#
+#getFidDumps()
+#exit()
+
 def getFidelities():
     import fnmatch
     parentdir = "/mnt/c/Users/Zoe/Downloads"
@@ -262,7 +303,6 @@ def getSellStats(updating=False):
             change = round(cprice / lastSave[astock], 3)
             print("astock: {} {}".format( astock , z.percentage(change)))
     
-import buy
 def simple(path, dontknow, etfs, total):
     global ports, second, mine, tory, sset
 
@@ -363,7 +403,8 @@ def getPorts():
 
 
 if __name__ == '__main__':
-    getPorts()
+#    getPorts()
+    getFidDumps()
 #    import sys
 #    update = None
 #    try:

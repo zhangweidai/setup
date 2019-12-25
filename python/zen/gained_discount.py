@@ -7,7 +7,7 @@ import buy
 import statistics
 
 dates = z.getp("dates")
-years = -1*252*3
+years = -1*252*4
 start = dates[years]
 ago500 = dates[-504]
 ago200 = dates[-200]
@@ -29,6 +29,7 @@ def genUlt():
     avg30 = SortedSet()
     worst30c = SortedSet()
     prices = list()
+    saveme = dict()
     for idx, astock in enumerate(stocks):
 #        if astock != "NTDOY":
 #            continue
@@ -46,9 +47,6 @@ def genUlt():
             try:
                 c_close = float(row[z.closekey])
             except:
-                print("astock: {}".format( astock))
-                print("row : {}".format( row ))
-                print("i : {}".format( i ))
                 continue
 
             seen.append(c_close)
@@ -76,6 +74,10 @@ def genUlt():
         except Exception as e:
             y1m = "NA"
             y1w = "NA"
+        try:
+            saveme[astock] = min(changes[:-252]) + statistics.median(changes[:-252])
+        except:
+            pass
 
         try:
             mcrank = buy.getMCRank(astock)
@@ -93,6 +95,7 @@ def genUlt():
     z.setp(worst30c[:30], "worst30c")
     z.setp(worst30c[-30:], "best30c")
     z.setp(savedic, "annuals");
+    z.setp(saveme, "y1wm2");
 
 
 HIGHEST = 10000
@@ -276,8 +279,8 @@ def delstock(astock):
 
 if __name__ == '__main__':
 #    dosomething2()
-    dosomething3()
+#    dosomething3()
 #    dosomething()
-#    delstock("FOX")
-#    genUlt()
+#    delstock("CJ")
+    genUlt()
 

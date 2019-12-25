@@ -48,6 +48,7 @@ def parsePage(astock, update=False):
     pe = None
     beta = None
     change = None
+    fcf = None
 
     for line in live:
         line = line.strip()
@@ -72,6 +73,14 @@ def parsePage(astock, update=False):
                 except Exception as e:
                     pass
 
+            elif nextone and "freeCashflow" in aline:
+                try:
+                    if not fcf:
+                        fcf = round(int(more[i+2].split(",")[0])/billion,5)
+                    return (cap, beta, pe, dividend, fcf)
+                except Exception as e:
+                    pass
+
             elif nextone and "trailingAnnualDividendYield" in aline:
                 try:
                     if not dividend:
@@ -88,13 +97,13 @@ def parsePage(astock, update=False):
             elif nextone and "trailingPE" in aline:
                 try:
                     pe=float(more[i+2].split(",")[0])
-                    return (cap, beta, pe, dividend)
+                    #return (cap, beta, pe, dividend, fcf)
                 except:
                     pass
 #                    return True
 
     if cap:
-        return (cap, beta, pe, dividend)
+        return (cap, beta, pe, dividend, fcf)
     print ("didint find cap for {}".format(astock))
     return True
 
@@ -233,7 +242,7 @@ def saveDivs():
     #months = ["Mar"]
     for month in months:
         for i in range(1,30):
-
+    
             # too late
             if month == "Mar" and i <= datetime.datetime.today().day + 1:
                 continue
@@ -469,7 +478,8 @@ if __name__ == '__main__':
 #    saveJsonData(z.getp("listofstocks"))
 #    remaining()
 
-    genMCRanking()
+    print (parsePage("MSFT"))
+#    genMCRanking()
 #    runmain()
 #    zen.diffOuts()
 
