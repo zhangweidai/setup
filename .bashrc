@@ -181,9 +181,11 @@ alias mc="py buy.py --mode=mc"
 alias bench="py buy.py --mode=benchmark"
 alias live="py buy.py --live=True"
 alias single="py buy.py --mode=single"
+alias multiple="py buy.py --mode=multiple"
 alias special="py buy.py --mode=special"
 alias notes="py buy.py --mode=notes"
 alias gbuy2="py zen.py gbuy2"
+alias gbuy2="py gbuy.py --skips=True"
 alias well='cd ~/gits/manim; python -m manim example_scenes.py SquareToCircle -pl; '
 alias well='cd ~/gits/manim; python -m manim example_scenes.py AAA -pl; '
 alias well2='wsl-open /home/zoe/gits/manim/media/videos/example_scenes/2160p15/SquareToCircle.mp4'

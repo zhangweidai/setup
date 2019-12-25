@@ -42,17 +42,25 @@ if __name__ == '__main__':
     import update_history
     import csv
     import datetime
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--skips', default=False)
+    args = parser.parse_args()
+
     try:
         latestprices = dict()
         problems = [] 
         skips = list()
-#        if args.skips:
-#            skips = z.getp("problems")
+        if args.skips:
+            skips = z.getp("problems")
+            print("skips : {}".format( skips ))
         stocks = z.getp("listofstocks")
         import datetime
         now = datetime.datetime.now()
         missed = 0
         for astock in stocks:
+            if astock in skips:
+                continue
             print("astock : {}".format( astock ))
 
             apath = z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, str(now.year)))
@@ -80,6 +88,9 @@ if __name__ == '__main__':
                 print("problem downloading: {}".format( astock))
                 missed += 1
                 if missed > 5:
+                    problems.append(astock)
+                    print("problems : {}".format( problems ))
+                    z.setp(problems, "problems")
                     exit()
                 continue
             missed = 0
@@ -108,7 +119,8 @@ if __name__ == '__main__':
         gained_discount.dosomething()
         gained_discount.genUlt()
 
-        print("problems : {}".format( problems ))
+#        print("problems : {}".format( problems ))
+#        z.setp(problems, "problems")
 #            generateWorst30()
 #            import buyat
 #            buyat.runmain()

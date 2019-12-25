@@ -483,7 +483,7 @@ def single(value, avgOneYear):
 #exit()
 
 problems = set()
-def multiple(stocks, title = None):
+def multiple(stocks, title = None, helpers = True):
     global problems
 
     if type(stocks) is str:
@@ -498,7 +498,7 @@ def multiple(stocks, title = None):
                 astock = value[1]
             else:
                 astock = value
-            if not astock.startswith(args.helpers):
+            if not astock.startswith(args.helpers) and helpers:
                 continue
 
         try:
@@ -526,7 +526,6 @@ args = None
 import util
 if __name__ == '__main__':
     import argparse
-
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', default="default")
     parser.add_argument('--live', default=False)
@@ -566,6 +565,12 @@ if __name__ == '__main__':
 
     if args.mode == "single":
         multiple([savedhelper.upper()], "single")
+#        table_print.initiate()
+        exit()
+
+    if args.mode == "multiple":
+        print("savedhelper: {}".format( savedhelper))
+        multiple(savedhelper, helpers=False)
 #        table_print.initiate()
         exit()
 

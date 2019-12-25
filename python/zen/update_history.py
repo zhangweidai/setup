@@ -25,10 +25,10 @@ def getDataFromYahoo(astock, cdate):
         except Exception as e:
 #            z.trace(e)
             problems.append(astock)
-            if len(problems)>30:
-                print("didn't finish problems: {}".format( problems))
+#            if len(problems)>30:
+#                print("didn't finish problems: {}".format( problems))
 #                z.setp(problems, "problems")
-                raise SystemExit
+#                raise SystemExit
             return None
     
     for idx in df.index:
