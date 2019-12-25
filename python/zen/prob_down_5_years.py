@@ -1,5 +1,6 @@
 import z
 import buy
+# starting 2014 and looking at 1 year intervals, what's the probability you'd be up at least 3 percent
 close = z.closekey
 def prob():
     global close
@@ -25,8 +26,11 @@ def prob():
     prob_down = dict()
     problems = set()
     monDict = dict()
-    print("sdate: {}".format( starting))
+
     for idx, astock in enumerate(stocks):
+#        if astock != "WM":
+#            continue
+
         if not idx % 100:
             print("idx: {}".format( idx))
 

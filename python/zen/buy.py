@@ -282,6 +282,8 @@ def getRsi(ups, downs):
     total = len(ups) + len(downs) + 1
     m1 = sum(ups)/total
     m2 = sum(downs)/total
+    if m2 == 0:
+        return 100
     return round(100-(100/(1+ (m1/m2))),1)
 
 
