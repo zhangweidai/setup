@@ -184,6 +184,7 @@ alias single="py buy.py --mode=single"
 alias multiple="py buy.py --mode=multiple"
 alias special="py buy.py --mode=special"
 alias notes="py buy.py --mode=notes"
+alias rands="py buy.py --mode=rand"
 alias gbuy2="py zen.py gbuy2"
 alias gbuy2="py gbuy.py --skips=True"
 alias well='cd ~/gits/manim; python -m manim example_scenes.py SquareToCircle -pl; '

@@ -28,7 +28,17 @@ def getItems():
 
     ret = SortedSet()
     for item in store.items[cidx]:
-        ret.add((item[currentsort], item))
+        bar = item[currentsort]
+        if type(bar) is str:
+            try:
+                bar = float(bar)
+            except:
+                try:
+                    bar = float(bar[:-1])
+                except:
+                    bar = 0
+                    pass
+        ret.add((bar, item))
 
     realret = list()
     for item in ret:
@@ -38,8 +48,9 @@ def getItems():
 mm = dict()
 titles = dict()
 dates = z.getp("dates")
+clist = list()
 def printTable(tablename ="default"):
-    global cidx, mm, ivv, iusg
+    global cidx, mm, ivv, iusg, clist
     headerWidths = defaultdict(int)
 
     if cidx not in titles:
@@ -48,7 +59,6 @@ def printTable(tablename ="default"):
 
     # determine headerWidths
     dics = defaultdict(list)
-    print("cidx: {}".format( cidx))
     for items in store.items[cidx]:
         for j, individual in enumerate(items):
             ctitle = store.title[j]
@@ -89,11 +99,20 @@ def printTable(tablename ="default"):
         bar = "{:>" + "{}".format(width) + "}"
         headeritems.append(bar.format(ctitle[:width]))
 
+    print("cidx: {} \tSorting By : '{}' ({})".format( cidx, store.title[currentsort], currentsort))
     print(Fore.GREEN + Style.BRIGHT + "  ".join(headeritems) + Style.RESET_ALL)
 
+#    try:
+#        bar = getItems()
+#        print("bar : {}".format( bar ))
+#    except Exception as e:
+#        z.trace(e)
+    clist = list()
     for x,items in enumerate(getItems()):
         saveme = list()
         have = False
+
+        clist.append(items[0].replace("*", ""))
 
         if not x % 40 and x > 0:
             print(Fore.GREEN + Style.BRIGHT + "  ".join(headeritems) + Style.RESET_ALL)
@@ -177,6 +196,7 @@ def printTable(tablename ="default"):
 def initiate():
     global cidx
     global currentsort
+    global clist
     import readchar
     import os
 
@@ -198,6 +218,27 @@ def initiate():
                 cidx += 1
                 if cidx not in store.items:
                     cidx = 0
+                os.system("clear")
+                printTable()
+
+            elif key == "f":
+                try:
+                    idx = int(readchar.readkey())
+                except: 
+                    idx = 0
+
+                ticker = clist[idx]
+                print("ticker : {}".format( ticker ))
+                webpage = "https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/research?symbol={}&appCode=".format(ticker)
+                os.system("powershell.exe /c start firefox.exe {}".format(webpage))
+
+            elif key == "=":
+                currentsort = currentsort + 1
+                os.system("clear")
+                printTable()
+
+            elif key == "-":
+                currentsort = currentsort - 1
                 os.system("clear")
                 printTable()
 

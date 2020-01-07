@@ -226,6 +226,42 @@ def getFidDumps():
 #
 #getFidDumps()
 #exit()
+import regen_stock
+def process_adr():
+    import fnmatch
+    parentdir = "/mnt/c/Users/Zoe/Downloads"
+    if not os.path.exists(parentdir):
+        parentdir = "/mnt/c/Users/pzhang/Downloads"
+
+    listOfFiles = os.listdir(parentdir)
+    bar = SortedSet()
+    dic = dict()
+    stocks = list()
+    for entry in listOfFiles:  
+        if "adr" not in entry:
+            continue
+        fullpath = "{}/{}".format(parentdir, entry)
+        print("fullpath : {}".format( fullpath ))
+        xl = pd.ExcelFile(fullpath)
+        df = xl.parse(xl.sheet_names[0])
+        vals = df.columns.values
+        for i, row in enumerate(df.values):
+            astock = row[0]
+            if type(astock) is float:
+                continue
+            if " " in astock or "/" in astock:
+                continue
+            stocks.append(astock)
+#            try:
+#                regen_stock.process(astock)
+#            except:
+#                print("astock: {}".format( astock))
+#                continue
+
+    print (" ".join(stocks))
+    print("stocks: {}".format( stocks))
+#process_adr()
+#exit()
 
 def getFidelities():
     import fnmatch
@@ -321,13 +357,18 @@ def simple(path, dontknow, etfs, total):
             continue
 
         if len(astock) >= 1 and astock not in skips:
+
+            try:
+                c_value = float(row['Current Value'].strip("$"))
+            except:
+                continue
             
             if second:
                 tory.append(astock)
             else:
                 mine.append(astock)
 
-            c_value = float(row['Current Value'].strip("$"))
+
             total += c_value
 
             if not isetf:
@@ -374,9 +415,9 @@ def getPorts():
     print("total2 : {}".format( total2 ))
     total += total2
 
-#    z.setp(ports,"ports")
-#    z.setp(mine, "mine")
-#    z.setp(tory, "tory")
+    z.setp(ports,"ports")
+    z.setp(mine, "mine")
+    z.setp(tory, "tory")
     print("dontknow : {}".format( dontknow ))
 
     skeys = sorted(sset.keys())
@@ -403,8 +444,8 @@ def getPorts():
 
 
 if __name__ == '__main__':
-#    getPorts()
-    getFidDumps()
+    getPorts()
+#    getFidDumps()
 #    import sys
 #    update = None
 #    try:
@@ -414,7 +455,7 @@ if __name__ == '__main__':
 #        pass
 #
 #    getSellStats(updating=update)
-#    vals = fidelity(forselling)
+#    vals = fidelity()
 #    print("vals : {}".format( vals ))
 #    print("vals : {}".format( z.percentage(vals[0])))
 #    print("port: {}".format(port))

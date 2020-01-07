@@ -41,6 +41,7 @@ def num_of_days_checks():
             i += 1
         if i < 218:
             print("astock: {} {} ".format( astock, i))
+
 def listofs():
     stocks = z.getp("listofstocks")
     etfs = z.getEtfList()
@@ -51,8 +52,8 @@ def listofs():
         listofs.append(astock)
     z.setp(listofs, "listofs")
 
-listofs()
-exit()
+#listofs()
+#exit()
 
 if __name__ == '__main__':
 

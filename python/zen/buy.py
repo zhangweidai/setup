@@ -5,11 +5,44 @@ import table_print
 import statistics
 import os
 from sortedcontainers import SortedSet
+now_year = 2020
 # mc 30.00B to 1.54T
 # mc 7.5B to 30.00B 
 # mc 2.7B to 7.5B
 # mc 0 to 2.7B 
+def addSorted(title, val, astock, keeping = 60):
+    discardlocation = int(keeping/2)
+    addSorted.dic[title].add((val, astock))
+    if len(addSorted.dic[title]) > keeping:
+        addSorted.dic[title].discard(addSorted.dic[title][discardlocation])
 
+def addSortedLow(title, val, astock, keeping = 30):
+    addSorted.dic[title].add((val, astock))
+    if len(addSorted.dic[title]) > keeping:
+        addSorted.dic[title].pop()
+
+def addSortedHigh(title, val, astock, keeping = 30):
+    addSorted.dic[title].add((val, astock))
+    if len(addSorted.dic[title]) > keeping:
+        addSorted.dic[title].pop(0)
+
+
+addSorted.dic = defaultdict(SortedSet)
+
+def getSorted(title):
+    return addSorted.dic[title]
+
+#for b in range(100):
+#    addSorted("blah", b, "KO")
+#    addSortedHigh("blahh", b, "KO")
+#    addSortedLow("blahl", b, "KO")
+#bar = getSorted("blah")
+#print("bar : {}".format( bar ))
+#bar = getSorted("blahh")
+#print("bar : {}".format( bar ))
+#bar = getSorted("blahl")
+#print("bar : {}".format( bar ))
+#exit()
 
 #start = 37
 start = 107
@@ -158,8 +191,7 @@ def getYears(date):
     away_year = int(date.split("-")[0])
     dates = z.getp("dates")
     date_away = dates[-1]
-    now_year = int(date_away.split("-")[0])
-    while int(away_year)  != now_year:
+    while int(away_year) != now_year:
         yield away_year
         away_year += 1
     yield away_year
@@ -287,6 +319,18 @@ def getRsi(ups, downs):
         return 100
     return round(100-(100/(1+ (m1/m2))),1)
 
+lastosDate = None
+lastosDate2 = None
+#def getOSChange(astock):
+#    global lastosDate, lastosDate2
+#    try:
+#        datez = getFrom("wlp_dict", astock)
+#        if not lastosDate:
+#            datezl = list(datez)
+#            lastosDate = datezl[-1] 
+#            lastosDate = datezl[-400] 
+#        mc, dr, out, ebit = datez[lastosDate]
+#    except:
 
 
 #print (getPrice("KO", "2019-01-09"))
@@ -357,6 +401,9 @@ def single(value, avgOneYear):
             if change5 < 1:
                 mins.append(change5)
 
+    if not avg5Change:
+        return
+
     if not c_close:
         return
 
@@ -393,8 +440,9 @@ def single(value, avgOneYear):
     mindrop = "NA"
     maxdrop = "NA"
     if mins:
-        mindrop = round(statistics.mean(mins) * c_close,2)
-        maxdrop = round(min(mins) * c_close,2)
+        mean = statistics.mean(mins)
+        mindrop = round(( mean + mean + min(mins))/3 * c_close, 2)
+#        maxdrop = round(min(mins) * c_close,2)
 
     d13_30 = getDropScore(astock, "2013-03-19", 30)
     d17_45 = getDropScore(astock, "2017-05-25", 45)
@@ -440,35 +488,63 @@ def single(value, avgOneYear):
         except:
             volr = "NA"
 
+    try:
+        dr, ebit, r_value, slope = getFrom("wlp_lasts", astock)
+    except:
+        dr = "NA"
+        ebit = "NA"
+        r_value = "NA"
+        slope = "NA"
+
+
+    try:
+        mc_size = getFrom("latest_mc", astock)
+        fcf_mc = getFrom("fcfdic2", astock)
+        fcf_mc = round((fcf_mc/mc_size)*10,2)
+    except:
+        fcf_mc = "NA"
+        mcc = "NA"
+
+    try:
+        yearagomc_size = getFrom("yearagomc", astock)
+        mcc = round(mc_size/yearagomc_size,3)
+    except:
+        mcc = 0
+
+#        (fromtop, (lowFromHigh/high)),
+#        (fromtopgain, (c_close/lowFromHigh)),
+#        ("fcf", getFrom("fcfdic", astock)),
+#        ("ebit", ebit),
     values = [
         ("Stock", inPortfolio(astock)),
-        ("Name", name),
         ("Price", c_close),
-        ("avg5", z.avg(avg5Change)),
         ("min5", min(avg5Change)),
         ("last5", avg5Change[-1]),
         (lastchange, (c_close/firstPrice)),
-        (fromtop, (lowFromHigh/high)),
-        (fromtopgain, (c_close/lowFromHigh)),
+        ("mc", getFrom("latestmc", astock, "")),
         ("d13_30", d13_30),
         ("d18_64", d18_64),
+        ("probup", getLongProbDown(astock)),
+        ("div", div),
+        ("y1l", y1l),
+        ("y1l2", y1l2),
+        ("y1m", y1m2),
+        ("y1w", y1w2),
         ("rsi", rsi),
         ("rsiid", getFrom("rsi_indicator_dic", astock)),
-        ("fcf", getFrom("fcfdic", astock)),
-        ("mc", getFrom("latestmc", astock, "")),
+        ("fcf", fcf_mc),
+        ("mcc", mcc),
+        ("dr", dr),
+        ("os_r_value", r_value),
+        ("os_slope", slope),
         ("volr", volr),
-        ("div", div),
-        ("y1w", y1w2),
-        ("y1m", y1m2),
-        ("y1l2", y1l2),
-        ("y1l", y1l),
-        ("probup", getLongProbDown(astock)),
         ("discount", disc),
         ("MeanDrop", mindrop),
-        ("MaxDrop", maxdrop),
         ("Owned", portFolioValue(astock)),
         ("Orders", orderstr),
-        ("OrderChange", orderchange)
+        ("OrderChange", orderchange),
+        ("avg5", z.avg(avg5Change)),
+        ("Name", name)
         ]
 
     if args.live:
@@ -477,7 +553,7 @@ def single(value, avgOneYear):
         values.append(("Last", (c_close/seen[-2])))
 
     table_print.store(values)
-    table_print.use_percentages = ["avg5", "min5", "last5", fromtop, lastchange, fromtopgain, "OrderChange"]
+    table_print.use_percentages = ["avg5", "min5", "last5", fromtop, lastchange, fromtopgain, "OrderChange", "mcc", "volc"]
 
 #    if args.live:
     table_print.use_percentages.append("Last")
@@ -486,8 +562,10 @@ def single(value, avgOneYear):
 #exit()
 
 problems = set()
-def multiple(stocks, title = None, helpers = True):
+def multiple(stocks, title = None, helpers = True, runinit = False):
     global problems
+    if runinit:
+        init()
 
     if type(stocks) is str:
         if not title:
@@ -525,13 +603,24 @@ def multiple(stocks, title = None, helpers = True):
     print ("Annual Change {}".format(yearone))
     print ("Problems {}".format(", ".join(problems)))
 
+def multiplep(title):
+    bar = z.getp(title)
+    barl = int(len(bar)/2)
+    multiple(bar[:-barl], helpers=False)
+    multiple(bar[barl:], helpers=False)
+    table_print.initiate()
+    exit()
+
 args = None
 import util
-if __name__ == '__main__':
+def init():
     import argparse
+    global companies, orders, torys, tory, mine, prob_discount, dict2, parser, args, savedhelper
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', default="default")
     parser.add_argument('--live', default=False)
+    parser.add_argument('--section', default=None)
     parser.add_argument('helpers', type=str, nargs='?', default = [])
     args = parser.parse_args()
     savedhelper = None
@@ -551,6 +640,11 @@ if __name__ == '__main__':
     if getDropScore.cache is None:
         getDropScore.cache = defaultdict(dict)
     getDropScore.cache = defaultdict(dict)
+
+
+if __name__ == '__main__':
+
+    init()
 
     z.online.online = args.live
 
@@ -573,7 +667,10 @@ if __name__ == '__main__':
 
     if args.mode == "multiple":
         print("savedhelper: {}".format( savedhelper))
-        multiple(savedhelper, helpers=False)
+        if args.section == "b":
+            multiplep(savedhelper)
+        else:
+            multiple(savedhelper, helpers=False)
 #        table_print.initiate()
         exit()
 
@@ -603,11 +700,14 @@ if __name__ == '__main__':
     if "notes" in args.mode:
 #        multiple(['NVMI', 'CASS', 'SP', 'RILY', 'GTY', "CKH", "CMCO", "CNXN", "BFS", "WMK", "KOP", "CENT", "LORL", "TTEC", "MTSC"], title = "fidelity_s1")
 #        multiple(['ADES', 'MNLO', 'QTRX', 'REGI', 'SRRK'])
-        multiple(['DHI'])
+        bar = "AAPL AXP BA CAT CSCO CVX DIS DOW GE GS HD IBM INTC JNJ JPM KO MCD MMM MRK MSFT NKE PFE PG TRV UNH UTX V VZ WMT XOM"
+        multiple(bar.split(" "))
+        bar = ['NGLOY', 'ABB', 'AEG', 'ADRNY', 'AKZOY', 'AMOV', 'AMX', 'ASML', 'AXAHY', 'AZN', 'BBD', 'BBL', 'BCH', 'BCS', 'BASFY', 'BHP', 'BNPQY', 'BP', 'BTI', 'EBR', 'CAJ', 'CEO', 'CHA', 'CHL', 'CRH', 'TCOM', 'CUK', 'DANOY', 'DEO', 'DTEGY', 'E', 'ERIC', 'FMS', 'FMX', 'GSK', 'HSBC', 'HDB', 'HEINY', 'HMC', 'IBN', 'IFNNY', 'INFY', 'ING', 'ITUB', 'IMBBY', 'IX', 'KB', 'KEP', 'KOF', 'LFC', 'LYG', 'MT', 'MUFG', 'NMR', 'NOK', 'NTES', 'NVO', 'NVS', 'PBR', 'PHG', 'PKX', 'PTR', 'PUBGY', 'PUK', 'REPYY', 'RHHBY', 'VALE', 'RIO', 'RELX', 'RYAAY', 'BSAC', 'SAP', 'SBS', 'SHG', 'SKM', 'SMFG', 'SNE', 'SNN', 'SNP', 'SNY', 'SSL', 'STM', 'EQNR', 'TEF', 'TLK', 'TM', 'TOT', 'TS', 'TSM', 'VIV', 'UL', 'UN', 'VOD', 'WBK', 'WIT', 'WMMVY', 'FERGY', 'WPP', 'BBVA', 'IHG', 'NGG', 'BIDU', 'EDU', 'CS', 'MFG', 'MLCO', 'SAN', 'RBS', 'CHT', 'GLPG', 'EC', 'BUD', 'BSBR', 'HTHT', 'TAL', 'GRFS', 'BBDO', 'WUBA', 'ABEV', 'WB', 'JD', 'BABA', 'LN', 'ZTO', 'BDXA', 'SE', 'IQ', 'ASX', 'PDD', 'TME']
+        multiple(bar)
 #        multiple(['CLX', 'MTN', 'NOW', 'SGEN', 'TGT', "IBB", "IDA", "IGM", "IHI", "MTUM", "PEP", "PLCE"], title = "notes")
 #        multiple("newstuff")
 #        multiple("probs_added_up")
-#        table_print.initiate()
+        table_print.initiate()
         exit()
 
     if "mc" in args.mode:

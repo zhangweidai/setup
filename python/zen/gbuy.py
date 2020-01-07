@@ -2,6 +2,23 @@ import z
 import buy
 import os
 from sortedcontainers import SortedSet
+year = "2020"
+
+import glob
+def setlistofstocks():
+    path = z.getPath("split/*/*{}.csv".format(year))
+    files = glob.glob(path)
+    stocks = [ os.path.splitext(os.path.basename(entry))[0].replace("_{}".format(year), "") for entry in files ]
+    z.setp(stocks, "listofstocks")
+
+    etfs = z.getEtfList()
+    listofs = list()
+    for astock in stocks:
+        if astock in etfs:
+            continue;
+        listofs.append(astock)
+    z.setp(listofs, "listofs")
+
 
 def generateWorst30():
     dates = z.getp("dates")
@@ -47,6 +64,8 @@ if __name__ == '__main__':
     parser.add_argument('--skips', default=False)
     args = parser.parse_args()
 
+    setlistofstocks()
+
     try:
         latestprices = dict()
         problems = [] 
@@ -59,15 +78,18 @@ if __name__ == '__main__':
         now = datetime.datetime.now()
         missed = 0
         for astock in stocks:
+
             if astock in skips:
                 continue
-            print("astock : {}".format( astock ))
 
-            apath = z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, str(now.year)))
-            if not os.path.exists(apath):
+            apath = z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
+#            if not os.path.exists(apath):
+#                continue
+
+            try:
+                t = os.path.getmtime(apath)
+            except:
                 continue
-
-            t = os.path.getmtime(apath)
             csvdate = datetime.datetime.fromtimestamp(t)
             csvday = csvdate.day
             csvmonth = csvdate.month

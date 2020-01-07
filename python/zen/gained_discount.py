@@ -20,8 +20,12 @@ ago5 = dates[-13]
 close = z.closekey
 length = 252
 
-def genUlt():
-    stocks = z.getp("listofstocks")
+def genUlt(stocks = None):
+
+    allofthem = False
+    if not stocks:
+        stocks = z.getp("listofstocks")
+        allofthem = True
 #    ago500 = dates[-30]
     savedic = dict()
 
@@ -52,6 +56,7 @@ def genUlt():
             seen.append(c_close)
             if len(seen) > length:
                 change1year = round(c_close/seen[i-length],3)
+                bar = seen[i-length]
                 if change1year > 3.2:
                     change1year = 3.2
                 changes.append(change1year)
@@ -90,12 +95,13 @@ def genUlt():
 
         savedic[astock] = [y1w, y1m, y1l, y1l2]
 
-    z.setp(avg30[-30:], "avg30", printdata = True)
-    z.setp(avg30c[-30:], "avg30c", printdata = True)
-    z.setp(worst30c[:30], "worst30c")
-    z.setp(worst30c[-30:], "best30c")
-    z.setp(savedic, "annuals");
-    z.setp(saveme, "y1wm2");
+    if allofthem:
+        z.setp(avg30[-30:], "avg30")
+        z.setp(avg30c[-30:], "avg30c")
+        z.setp(worst30c[:30], "worst30c", True)
+        z.setp(worst30c[-30:], "best30c")
+        z.setp(savedic, "annuals");
+        z.setp(saveme, "y1wm2");
 
 
 HIGHEST = 10000
@@ -282,5 +288,6 @@ if __name__ == '__main__':
 #    dosomething3()
 #    dosomething()
 #    delstock("CJ")
+#    genUlt(['FAST'])
     genUlt()
 
