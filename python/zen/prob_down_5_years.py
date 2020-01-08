@@ -1,11 +1,25 @@
 import z
 import buy
+
 # starting 2014 and looking at 1 year intervals, what's the probability you'd be up at least 3 percent
+dates = z.getp("dates")
+yearago = dates[-112]
+print("yearago : {}".format( yearago ))
+
+def getetfChanges():
+    prices = list()
+    for row in buy.getRows("IVV", yearago):
+        prices.append(float(row[close]))
+    last = prices[-1]
+    changes = [ round(last / openp,3) for openp in prices[:-5] ]
+    return changes
+
 close = z.closekey
 def prob():
-    global close
+    global close, args
 
-    dates = z.getp("dates")
+#    bar = getetfChanges()
+
     lens = len(dates)
     sdate = "2014-01-02"
     didx = dates.index(sdate)
@@ -16,10 +30,14 @@ def prob():
     month3 = lens-int(3.8*(ayear/12)) 
     month3 = dates[month3]
 
-    
-#    dics = z.getp("stocks_bigdic")
-    stocks = z.getp("listofstocks")
+    stocks = []
+    if args.helpers:
+        stocks = [args.helpers]
+    else:
+        stocks = z.getp("listofstocks")
+
     print("stocks : {}".format( len(stocks) ))
+    print("stocks : {}".format( stocks ))
     starting = "2014-01-02"
     sdate = "2014-01-02"
     
@@ -34,12 +52,30 @@ def prob():
         if not idx % 100:
             print("idx: {}".format( idx))
 
+        print("starting: {}".format( starting))
         cdict = dict()
+        starting = False
+        prices = list()
         try:
             for row in buy.getRows(astock, starting):
-                cdict[row['Date']] = float(row[close])
-        except:
+                cdate = row['Date']
+                if cdate == yearago:
+                    starting = True
+
+                cprice = float(row[close])
+                if starting:
+                    prices.append(cprice)
+
+                cdict[cdate] = cprice
+                
+        except Exception as e:
+            z.trace(e)
             continue
+
+        last = prices[-1]
+        print("last : {}".format( last ))
+        changes = [ round(last / openp,3) for openp in prices[:-5] ]
+        print("changes : {}".format( changes ))
 
         above = 0
         total = 0
@@ -90,11 +126,21 @@ def prob():
             problems.add(astock)
             continue
     
-    print ("saving prob_down")
-    z.setp(prob_down, "prob_down", printdata=True)
-    z.setp(problems, "problems")
-    z.setp(monDict, "monDict")
-    print("prob_down_problems : {}".format( len(problems) ))
-    
+    if not args.helpers:
+        print ("saving prob_down")
+        z.setp(prob_down, "prob_down", printdata=True)
+        z.setp(problems, "problems")
+        z.setp(monDict, "monDict")
+        print("prob_down_problems : {}".format( len(problems) ))
+
+args = None    
 if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('helpers', type=str, nargs='?', default = [])
+    args = parser.parse_args()
+
+    if args.helpers:
+        args.helpers = args.helpers.upper()
+
     prob()
