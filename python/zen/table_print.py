@@ -161,6 +161,7 @@ def printTable(tablename ="default"):
                 print ("problem with {} {}".format(ctitle, individual))
                 exit()
 
+        saveme.append("{:>3}".format(str(x)))
         if not have:
             print("  ".join(saveme))
         else:
@@ -204,6 +205,8 @@ def initiate():
     os.system("clear")
     printTable()
 
+#    os.system("powershell.exe /c start firefox.exe ")
+#    exit()
     key = readchar.readkey()
     while (key != "q"):
         try:
@@ -222,15 +225,22 @@ def initiate():
                 printTable()
 
             elif key == "f":
+                bar = input("Enter idx: ")
                 try:
-                    idx = int(readchar.readkey())
+                    if "q" in bar:
+                        exit()
+                    idx = int(bar)
                 except: 
                     idx = 0
 
+                if "q" in bar:
+                    exit()
+
                 ticker = clist[idx]
                 print("ticker : {}".format( ticker ))
-                webpage = "https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/research?symbol={}&appCode=".format(ticker)
-                os.system("powershell.exe /c start firefox.exe {}".format(webpage))
+#                webpage = "https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/research?symbol={}&appCode=".format(ticker)
+                webpage = 'https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/research?symbol={}&appCode='.format(ticker)
+                os.system("powershell.exe /c start firefox.exe \"'{}'\"".format(webpage))
 
             elif key == "=":
                 currentsort = currentsort + 1

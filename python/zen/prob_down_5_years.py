@@ -3,7 +3,7 @@ import buy
 
 # starting 2014 and looking at 1 year intervals, what's the probability you'd be up at least 3 percent
 dates = z.getp("dates")
-yearago = dates[-112]
+yearago = dates[-152]
 print("yearago : {}".format( yearago ))
 
 def getetfChanges():
@@ -12,13 +12,14 @@ def getetfChanges():
         prices.append(float(row[close]))
     last = prices[-1]
     changes = [ round(last / openp,3) for openp in prices[:-5] ]
-    return changes
+    return round(sum(changes),3), len(changes)
+#    return changes
 
 close = z.closekey
 def prob():
     global close, args
 
-#    bar = getetfChanges()
+    bar, leng = getetfChanges()
 
     lens = len(dates)
     sdate = "2014-01-02"
@@ -31,51 +32,56 @@ def prob():
     month3 = dates[month3]
 
     stocks = []
-    if args.helpers:
-        stocks = [args.helpers]
-    else:
+    try:
+        if args.helpers:
+            stocks = [args.helpers]
+        else:
+            stocks = z.getp("listofstocks")
+    except:
         stocks = z.getp("listofstocks")
 
-    print("stocks : {}".format( len(stocks) ))
-    print("stocks : {}".format( stocks ))
+#    print("stocks : {}".format( len(stocks) ))
+#    print("stocks : {}".format( stocks ))
     starting = "2014-01-02"
     sdate = "2014-01-02"
     
     prob_down = dict()
     problems = set()
     monDict = dict()
+    ivvCompare = dict()
 
     for idx, astock in enumerate(stocks):
-#        if astock != "WM":
-#            continue
 
         if not idx % 100:
             print("idx: {}".format( idx))
 
-        print("starting: {}".format( starting))
+#        print("starting: {}".format( starting))
         cdict = dict()
-        starting = False
+        started = False
         prices = list()
         try:
             for row in buy.getRows(astock, starting):
                 cdate = row['Date']
                 if cdate == yearago:
-                    starting = True
+                    started = True
 
                 cprice = float(row[close])
-                if starting:
+                if started:
                     prices.append(cprice)
 
                 cdict[cdate] = cprice
                 
         except Exception as e:
-            z.trace(e)
             continue
 
-        last = prices[-1]
-        print("last : {}".format( last ))
-        changes = [ round(last / openp,3) for openp in prices[:-5] ]
-        print("changes : {}".format( changes ))
+        try:
+            last = prices[-1]
+            changes = [ round(last / openp,3) for openp in prices[:-5] ]
+            if len(changes) == leng:
+                ivvCompare[astock] = round(sum(changes) / bar,3)
+        except:
+            pass
+#        print("changes : {}".format( changes ))
 
         above = 0
         total = 0
@@ -126,8 +132,9 @@ def prob():
             problems.add(astock)
             continue
     
-    if not args.helpers:
+    if len(stocks) > 1:
         print ("saving prob_down")
+        z.setp(ivvCompare, "ivvCompare", printdata=True)
         z.setp(prob_down, "prob_down", printdata=True)
         z.setp(problems, "problems")
         z.setp(monDict, "monDict")

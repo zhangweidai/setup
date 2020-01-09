@@ -525,6 +525,7 @@ def single(value, avgOneYear):
         ("d13_30", d13_30),
         ("d18_64", d18_64),
         ("probup", getLongProbDown(astock)),
+        ("ivv", getFrom("ivvCompare", astock)),
         ("div", div),
         ("y1l", y1l),
         ("y1l2", y1l2),
@@ -682,7 +683,7 @@ if __name__ == '__main__':
 
     if "order" in args.mode:
         multiple(orders.keys(), title = "Orders")
-#        table_print.initiate()
+        table_print.initiate()
         exit()
 
     if "benchmark" in args.mode:

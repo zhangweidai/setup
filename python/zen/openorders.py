@@ -10,6 +10,7 @@ import zen
 orders = defaultdict(list)
 tory = False
 torys = list()
+stocks = z.getp("listofstocks")
 for aline in bar:
     if "Z03895009" in aline:
         tory = True
@@ -22,7 +23,20 @@ for aline in bar:
             if token == 'Buy':
                 count = int(items[i+1])
                 astock = items[i+4]
-                price = float(items[i+7][1:].replace(",", ""))
+                try:
+                    price = float(items[i+7][1:].replace(",", ""))
+                except:
+                    try:
+                        price = float(items[i+6][1:].replace(",", ""))
+                        astock = items[i+3]
+                    except:
+                        print("items: {}".format( items))
+                        print("items: {}".format( i))
+                        exit()
+
+                if astock not in stocks:
+                    print("WHAT IS THIS astock : {}".format( astock ))
+                    print("WHAT IS THIS astock : {}".format( aline ))
                 value = count * price
                 orders[astock].append((value, price))
                 if tory:

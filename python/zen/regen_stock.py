@@ -41,6 +41,7 @@ def process(astock):
     try:
         latestprices = dict()
         problems = [] 
+        print("date: {}".format( date))
         df = update_history.getDataFromYahoo(astock, date)
         if df is None:
             problems.append(astock)
@@ -59,9 +60,8 @@ def process(astock):
                 if f is not None:
                     f.close()
                 apath = z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, cyear))
-                if os.path.exists(apath):
-                    print("apath : {}".format( apath ))
-                    continue
+#                if os.path.exists(apath):
+#                    continue
                 lastyear = cyear                                                              
                 f = open(apath, "w")
                 f.write("Date,Open,High,Low,Close,Adj Close,Volume\n")
@@ -92,6 +92,10 @@ if __name__ == '__main__':
         exit()
 
     astock = args.helpers.upper()
+    if astock == "DONE":
+        import gbuy
+        gbuy.setlistofstocks()
+        exit()
     process(astock)
 
 #    listof = z.getp("listofstocks")
