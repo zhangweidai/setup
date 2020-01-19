@@ -61,11 +61,11 @@ def getChangeStats(astock, idx=1):
 
 def getLongProbDown(astock):
     try:
-        return getLongProbDown.dic[astock]
+        return round(getLongProbDown.dic[astock],2)
     except:
         try:
             getLongProbDown.dic = z.getp("prob_down")
-            return getLongProbDown.dic[astock]
+            return round(getLongProbDown.dic[astock],2)
         except Exception as e:
             pass
     return "NA"
@@ -103,7 +103,7 @@ def getMCDiv(astock):
             return getMCDiv.dic[astock]
         except:
             pass
-    return ["NA", 3999]
+    return ["NA", 3999, "NA"]
 
 def getMCRank(astock):
     return getFrom("latestmc", astock, 3999)
@@ -182,10 +182,22 @@ def getFiles(astock, date = "2000"):
             yield apath
 
     if not added:
-        apath = z.getPath("historical/{}.csv".format(astock))
-        print("apath : {}".format( apath ))
+        import regen_stock
+        regen_stock.process(astock)
+
+    for year in getYears(date):
+        apath = z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
         if os.path.exists(apath):
+            added = True
             yield apath
+
+    if not added:
+        print("DID NOT DOWNLOAD astock: {}".format( astock))
+
+#        apath = z.getPath("historical/{}.csv".format(astock))
+#        print("apath : {}".format( apath ))
+#        if os.path.exists(apath):
+#            yield apath
 
 def getYears(date):
     away_year = int(date.split("-")[0])
@@ -338,6 +350,7 @@ lastosDate2 = None
 #exit()
 HIGHEST = 10000
 dict2 = None
+daysAgo5 = 5
 def single(value, avgOneYear):
     global torys, mine, tory, prob_discount, dict2
 
@@ -347,8 +360,8 @@ def single(value, avgOneYear):
         astock = value
 
     seen = list()
-    daysAgo5 = 5
     avg5Change = list()
+    avg60Change = list()
     firstPrice = None
     values = list()
     lowFromHigh = HIGHEST
@@ -358,6 +371,7 @@ def single(value, avgOneYear):
     rup = list()
     rdown = list()
     prev = None
+    daysAgoValue = None
 
     for i, row in enumerate(getRows(astock, dates[-1*start])):
         try:
@@ -407,7 +421,7 @@ def single(value, avgOneYear):
     if not c_close:
         return
 
-    rsi = getRsi(rup, rdown)
+#    rsi = getRsi(rup, rdown)
 
     y1w2, y1m2, y1l, y1l2 = getYearly2(astock)
 
@@ -419,10 +433,12 @@ def single(value, avgOneYear):
         y1l2 = z.percentage(y1l2)
 
     mc = "NA"
+    pe = "NA"
     try:
         both = getMCDiv(astock)
         mc = both[1]
-        div = round(both[0]*100,3)
+        pe = both[2]
+        div = round(both[0]*100,2)
     except:
         div = "NA"
 
@@ -433,6 +449,8 @@ def single(value, avgOneYear):
             if not live:
                 print("NO LIVE astock: {}".format( astock))
             c_close = live if live else c_close
+            change = c_close/daysAgoValue
+            avg5Change.append(change)
         except Exception as e:
             z.trace(e)
             exit()
@@ -511,53 +529,78 @@ def single(value, avgOneYear):
     except:
         mcc = 0
 
+    try:
+        ui, di, l60 = getFrom("ud_dict", astock)
+    except:
+        ui, di, l60 = "NA", "NA", "NA"
+
+    try:
+        basischange = getFrom("cost_change", astock)[1]
+        basischange = c_close/basischange
+    except:
+        basischange = "NA"
+
+    downs = ""
+    owned = portFolioValue(astock)
+    if owned:
+        try:
+            downs = getFrom("downps", astock)
+            b = [ str(i) for i in downs ]
+            downs = ",".join(b)
+        except:
+            downs = ""
+
 #        (fromtop, (lowFromHigh/high)),
 #        (fromtopgain, (c_close/lowFromHigh)),
 #        ("fcf", getFrom("fcfdic", astock)),
 #        ("ebit", ebit),
+#        ("avg5", z.avg(avg5Change)),
+#        ("6u_i", ui),
+#        ("d_i", di),
+#        ("rsi", rsi),
+#        ("rsiid", getFrom("rsi_indicator_dic", astock)),
     values = [
-        ("Stock", inPortfolio(astock)),
-        ("Price", c_close),
+        ("stock", inPortfolio(astock)),
+        ("price", c_close),
         ("min5", min(avg5Change)),
         ("last5", avg5Change[-1]),
         (lastchange, (c_close/firstPrice)),
         ("mc", getFrom("latestmc", astock, "")),
         ("d13_30", d13_30),
         ("d18_64", d18_64),
-        ("probup", getLongProbDown(astock)),
+        ("probu", getLongProbDown(astock)),
         ("ivv", getFrom("ivvCompare", astock)),
         ("div", div),
         ("y1l", y1l),
         ("y1l2", y1l2),
         ("y1m", y1m2),
         ("y1w", y1w2),
-        ("rsi", rsi),
-        ("rsiid", getFrom("rsi_indicator_dic", astock)),
         ("fcf", fcf_mc),
         ("mcc", mcc),
         ("dr", dr),
-        ("os_r_value", r_value),
-        ("os_slope", slope),
-        ("volr", volr),
-        ("discount", disc),
-        ("MeanDrop", mindrop),
-        ("Owned", portFolioValue(astock)),
+        ("pe", pe),
+        ("os_r", r_value),
+        ("os_s", slope),
+        ("last60", l60),
+        ("meandrop", mindrop),
+        ("basisc", basischange),
+        ("down", downs),
+        ("owned", portFolioValue(astock)),
         ("Orders", orderstr),
-        ("OrderChange", orderchange),
-        ("avg5", z.avg(avg5Change)),
-        ("Name", name)
+        ("orderchange", orderchange),
+        ("name", name)
         ]
 
     if args.live:
-        values.append(("Last", (c_close/prev_close)))
+        values.append(("last", (c_close/prev_close)))
     else:
-        values.append(("Last", (c_close/seen[-2])))
+        values.append(("last", (c_close/seen[-2])))
 
     table_print.store(values)
-    table_print.use_percentages = ["avg5", "min5", "last5", fromtop, lastchange, fromtopgain, "OrderChange", "mcc", "volc"]
+    table_print.use_percentages = ["avg5", "min5", "last5", lastchange, "orderchange", "mcc", "volc", "last60", "basischange"]
 
 #    if args.live:
-    table_print.use_percentages.append("Last")
+    table_print.use_percentages.append("last")
 
 #single("IVV")
 #exit()
@@ -663,7 +706,7 @@ if __name__ == '__main__':
 
     if args.mode == "single":
         multiple([savedhelper.upper()], "single")
-#        table_print.initiate()
+        table_print.initiate()
         exit()
 
     if args.mode == "multiple":

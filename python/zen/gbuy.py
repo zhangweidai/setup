@@ -102,7 +102,10 @@ if __name__ == '__main__':
 
             for row in csv.DictReader(open(apath)):
                 pass
-            date = row['Date']
+            try:
+                date = row['Date']
+            except:
+                continue
 
             print("date: {}".format( date))
             df = update_history.getDataFromYahoo(astock, date)

@@ -9,6 +9,7 @@ use_percentages = list()
 currentsort = 0
 ivv = 0
 iusg = 0
+reversing = False
 
 def store(values):
     global cidx
@@ -21,7 +22,7 @@ store.title = None
 
 from sortedcontainers import SortedSet
 def getItems():
-    global currentsort
+    global currentsort, reversing
 
     if currentsort >= len(store.items[cidx]):
         currentsort = 0
@@ -41,8 +42,12 @@ def getItems():
         ret.add((bar, item))
 
     realret = list()
-    for item in ret:
-        realret.append(item[1])
+    if not reversing: 
+        for item in ret:
+            realret.append(item[1])
+    else:
+        for item in reversed(ret):
+            realret.append(item[1])
     return realret
 
 mm = dict()
@@ -70,7 +75,7 @@ def printTable(tablename ="default"):
             elif type(individual) is not str:
                 dics[j].append(individual)
             width = len(str(individual))
-            if ctitle in use_percentages:
+            if ctitle in use_percentages and type(individual) is float:
                 width = len(str(round(individual,2))) + 3
 
             if width > headerWidths[ctitle]:
@@ -198,6 +203,7 @@ def initiate():
     global cidx
     global currentsort
     global clist
+    global reversing
     import readchar
     import os
 
@@ -224,7 +230,24 @@ def initiate():
                 os.system("clear")
                 printTable()
 
-            elif key == "f":
+            elif key == "g":
+                ticker = clist[0]
+                webpage = 'https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/research?symbol={}&appCode='.format(ticker)
+                os.system("powershell.exe /c start firefox.exe \"'{}'\"".format(webpage))
+
+            elif key == "r":
+                reversing = not reversing
+                os.system("clear")
+                printTable()
+
+            elif key == "s":
+                bar = input("Enter Column: ")
+                currentsort = store.title.index(bar)
+                print("currentsort : {}".format( currentsort ))
+#                os.system("clear")
+                printTable()
+
+            elif key == "f" or key == "z" or key == "c" or key == 'x':
                 bar = input("Enter idx: ")
                 try:
                     if "q" in bar:
@@ -240,6 +263,12 @@ def initiate():
                 print("ticker : {}".format( ticker ))
 #                webpage = "https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/research?symbol={}&appCode=".format(ticker)
                 webpage = 'https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/research?symbol={}&appCode='.format(ticker)
+                if key == "z":
+                    webpage = 'https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/financials?stockspage=financials&symbol={}&period=quarterly'.format(ticker)
+                if key == "x":
+                    webpage = 'https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/financials?stockspage=incomestatement&symbol={}&period=quarterly'.format(ticker)
+                if key == "c":
+                    webpage = 'https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/financials?stockspage=cashflow&symbol={}&period=quarterly'.format(ticker)
                 os.system("powershell.exe /c start firefox.exe \"'{}'\"".format(webpage))
 
             elif key == "=":

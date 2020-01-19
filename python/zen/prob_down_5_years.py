@@ -3,7 +3,7 @@ import buy
 
 # starting 2014 and looking at 1 year intervals, what's the probability you'd be up at least 3 percent
 dates = z.getp("dates")
-yearago = dates[-152]
+yearago = dates[-111]
 print("yearago : {}".format( yearago ))
 
 def getetfChanges():

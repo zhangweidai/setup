@@ -3,6 +3,7 @@ import pandas as pd
 import buy
 import os
 import util
+import z
 #"Account Name/Number","Symbol","Description","Quantity","Last Price","Last Price Change","Current Value","Today's Gain/Loss Dollar","Today's Gain/Loss Percent","Total Gain/Loss Dollar","Total Gain/Loss Percent","Cost Basis Per Share","Cost Basis Total","Type"
 
 port = dict()
@@ -62,7 +63,7 @@ def fidelity(forselling=False, updating=False):
 #                print (z.percentage(temp/temp2))
                 current_pv += temp
             except:
-                print("astock: {}".format( astock))
+                print("problem astock: {}".format( astock))
                 continue
 
             if forselling:
@@ -338,9 +339,55 @@ def getSellStats(updating=False):
 
             change = round(cprice / lastSave[astock], 3)
             print("astock: {} {}".format( astock , z.percentage(change)))
-    
+
+saved_gain = None    
+down_gain = None
+downps = None
+cost_change = None
+
+def saveGain(account, astock, c_gain, quant):
+    global saved_gain, down_gain, downps, cost_change
+
+    key = "{}_{}".format(account, astock)
+    done = False
+    try:
+        prev_gain, prev_quant = saved_gain[key]
+    except:
+        done = True
+        saved_gain[key] = c_gain, quant
+        if c_gain < 0:
+            down_gain[key] = abs(c_gain)
+
+    if not done:
+        if prev_gain < c_gain:
+            saved_gain[key] = c_gain, quant
+            down_gain[key] = None
+        elif quant > (prev_quant * 1.15) or quant < prev_quant:
+            saved_gain[key] = c_gain, quant
+            if c_gain > 0:
+                down_gain[key] = None
+            else:
+                down_gain[key] = abs(c_gain)
+        elif c_gain < 0:
+            if prev_gain > 0:
+                down_gain[key] = c_gain - prev_gain
+            else:
+                down_gain[key] = abs(c_gain)
+        elif prev_gain > c_gain:
+            answer = round(prev_gain-c_gain,2)
+            down_gain[key] = answer
+        else:
+            down_gain[key] = None
+
+    try:
+        if down_gain[key] > 0:
+            downps[astock].append(down_gain[key])
+    except Exception as e:
+        pass
+        
+
 def simple(path, dontknow, etfs, total):
-    global ports, second, mine, tory, sset
+    global ports, second, mine, tory, sset, cost_change
 
     print("path : {}".format( path ))
     for row in csv.DictReader(open(path)):
@@ -359,15 +406,32 @@ def simple(path, dontknow, etfs, total):
         if len(astock) >= 1 and astock not in skips:
 
             try:
-                c_value = float(row['Current Value'].strip("$"))
-            except:
+                quant = float(row['Quantity'])
+                c_value = float(row['Current Value'].strip("$").strip(" ").replace(',',''))
+                c_gain = float(row['Total Gain/Loss Percent'].strip("%"))
+                c_account = row['Account Name/Number']
+                saveGain(c_account, astock, c_gain, quant)
+            except Exception as e:
+                z.trace(e)
+                exit()
+                continue
+
+            try:
+                c_basis = float(row['Cost Basis Per Share'].strip("$").strip(" ").replace(',',''))
+                if astock not in cost_change:
+                    cost_change[astock] = (quant, c_basis)
+                else:
+                    prev_quant, prev_basis = cost_change[astock]
+                    new_quant = prev_quant + quant
+                    new_total = round(((prev_basis * prev_quant) + (quant * c_basis))/new_quant,2)
+                    cost_change[astock] = (new_quant, new_total)
+            except Exception as e:
                 continue
             
             if second:
                 tory.append(astock)
             else:
                 mine.append(astock)
-
 
             total += c_value
 
@@ -377,7 +441,7 @@ def simple(path, dontknow, etfs, total):
                     binid = mc // 50
                     sset[binid] += c_value
                 except Exception as e:
-                    print("astock: {} {}".format( astock, c_value))
+                    print("prob 2 astock: {} {}".format( astock, c_value))
                     dontknow += c_value
                     pass
             else:
@@ -397,7 +461,7 @@ def getPorts():
         print ("not enough files")
         exit()
 
-    global ports, second, ports, tory, mine, sset
+    global ports, second, ports, tory, mine, sset, saved_gain, cost_change
     ports = defaultdict(int)
     mine = list()
     tory = list()
@@ -411,9 +475,15 @@ def getPorts():
     print("total : {}".format( total ))
     second = True
     total2 = 0
+
     dontknow, etfs, total2 = simple(paths[1][1], dontknow, etfs, total2)
     print("total2 : {}".format( total2 ))
     total += total2
+
+    z.setp(cost_change, "cost_change", True)
+    z.setp(saved_gain, "saved_gain", True)
+    z.setp(down_gain, "down_gain", True)
+    z.setp(downps, "downps", True)
 
     z.setp(ports,"ports")
     z.setp(mine, "mine")
@@ -444,6 +514,13 @@ def getPorts():
 
 
 if __name__ == '__main__':
+
+#    saved_gain = z.getp("saved_gain") or dict()
+#    down_gain = z.getp("down_gain") or dict()
+    downps = defaultdict(list)
+    saved_gain = dict()
+    down_gain = dict()
+    cost_change = defaultdict(tuple)
     getPorts()
 #    getFidDumps()
 #    import sys

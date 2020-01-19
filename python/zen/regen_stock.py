@@ -36,7 +36,7 @@ def generateWorst30():
     z.setp(answer, "worst30")
 
 problems = list()
-def process(astock):
+def process(astock, one_at_a_time = True):
     global problems
     try:
         latestprices = dict()
@@ -72,8 +72,20 @@ def process(astock):
             closed = df.at[idx, "Close"]
             adj = df.at[idx, "Adj Close"]
             vol = df.at[idx, "Volume"]
-            f.write("{},{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, adj, vol))
+            f.write("{},{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, adj, vol)) 
 
+        if one_at_a_time:
+            import json_util
+            json_util.parses([astock], addone = True)
+            
+            stocks = z.getp("listofstocks")
+            stocks.append(astock)
+            z.setp(stocks, "listofstocks")
+
+            stocks = z.getp("listofs")
+            stocks.append(astock)
+            z.setp(stocks, "listofs")
+        
     except Exception as e:
         print ("problem with gbuy")
         z.trace(e)
