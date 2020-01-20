@@ -597,7 +597,8 @@ def single(value, avgOneYear):
         values.append(("last", (c_close/seen[-2])))
 
     table_print.store(values)
-    table_print.use_percentages = ["avg5", "min5", "last5", lastchange, "orderchange", "mcc", "volc", "last60", "basischange"]
+    table_print.use_percentages = ["avg5", "min5", "last5", lastchange, "orderchange", "mcc", "volc", "last60", "basisc"]
+    table_print.gavgs = ["107chg", "y1w", "probu", "ivv"]
 
 #    if args.live:
     table_print.use_percentages.append("last")
