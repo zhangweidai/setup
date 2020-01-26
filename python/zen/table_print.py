@@ -3,7 +3,10 @@ from collections import defaultdict
 import statistics
 import z
 import buy
+import os
+import argparse
 
+args = None
 cidx = 0
 use_percentages = list()
 gavgs = list()
@@ -12,6 +15,9 @@ ivv = 0
 iusg = 0
 reversing = False
 avgidx = False
+def setArgs(largs):
+    global args
+    args = largs
 
 def store(values):
     global cidx
@@ -59,6 +65,10 @@ titles = dict()
 dates = z.getp("dates")
 clist = list()
 def printTable(tablename ="default"):
+    global args
+    if args.nc == False:
+        os.system("clear")
+
     global cidx, mm, ivv, iusg, clist, avgidx
     headerWidths = defaultdict(int)
 
@@ -168,7 +178,6 @@ def printTable(tablename ="default"):
                             bar = Fore.GREEN + "{:>" + "{}".format(headerWidths[ctitle]) + "}"
                         updated = True
             except:
-                print ("asdfa")
                 pass
     
 #            if individual == "NA":
@@ -232,7 +241,6 @@ def initiate():
     import os
 
     cidx = 0
-    os.system("clear")
     printTable()
 
 #    os.system("powershell.exe /c start firefox.exe ")
@@ -245,23 +253,19 @@ def initiate():
                 cidx -= 1
                 if cidx not in store.items:
                     cidx = 0
-                os.system("clear")
                 printTable()
 
             elif key == "n":
                 cidx += 1
                 if cidx not in store.items:
                     cidx = 0
-                os.system("clear")
                 printTable()
 
             elif key == "p":
-                os.system("clear")
                 printTable()
 
             elif key == "a":
                 avgidx = True
-                os.system("clear")
                 printTable()
 
             elif key == "g":
@@ -271,14 +275,12 @@ def initiate():
 
             elif key == "r":
                 reversing = not reversing
-                os.system("clear")
                 printTable()
 
             elif key == "s":
                 bar = input("Enter Column: ")
                 currentsort = store.title.index(bar)
                 print("currentsort : {}".format( currentsort ))
-                os.system("clear")
                 printTable()
 
             elif key == "l":
@@ -313,17 +315,20 @@ def initiate():
 
             elif key == "=":
                 currentsort = currentsort + 1
-                os.system("clear")
+                if args.nc == False:
+                    os.system("clear")
                 printTable()
 
             elif key == "-":
                 currentsort = currentsort - 1
-                os.system("clear")
+                if args.nc == False:
+                    os.system("clear")
                 printTable()
 
             elif int(key):
                 currentsort = int(key) - 1
-                os.system("clear")
+                if args.nc == False:
+                    os.system("clear")
                 printTable()
         except:
             pass

@@ -391,7 +391,7 @@ def getEtfList(forEtfs = False, buys=False):
     if buys:
         return [ "ITOT" , "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV", "BNDX", "VEA", "VIG", "VNQ", "VOO", "VTI", "VTV", "VUG", "VIG"]
     if forEtfs:
-        return [ "ITOT" , "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV"]
+        return [ "ITOT" , "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV", "VOO", "VUG"]
     return [ "IUSG", "IJH", "IJR", "IVV", "ITOT" ]
 
 def getCsvPath(astock, year = YEAR):
