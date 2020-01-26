@@ -186,24 +186,6 @@ def getFiles(astock, date = "2000"):
             added = True
             yield apath
 
-#    if not added:
-#        import regen_stock
-#        regen_stock.process(astock)
-#
-#    for year in getYears(date):
-#        apath = z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
-#        if os.path.exists(apath):
-#            added = True
-#            yield apath
-#
-#    if not added:
-#        print("DID NOT DOWNLOAD astock: {}".format( astock))
-
-#        apath = z.getPath("historical/{}.csv".format(astock))
-#        print("apath : {}".format( apath ))
-#        if os.path.exists(apath):
-#            yield apath
-
 def getYears(date):
     away_year = int(date.split("-")[0])
     dates = z.getp("dates")
@@ -356,13 +338,9 @@ lastosDate2 = None
 HIGHEST = 10000
 dict2 = None
 daysAgo5 = 5
-def single(value, avgOneYear, retval = None):
-    global torys, mine, tory, dict2
-
-    if type(value) is tuple:
-        astock = value[1]
-    else:
-        astock = value
+recentStats = dict()
+def genRecentStat(astock):
+    global recentStats
 
     seen = list()
     avg5Change = list()
@@ -371,9 +349,6 @@ def single(value, avgOneYear, retval = None):
     high = 0
     mins = list()
     c_close = None
-#    rup = list()
-#    rdown = list()
-#    prev = None
     daysAgoValue = None
     wc_highs = list()
     wc_lows = list()
@@ -381,16 +356,12 @@ def single(value, avgOneYear, retval = None):
 
     c_maxups = 0 
     maxup = 0 
-
     c_maxdown = 0 
     maxdown = 0 
     upd = ""
 
     for i, row in enumerate(getRows(astock, dates[istart])):
-        try:
-            c_open = float(row['Open'])
-        except:
-            return retval
+        c_open = float(row['Open'])
 
         if len(wc_highs) < 5:
             wc_highs.append(float(row['High']))
@@ -445,16 +416,56 @@ def single(value, avgOneYear, retval = None):
             avg5Change.append(change5)
             if change5 < 1:
                 mins.append(change5)
-    if not avg5Change:
-        return retval
 
-    if not c_close:
-        return
+    try:
+        wcc = min(wc_lows)/ max(wc_highs)
+        lchange = c_close / firstPrice
+        diff = wcc / lchange
+    except:
+        wcc = "NA"
+        lchange = "NA"
+        diff = "NA"
+
+    min5 = min(avg5Change)
+    last5 = avg5Change[-1]
+
+    meandrop = "NA"
+    if mins:
+        mean = statistics.mean(mins)
+        meandrop = round(( mean + mean + min(mins))/3 * c_close, 2)
 
     dayup = "NA"
     lengs = len(daysup)
     if lengs-start < 2:
         dayup = round(sum(daysup)/lengs,2)
+    last = c_close/seen[-2]
+    recentStats[astock] = (upd, c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last)
+
+def genRecentStats():
+    global recentStats
+    stocks = z.getp("listofstocks")
+#    stocks = ["BA"]
+    for astock in stocks:
+        try:
+            genRecentStat(astock)
+        except Exception as e:
+            z.trace(e)
+            pass
+    z.setp(recentStats, "recentStats", True)
+
+def single(value, avgOneYear, retval = None):
+    global torys, mine, tory, dict2
+
+    if type(value) is tuple:
+        astock = value[1]
+    else:
+        astock = value
+
+    try:
+        upd, c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last = getFrom("recentStats", astock)
+    except Exception as e:
+        z.trace(e)
+        return retval
 
     y1w2, y1m2, y1l, y1l2 = getYearly2(astock)
 
@@ -482,16 +493,10 @@ def single(value, avgOneYear, retval = None):
             if not live:
                 print("NO LIVE astock: {}".format( astock))
             c_close = live if live else c_close
-            change = c_close/daysAgoValue
-            avg5Change.append(change)
+#            change = c_close/daysAgoValue
         except Exception as e:
             z.trace(e)
             exit()
-
-    mindrop = "NA"
-    if mins:
-        mean = statistics.mean(mins)
-        mindrop = round(( mean + mean + min(mins))/3 * c_close, 2)
 
     d13_30 = getDropScore(astock, "2013-03-19", 30)
 #    d17_45 = getDropScore(astock, "2017-05-25", 45)
@@ -501,18 +506,7 @@ def single(value, avgOneYear, retval = None):
     fromtop = "{}drop".format(start)
     wcchange = "{}wc".format(start)
     diffS = "{}diff".format(start)
-    try:
-        wcc = min(wc_lows)/ max(wc_highs)
-        lchange = c_close / firstPrice
-        diff = wcc / lchange
-    except:
-        wcc = "NA"
-        lchange = "NA"
-        diff = "NA"
 
-#    try:
-#        name = companies[astock][0][0:17]
-#    except:
     name = ""
         
     order = getOrder(astock)
@@ -619,8 +613,8 @@ def single(value, avgOneYear, retval = None):
     values = [
         ("stock", inPortfolio(astock)),
         ("price", c_close),
-        ("min5", min(avg5Change)),
-        ("last5", avg5Change[-1]),
+        ("min5", min5),
+        ("last5", last5),
         (lastchange, lchange),
         (wcchange, wcc),
         (diffS, diff),
@@ -644,7 +638,7 @@ def single(value, avgOneYear, retval = None):
         (fromtop, (lowFromHigh/high)),
         ("dr", dr),
         ("pe", pe),
-        ("meandrop", mindrop),
+        ("meandrop", meandrop),
         ("basisc", basischange),
         ("down", downs),
         ("owned", portFolioValue(astock)),
@@ -655,7 +649,7 @@ def single(value, avgOneYear, retval = None):
     if args.live:
         values.append(("last", (c_close/prev_close)))
     else:
-        values.append(("last", (c_close/seen[-2])))
+        values.append(("last", last))
 
     table_print.store(values)
     table_print.use_percentages = ["avg5", "min5", "last5", lastchange, "orderc", "mcc", "basisc", fromtop, wcchange, diffS]
@@ -831,9 +825,9 @@ if __name__ == '__main__':
         multiple(["IVV", "VOO"])
         multiple(["USMV", "VFMV"])
 #        multiple(["VUG", "IUSG", "VOO", "IVV", "USMV", "VFMV"])
-        bar = z.getp("listofstocks")
+        stocks = z.getp("listofstocks")
         import random
-        multiple([bar[random.randint(1,len(bar))] for b in range(0,10)])
+        multiple([stocks[random.randint(1,len(stocks))] for b in range(0,10)])
         table_print.initiate()
         exit()
         

@@ -144,6 +144,8 @@ if __name__ == '__main__':
         gained_discount.dosomething()
         gained_discount.genUlt()
 
+        buy.genRecentStats()
+
 #        print("problems : {}".format( problems ))
 #        z.setp(problems, "problems")
 #            generateWorst30()
