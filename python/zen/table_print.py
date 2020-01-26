@@ -90,7 +90,7 @@ def printTable(tablename ="default"):
                 dics[j].append(individual)
             width = len(str(individual))
             if ctitle in use_percentages and type(individual) is float:
-                width = len(str(round(individual,2))) + 3
+                width = len(str(round(individual,2))) + 2
 
             if width > headerWidths[ctitle]:
                 headerWidths[ctitle] = width

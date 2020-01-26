@@ -2,7 +2,7 @@ import util
 from datetime import date, timedelta
 import datetime
 from pandas_datareader import data as pdr
-import fix_yahoo_finance as yf
+import yfinance as yf
 import math
 #3/20
 #PointsAbove 25.22%  0.02    39.40%  2.00%   0   1.949

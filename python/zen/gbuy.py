@@ -146,6 +146,9 @@ if __name__ == '__main__':
 
         buy.genRecentStats()
 
+        import drop_finder
+        drop_finder.procs()
+
 #        print("problems : {}".format( problems ))
 #        z.setp(problems, "problems")
 #            generateWorst30()

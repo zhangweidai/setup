@@ -418,16 +418,16 @@ def genRecentStat(astock):
                 mins.append(change5)
 
     try:
-        wcc = min(wc_lows)/ max(wc_highs)
-        lchange = c_close / firstPrice
-        diff = wcc / lchange
+        wcc = round(min(wc_lows)/ max(wc_highs),3)
+        lchange = round(c_close / firstPrice,3)
+        diff = round(wcc / lchange,2)
     except:
         wcc = "NA"
         lchange = "NA"
         diff = "NA"
 
-    min5 = min(avg5Change)
-    last5 = avg5Change[-1]
+    min5 = round(min(avg5Change),3)
+    last5 = round(avg5Change[-1],3)
 
     meandrop = "NA"
     if mins:
@@ -438,22 +438,33 @@ def genRecentStat(astock):
     lengs = len(daysup)
     if lengs-start < 2:
         dayup = round(sum(daysup)/lengs,2)
-    last = c_close/seen[-2]
+    last = round(c_close/seen[-2],3)
+
     recentStats[astock] = (upd, c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last)
+    return upd, c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last
 
 def genRecentStats():
     global recentStats
     stocks = z.getp("listofstocks")
 #    stocks = ["BA"]
-    for astock in stocks:
+    for idx, astock in enumerate(stocks):
         try:
             genRecentStat(astock)
         except Exception as e:
-            z.trace(e)
+            print("astock: {}".format( astock))
             pass
-    z.setp(recentStats, "recentStats", True)
+    z.setp(recentStats, "recentStats")
 
-def single(value, avgOneYear, retval = None):
+#genRecentStats()
+#exit()
+
+lastchange = "{}chg".format(start)
+fromtop = "{}drop".format(start)
+wcchange = "{}wc".format(start)
+diffS = "{}diff".format(start)
+
+
+def single(value, avgOneYear, retval = None, lots = True):
     global torys, mine, tory, dict2
 
     if type(value) is tuple:
@@ -462,9 +473,14 @@ def single(value, avgOneYear, retval = None):
         astock = value
 
     try:
-        upd, c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last = getFrom("recentStats", astock)
+        if lots:
+            upd, c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last = getFrom("recentStats", astock)
+        else:
+            upd, c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last = genRecentStat(astock)
     except Exception as e:
-        z.trace(e)
+        print("astock: {}".format( astock))
+#        z.trace(e)
+#        exit()
         return retval
 
     y1w2, y1m2, y1l, y1l2 = getYearly2(astock)
@@ -502,10 +518,6 @@ def single(value, avgOneYear, retval = None):
 #    d17_45 = getDropScore(astock, "2017-05-25", 45)
     d18_64 = getDropScore(astock, "2018-07-11", 64)
 
-    lastchange = "{}chg".format(start)
-    fromtop = "{}drop".format(start)
-    wcchange = "{}wc".format(start)
-    diffS = "{}diff".format(start)
 
     name = ""
         
@@ -610,10 +622,16 @@ def single(value, avgOneYear, retval = None):
     except:
         score = 0
 
+    try:
+        med_15, tgt_15 = getFrom("low_target", astock)
+    except:
+        med_15, tgt_15 = "NA", "NA"
+
     values = [
         ("stock", inPortfolio(astock)),
         ("price", c_close),
         ("min5", min5),
+        ("med5", med_15),
         ("last5", last5),
         (lastchange, lchange),
         (wcchange, wcc),
@@ -623,7 +641,7 @@ def single(value, avgOneYear, retval = None):
         ("d18_64", d18_64),
         ("score", score),
         ("probu", probu),
-        ("dailyp", dayup),
+        ("daily", dayup),
         ("maxu", maxup),
         ("maxd", maxdown),
         ("ivv", ivv), 
@@ -639,6 +657,7 @@ def single(value, avgOneYear, retval = None):
         ("dr", dr),
         ("pe", pe),
         ("meandrop", meandrop),
+        ("tgt15", tgt_15),
         ("basisc", basischange),
         ("down", downs),
         ("owned", portFolioValue(astock)),
@@ -652,7 +671,7 @@ def single(value, avgOneYear, retval = None):
         values.append(("last", last))
 
     table_print.store(values)
-    table_print.use_percentages = ["avg5", "min5", "last5", lastchange, "orderc", "mcc", "basisc", fromtop, wcchange, diffS]
+    table_print.use_percentages = ["avg5", "min5", "last5", lastchange, "orderc", "mcc", "basisc", fromtop, wcchange, diffS, "med5"]
     table_print.gavgs = ["107chg", "y1w", "probu", "ivv"]
 
 #    if args.live:
@@ -672,6 +691,7 @@ def multiple(stocks, title = None, helpers = True, runinit = False, retval=None)
             title = stocks
         stocks = z.getp(stocks)
 
+    lots = len(stocks) > 15
     avgOneYear = list()
     for idx, value in enumerate(stocks):
         if args.helpers:
@@ -683,7 +703,7 @@ def multiple(stocks, title = None, helpers = True, runinit = False, retval=None)
                 continue
 
         try:
-            ret = single(value, avgOneYear, retval=retval)
+            ret = single(value, avgOneYear, retval=retval, lots=lots)
             if ret == False:
                 return False
         except Exception as e:
@@ -805,7 +825,14 @@ if __name__ == '__main__':
         exit()
 
     if args.mode == "owned":
+#        import time
+#        start = time.time()
+
         multiple(portFolioValue.dict.keys(), "owned")
+
+#        end = time.time() - start
+#        print("end : {}".format( end ))
+
         z.setp(problems, "problems")
         table_print.initiate()
         exit()

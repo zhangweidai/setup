@@ -30,7 +30,7 @@ def percentage(factor, accurate=False):
         return "{:.2%}".format(factor-1)
 
     if not accurate:
-        return "{:.2%}".format(factor-1)
+        return "{:.1%}".format(factor-1)
 
     return "{:.3%}".format(factor-1)
 

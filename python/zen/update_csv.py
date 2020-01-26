@@ -1,6 +1,6 @@
 from datetime import date, timedelta
 from pandas_datareader import data as pdr
-import fix_yahoo_finance as yf
+import yfinance as yf
 import os
 import pandas
 import z
@@ -8,7 +8,7 @@ import util
 import time
 
 #main()
-yf.pdr_override()
+#yf.pdr_override()
 startdate = date.today() - timedelta(days=12)
 #print("startdate : {}".format( startdate ))
 #raise SystemExit

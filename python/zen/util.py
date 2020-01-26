@@ -1,16 +1,16 @@
-import numpy as np
+#import numpy as np
 import os
 import operator
 import math
-import pandas
+#import pandas
 import datetime
 import pickle
 import z
-import fix_yahoo_finance as yf
+import yfinance as yf
 import fnmatch
 import urllib.request, json
-from scipy import stats
-from pandas_datareader import data as pdr
+#from scipy import stats
+#from pandas_datareader import data as pdr
 from functools import lru_cache
 
 CsvColumn = "Close"
@@ -548,7 +548,7 @@ def setWhatToBuy(column, ascending = True):
     getStocks.fromCsv = (setWhatToBuy.fromfile, column, ascending)
 setWhatToBuy.fromfile = None
 
-yf.pdr_override() # <== that's all it takes :-)
+#yf.pdr_override() # <== that's all it takes :-)
 def getNumberOfDates():
     try : return getNumberOfDates.ret
     except : pass

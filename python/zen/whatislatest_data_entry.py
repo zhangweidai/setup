@@ -1,5 +1,5 @@
 from pandas_datareader import data as pdr
-import fix_yahoo_finance as yf
+import yfinance as yf
 import os
 import datetime
 import sys

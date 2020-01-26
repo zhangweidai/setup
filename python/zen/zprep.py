@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 import datetime
 from pandas_datareader import data as pdr
-import fix_yahoo_finance as yf
+import yfinance as yf
 import os
 import z
 import pandas
@@ -16,7 +16,7 @@ def setStockDays():
     print("last date dates : {}".format( dates[-1]))
     z.setp(dates,"dates")
 
-yf.pdr_override()
+#yf.pdr_override()
 startdate = date.today() - timedelta(days=16)
 def getDataFromYahoo(astock):
     data = None

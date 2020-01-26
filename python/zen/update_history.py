@@ -4,13 +4,12 @@ import os
 import z
 import csv
 import datetime
-import fix_yahoo_finance as yf
+import yfinance as yf
 import zprep
+from pandas_datareader import data as pdr
 
 closekey = z.closekey
-
-from pandas_datareader import data as pdr
-yf.pdr_override()
+#yf.pdr_override()
 problems = list()
 def getDataFromYahoo(astock, cdate):
 #    print("astock: {}".format( astock))
