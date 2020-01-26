@@ -48,7 +48,7 @@ def syp(data, name):
     pickle.dump(data, open(path, "wb"))
 
 getpd = set()
-@lru_cache(maxsize=30)
+@lru_cache(maxsize=40)
 def getp(name, override="pkl"):
     getpd.add(name)
     try:
@@ -139,6 +139,42 @@ def debug(sig, frame):
 def listen():
     signal.signal(signal.SIGUSR1, debug)  # Register handler
 
+def getEtfList(forEtfs = False, buys=False):
+    if buys:
+        return [ "ITOT" , "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV", "BNDX", "VEA", "VIG", "VNQ", "VOO", "VTI", "VTV", "VUG", "VIG"]
+    if forEtfs:
+        return [ "ITOT" , "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV", "VOO", "VUG"]
+    return [ "IUSG", "IJH", "IJR", "IVV", "ITOT" ]
+
+def getCsvPath(astock, year = YEAR):
+    path = getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
+    return path
+
+def getPriceFromCsv(astock, year = YEAR, date = None, return_row=False):
+    path = getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
+    if not date:
+        for row in csv.DictReader(open(path)):
+            pass
+        if return_row:
+            return row
+        return row[closekey]
+
+    for row in csv.DictReader(open(path)):
+        if row['Date'] == date:
+            return row[closekey]
+
+def avgp(lists, p=4):
+    return percentage(sum(lists)/len(lists))
+
+def avg(lists, p=4):
+    return round(sum(lists)/len(lists),p)
+
+#print(avg([2.313, 2.232, 2.358, 2.468, 2.727, 2.965, 3.262, 3.07]))
+#print(avg([1.924, 1.944, 1.986, 2.123, 2.057, 2.405, 2.807, 2.822]))
+#print(avg([2.359, 2.651, 2.148, 3.105, 3.109, 2.695, 3.25, 2.791]))
+#print(avg([2.131, 2.417, 2.238, 2.618, 2.782, 2.829, 3.116, 3.141]))
+#
+#raise SystemExit
 
 def breaker(count):
     if breaker.count == 0:

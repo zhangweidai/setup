@@ -3,12 +3,21 @@ from collections import defaultdict
 import statistics
 import z
 import buy
+import os
+import argparse
 
+args = None
 cidx = 0
 use_percentages = list()
+gavgs = list()
 currentsort = 0
 ivv = 0
 iusg = 0
+reversing = False
+avgidx = False
+def setArgs(largs):
+    global args
+    args = largs
 
 def store(values):
     global cidx
@@ -21,10 +30,10 @@ store.title = None
 
 from sortedcontainers import SortedSet
 def getItems():
-    global currentsort
+    global currentsort, reversing
 
-    if currentsort >= len(store.items[cidx]):
-        currentsort = 0
+#    if currentsort >= len(store.items[cidx]):
+#        currentsort = 0
 
     ret = SortedSet()
     for item in store.items[cidx]:
@@ -38,11 +47,17 @@ def getItems():
                 except:
                     bar = 0
                     pass
+        if not bar:
+            bar = 0
         ret.add((bar, item))
 
     realret = list()
-    for item in ret:
-        realret.append(item[1])
+    if not reversing: 
+        for item in ret:
+            realret.append(item[1])
+    else:
+        for item in reversed(ret):
+            realret.append(item[1])
     return realret
 
 mm = dict()
@@ -50,7 +65,11 @@ titles = dict()
 dates = z.getp("dates")
 clist = list()
 def printTable(tablename ="default"):
-    global cidx, mm, ivv, iusg, clist
+    global args
+    if args.nc == False:
+        os.system("clear")
+
+    global cidx, mm, ivv, iusg, clist, avgidx
     headerWidths = defaultdict(int)
 
     if cidx not in titles:
@@ -70,7 +89,7 @@ def printTable(tablename ="default"):
             elif type(individual) is not str:
                 dics[j].append(individual)
             width = len(str(individual))
-            if ctitle in use_percentages:
+            if ctitle in use_percentages and type(individual) is float:
                 width = len(str(round(individual,2))) + 3
 
             if width > headerWidths[ctitle]:
@@ -87,7 +106,7 @@ def printTable(tablename ="default"):
             width = len(str(avg))
             if width > headerWidths[ctitle]:
                 headerWidths[ctitle] = width
-            mm[key] = (m1,m2, avg)
+            mm[key] = (m1, m2, avg)
         except:
             mm[key] = ("NA","NA", "NA")
             pass
@@ -109,10 +128,27 @@ def printTable(tablename ="default"):
 #        z.trace(e)
     clist = list()
     for x,items in enumerate(getItems()):
-        saveme = list()
-        have = False
+        skipping = False
+        try:
+            if avgidx:
+                for avgname in gavgs:
+                    idx = store.title.index(avgname)
+                    try:
+                        if items[idx] < mm[idx][2]:
+                            skipping = True
+                            break
+                    except:
+                        pass
+        except Exception as e:
+            pass
+
+        if skipping:
+            continue
 
         clist.append(items[0].replace("*", ""))
+
+        saveme = list()
+        have = False
 
         if not x % 40 and x > 0:
             print(Fore.GREEN + Style.BRIGHT + "  ".join(headeritems) + Style.RESET_ALL)
@@ -137,7 +173,7 @@ def printTable(tablename ="default"):
                         updated = True
                     elif individual == mm[j][1]:
                         if have:
-                            bar = Fore.BLACK + "{:>" + "{}".format(headerWidths[ctitle]) + "}"
+                            bar = Fore.GREEN + "{:>" + "{}".format(headerWidths[ctitle]) + "}"
                         else:
                             bar = Fore.GREEN + "{:>" + "{}".format(headerWidths[ctitle]) + "}"
                         updated = True
@@ -194,44 +230,73 @@ def printTable(tablename ="default"):
         iusg = z.percentage(iusg)
     print("IVV:  {}\nIUSG: {}".format(ivv, iusg))
 
+lastf = 0
 def initiate():
     global cidx
     global currentsort
     global clist
+    global reversing
+    global avgidx, lastf
     import readchar
     import os
 
     cidx = 0
-    os.system("clear")
     printTable()
 
 #    os.system("powershell.exe /c start firefox.exe ")
 #    exit()
     key = readchar.readkey()
     while (key != "q"):
+        avgidx = None
         try:
             if key == "p":
                 cidx -= 1
                 if cidx not in store.items:
                     cidx = 0
-                os.system("clear")
                 printTable()
 
             elif key == "n":
                 cidx += 1
                 if cidx not in store.items:
                     cidx = 0
-                os.system("clear")
                 printTable()
 
-            elif key == "f":
+            elif key == "p":
+                printTable()
+
+            elif key == "a":
+                avgidx = True
+                printTable()
+
+            elif key == "g":
+                ticker = clist[0]
+                webpage = 'https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/research?symbol={}&appCode='.format(ticker)
+                os.system("powershell.exe /c start firefox.exe \"'{}'\"".format(webpage))
+
+            elif key == "r":
+                reversing = not reversing
+                printTable()
+
+            elif key == "s":
+                bar = input("Enter Column: ")
+                currentsort = store.title.index(bar)
+                print("currentsort : {}".format( currentsort ))
+                printTable()
+
+            elif key == "l":
+                ticker = clist[-1]
+                webpage = 'https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/research?symbol={}&appCode='.format(ticker)
+                os.system("powershell.exe /c start firefox.exe \"'{}'\"".format(webpage))
+
+            elif key == "f" or key == "z" or key == "c" or key == 'x':
                 bar = input("Enter idx: ")
                 try:
                     if "q" in bar:
                         exit()
                     idx = int(bar)
                 except: 
-                    idx = 0
+                    idx = lastf
+                lastf = idx
 
                 if "q" in bar:
                     exit()
@@ -240,21 +305,30 @@ def initiate():
                 print("ticker : {}".format( ticker ))
 #                webpage = "https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/research?symbol={}&appCode=".format(ticker)
                 webpage = 'https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/research?symbol={}&appCode='.format(ticker)
+                if key == "z":
+                    webpage = 'https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/financials?stockspage=financials&symbol={}&period=quarterly'.format(ticker)
+                if key == "x":
+                    webpage = 'https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/financials?stockspage=incomestatement&symbol={}&period=quarterly'.format(ticker)
+                if key == "c":
+                    webpage = 'https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/financials?stockspage=cashflow&symbol={}&period=quarterly'.format(ticker)
                 os.system("powershell.exe /c start firefox.exe \"'{}'\"".format(webpage))
 
             elif key == "=":
                 currentsort = currentsort + 1
-                os.system("clear")
+                if args.nc == False:
+                    os.system("clear")
                 printTable()
 
             elif key == "-":
                 currentsort = currentsort - 1
-                os.system("clear")
+                if args.nc == False:
+                    os.system("clear")
                 printTable()
 
             elif int(key):
                 currentsort = int(key) - 1
-                os.system("clear")
+                if args.nc == False:
+                    os.system("clear")
                 printTable()
         except:
             pass

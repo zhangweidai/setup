@@ -77,16 +77,24 @@ def parsePage(astock, update=False):
                 try:
                     if not fcf:
                         fcf = round(int(more[i+2].split(",")[0])/billion,5)
-                    return (cap, beta, pe, dividend, fcf)
+#                    return (cap, beta, pe, dividend, fcf)
                 except Exception as e:
                     pass
 
-            elif nextone and "trailingAnnualDividendYield" in aline:
+#            elif nextone and "trailingAnnualDividendYield" in aline:
+#                try:
+#                    if not dividend:
+#                        dividend=float(more[i+2].split(",")[0])
+#                except:
+#                    pass
+
+            elif nextone and "dividendYield" in aline:
                 try:
                     if not dividend:
                         dividend=float(more[i+2].split(",")[0])
                 except:
                     pass
+
 
             elif nextone and "beta" in aline:
                 try:
@@ -96,7 +104,7 @@ def parsePage(astock, update=False):
 
             elif nextone and "trailingPE" in aline:
                 try:
-                    pe=float(more[i+2].split(",")[0])
+                    pe=round(float(more[i+2].split(",")[0]),2)
                     #return (cap, beta, pe, dividend, fcf)
                 except:
                     pass
@@ -312,6 +320,7 @@ def saveJsonData(stocks, directory="all"):
 
     z.setp(data, "div_mc_dic")
     z.setp(mcs, "mc_set")
+    buy.sortedSetToRankDict("latestmc", mcs, reverse=True)
 #
 #    import pandas
 #    df = pandas.DataFrame.from_dict(data, orient = 'index', 
@@ -470,15 +479,37 @@ def updateOldYahoos():
 
     z.setp(data, "div_mc_dict")
 
+def parses(stocks, update=True, addone = False):
+    print ("Saving Json Data")
 
+    from sortedcontainers import SortedSet
+    mcs = SortedSet()
+    divdict = dict()
+    if addone:
+        divdict = z.getp("mcdivdict")
+    for idx, astock in enumerate(stocks):
+        try:
+            cap, beta, pe, div, fcf = parsePage(astock, update=update)
+            if not idx % 200:
+                print("{} {} {} {} ".format( idx , astock, cap, div ))
+            mcs.add((cap, astock))
+            divdict[astock] = div, cap, pe
+        except Exception as e:
+#            z.trace(e)
+            continue
+
+    z.setp(divdict, "mcdivdict")
+    if not addone:
+        buy.sortedSetToRankDict("latestmc", mcs, reverse=True)
 
 if __name__ == '__main__':
 #    updateOldYahoos()
 #    iterateStocks()
-#    saveJsonData(z.getp("listofstocks"))
+    stocks = z.getp("listofstocks")
+    parses(stocks, update=False)
 #    remaining()
 
-    print (parsePage("MSFT"))
+#    print (parsePage("EC"))
 #    genMCRanking()
 #    runmain()
 #    zen.diffOuts()
