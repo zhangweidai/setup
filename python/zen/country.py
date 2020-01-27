@@ -1,4 +1,3 @@
-import util
 import os
 import csv
 import z
@@ -47,7 +46,7 @@ def process(path):
 def getFiles(where, his_idx = None):
     import fnmatch
     holds = []
-    parentdir = util.getPath(where)
+    parentdir = z.getPath(where)
     listOfFiles = os.listdir(parentdir)
     for entry in listOfFiles:  
         path = os.path.join(parentdir, entry)

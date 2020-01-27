@@ -1,6 +1,7 @@
 import z
 import buy
 from sortedcontainers import SortedSet
+
 wanted = 60
 half = 30
 dic2 = z.getp("y1wm2");

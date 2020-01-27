@@ -1,7 +1,8 @@
-import urllib.request
-import util
+from collections import defaultdict
+from shutil import copyfile
 import os
-import fnmatch
+import time
+import urllib.request
 import z
 
 def savefile():
@@ -33,7 +34,6 @@ def getCode(i, etf):
                     f.writelines(lines)
 
 alls = set()
-from collections import defaultdict
 etfdict = defaultdict(set)
 company = dict()
 codes = [
@@ -46,21 +46,16 @@ codes = [
     "239695/ishares-msci-usa-minimum-volatility-etf"
 ]
 
-import time
 def doit():
     global alls, company, etfdict
 
-#    alls = util.getp("alletfs")
-#    company = util.getp("company")
-#    etfdict = util.getp("etfdict")
     etfpath = z.getPath("pkl/etfdict.pkl")
     try:
-        from shutil import copyfile
         copyfile(etfpath, z.getPath("pkl/etfdict_back.pkl"))
     except:
         pass
 
-    dels = util.getp("deletes")
+    dels = z.getp("deletes")
     for i,etf in enumerate(z.getEtfList(forEtfs=True)):
         print("i: {}".format( i))
         try:
@@ -78,21 +73,16 @@ def doit():
         print(addy)
         with urllib.request.urlopen(addy) as url:
             lines = url.read().decode('utf-8').split("\n")
-#        print(lines)
-    
-#        path = util.getPath("temp/{}".format(etf))
-#        with open(path,"w") as f:
-#            f.writelines(lines)
         cleanLines(lines, etf, dels)
         time.sleep(3)
 
-    util.setp(alls, "alls")
-    util.setp(company, "company")
-    util.setp(etfdict, "etfdict")
+    z.setp(alls, "alls")
+    z.setp(company, "company")
+    z.setp(etfdict, "etfdict")
 
 def getCsvsFiles():
     holds = []
-    path = util.getPath('holdings/{}.csv'.format())
+    path = z.getPath('holdings/{}.csv'.format())
     listOfFiles = os.listdir(path)
     for entry in listOfFiles:  
         holds.append("{}/{}".format(path,entry))
@@ -130,7 +120,7 @@ def cleanFiles():
 def diffISharesEtfs():
     latest = z.getp("etfdict")
     previous = z.getp("etfdict_back")
-    dels = util.getp("deletes")
+    dels = z.getp("deletes")
     if not latest or not previous:
         print ("missing data")
         return
@@ -158,16 +148,3 @@ def diffISharesEtfs():
 if __name__ == '__main__':
 #    doit()
     diffISharesEtfs()
-#cleanFiles()
-#huh = util.getp("alletfs")
-
-#with open("mytest","w") as f:
-#    f.writelines(getweb())
-#lines = []
-#with open("mytest","r") as f:
-#    lines = f.readlines()
-#for aline in lines:
-#    if "ITOT" in aline:
-#        print("aline : {}".format( aline ))
-
-#print(len(html))

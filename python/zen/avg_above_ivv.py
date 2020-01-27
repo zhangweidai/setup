@@ -1,6 +1,4 @@
-import math
 import z
-import util
 from sortedcontainers import SortedSet
 import os
 import buy

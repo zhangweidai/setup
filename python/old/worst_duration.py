@@ -1,6 +1,4 @@
 import util
-import operator
-import random
 import numpy as np
 from collections import defaultdict
 from scipy import stats

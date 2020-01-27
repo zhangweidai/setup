@@ -1,8 +1,6 @@
 import math
 import z
-import util
 from sortedcontainers import SortedSet
-import os
 import buy
 import statistics
 
@@ -158,7 +156,6 @@ def doem():
     for idx, astock in enumerate(stocks):
         if not idx % 100:
             print("idx: {}".format( idx))
-
         try:
             saveem[astock] = proc(astock)
         except:

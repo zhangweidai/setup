@@ -5,7 +5,6 @@ days = z.getp("dates")
 num_days = len(days)
 print("num_days : {}".format( num_days ))
 z.getCsv.savedReads = z.getp("allcsvs")
-spdf = z.getCsv("SPY")
 stocks = z.getStocks()
 
 ayear = 252

@@ -208,4 +208,5 @@ export SDKMAN_DIR="/home/zoe/.sdkman"
 LANG=en_US.utf8
 export DISPLAY=:0.0
 export PULSE_SERVER=tcp:localhost
+# awk '{ print $1 }'
 go1

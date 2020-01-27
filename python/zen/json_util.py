@@ -1,4 +1,3 @@
-from util import *
 import urllib.request, json
 from bs4 import BeautifulSoup
 import z
