@@ -11,8 +11,8 @@ dates = z.getp("dates")
 
 def proc(astock):
     prev_close = None
-    closes = sliding.WindowQueue(15, False, False)
-    lows = sliding.WindowQueue(15, needMax=False)
+    closes = sliding.WindowQueue(15)
+    lows = sliding.WindowQueue(15, needMin=True)
     mins = list()
 
     for i, row in enumerate(buy.getRows(astock, dates[istart])):

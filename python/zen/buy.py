@@ -5,8 +5,6 @@ import table_print
 import statistics
 import os
 from sortedcontainers import SortedSet
-now_year = 2020
-
 
 # mc 30.00B to 1.54T
 # mc 7.5B to 30.00B 
@@ -190,7 +188,7 @@ def getYears(date):
     away_year = int(date.split("-")[0])
     dates = z.getp("dates")
     date_away = dates[-1]
-    while int(away_year) != now_year:
+    while int(away_year) != z.YEAR:
         yield away_year
         away_year += 1
     yield away_year
@@ -524,6 +522,7 @@ def single(value, avgOneYear, retval = None, lots = True):
     order = getOrder(astock)
     orderstr = ""
     orderchange = 0
+
     if order != "NA":
         orderstr = round(order[0])
         orderchange = order[1]/c_close
@@ -627,8 +626,15 @@ def single(value, avgOneYear, retval = None, lots = True):
     except:
         med_15, tgt_15 = "NA", "NA"
 
+    chgchg= 0
+    try:
+        chgchg = round(med_15/ orderchange,3)
+    except:
+        pass
+
     values = [
         ("stock", inPortfolio(astock)),
+        ("strat", getFrom("strat", astock)),
         ("price", c_close),
         ("min5", min5),
         ("med5", med_15),
@@ -663,6 +669,7 @@ def single(value, avgOneYear, retval = None, lots = True):
         ("owned", portFolioValue(astock)),
         ("Orders", orderstr),
         ("orderc", orderchange),
+        ("chgchg", chgchg),
         ("name", name) ]
 
     if args.live:
@@ -671,7 +678,7 @@ def single(value, avgOneYear, retval = None, lots = True):
         values.append(("last", last))
 
     table_print.store(values)
-    table_print.use_percentages = ["avg5", "min5", "last5", lastchange, "orderc", "mcc", "basisc", fromtop, wcchange, diffS, "med5"]
+    table_print.use_percentages = ["avg5", "min5", "last5", lastchange, "orderc", "mcc", "basisc", fromtop, wcchange, diffS, "med5", "strat"]
     table_print.gavgs = ["107chg", "y1w", "probu", "ivv"]
 
 #    if args.live:

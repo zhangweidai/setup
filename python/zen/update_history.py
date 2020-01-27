@@ -8,8 +8,14 @@ import yfinance as yf
 import zprep
 from pandas_datareader import data as pdr
 
-closekey = z.closekey
+#from pandas_datareader import data as pdr
 #yf.pdr_override()
+#data = pdr.get_data_yahoo("AMZN", start="2017-01-01", end="2017-09-12")
+#print("data : {}".format( data ))
+#exit()
+
+closekey = z.closekey
+yf.pdr_override()
 problems = list()
 def getDataFromYahoo(astock, cdate):
 #    print("astock: {}".format( astock))

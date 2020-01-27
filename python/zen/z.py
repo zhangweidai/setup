@@ -1,16 +1,11 @@
-from collections import defaultdict
 from functools import lru_cache
-from sortedcontainers import SortedSet
-import csv
-import fnmatch
 import os
 #import pandas
 import pickle
-import statistics
 import time
 
 closekey = "Adj Close"
-YEAR = 2019
+YEAR = 2020
 
 def getPath(path, allowmake = True):
     path = "{}/../zen_dump/{}".format(os.getcwd(), path)
@@ -72,6 +67,7 @@ def goodbye():
     if getpd:
         print("\n---pickle report---")
 
+    from sortedcontainers import SortedSet
     savedSort = SortedSet()
     for name in getpd:
         path = getPath("{}/{}.pkl".format("pkl", name))

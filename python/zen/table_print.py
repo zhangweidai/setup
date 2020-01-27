@@ -101,7 +101,7 @@ def printTable(tablename ="default"):
         try:
             m1 = round(min(dics[key]),3)
             m2 = round(max(dics[key]),3)
-            avg = round(statistics.mean(dics[key]),3)
+            avg = round(statistics.mean(dics[key]),2)
 
             width = len(str(avg))
             if width > headerWidths[ctitle]:
