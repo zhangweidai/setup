@@ -2,7 +2,7 @@ import z
 import buy
 import os
 from sortedcontainers import SortedSet
-import update_history
+import gbuy
 
 def generateWorst30():
     dates = z.getp("dates")
@@ -14,13 +14,11 @@ def generateWorst30():
         try:
             if int(mcrank) > 320:
                 continue
-
             price = buy.getPrice(astock, dates[-252])
             if price < 5:
                 continue
         except Exception as e:
             continue
-
 
         try:
             annual = yearlydic[astock]
@@ -42,14 +40,11 @@ def process(astock, one_at_a_time = True):
         latestprices = dict()
         problems = [] 
         print("date: {}".format( date))
-        df = update_history.getDataFromYahoo(astock, date)
+        df = gbuy.getDataFromYahoo(astock, date)
         if df is None:
             problems.append(astock)
+            print("problem dl astock: {}".format( astock))
             return
-#            print("astock: {}".format( astock))
-#            print ("problem")
-#            exit()
-#        df = z.getp("temp")
 
         lastyear = None
         f = None
@@ -82,17 +77,17 @@ def process(astock, one_at_a_time = True):
             stocks.append(astock)
             z.setp(stocks, "listofstocks")
 
-            stocks = z.getp("listofs")
-            stocks.append(astock)
-            z.setp(stocks, "listofs")
+            try:
+                stocks = z.getp("listofs")
+                stocks.append(astock)
+                z.setp(stocks, "listofs")
+            except:
+                pass
         
     except Exception as e:
         print ("problem with gbuy")
         z.trace(e)
-#        exit()
 
-#generateWorst30()
-#exit()
 date = "2000-01-01"
 if __name__ == '__main__':
     import argparse
@@ -109,8 +104,3 @@ if __name__ == '__main__':
         gbuy.setlistofstocks()
         exit()
     process(astock)
-
-#    listof = z.getp("listofstocks")
-#    for astock in listof:
-#        process(astock)
-#    z.setp(problems, "problems", True)

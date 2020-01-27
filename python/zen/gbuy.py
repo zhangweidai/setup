@@ -2,9 +2,38 @@ import z
 import buy
 import os
 from sortedcontainers import SortedSet
+import glob
+import yfinance as yf
+from pandas_datareader import data as pdr
+
 year = "2020"
 
-import glob
+yf.pdr_override()
+def getDataFromYahoo(astock, cdate):
+    df = None
+    try:
+        print("astock: {}".format( astock))
+        df = pdr.get_data_yahoo([astock], start=cdate)
+    except Exception as e:
+        try:
+            df = pdr.get_data_yahoo([astock], start=cdate)
+        except Exception as e:
+            z.trace(e)
+            return None
+    
+    for idx in df.index:
+        try:
+            change = df.at[idx, "Close"] / df.at[idx+1, "Close"]
+            if change > 5 or change < 0.15 or df.at[idx, "Volume"] == 0:
+                print ("may have problem {}".format(astock))
+        except Exception as e:
+            pass
+
+        for label in ["Open", "Close", "High", "Low", "Adj Close"]:
+            df.at[idx, label] = round(df.at[idx, label], 3)
+
+    return df
+
 def setlistofstocks():
     path = z.getPath("split/*/*{}.csv".format(year))
     files = glob.glob(path)
@@ -56,7 +85,6 @@ def generateWorst30():
 #exit()
 if __name__ == '__main__':
     import argparse
-    import update_history
     import csv
     import datetime
 
@@ -74,6 +102,7 @@ if __name__ == '__main__':
             skips = z.getp("problems")
             print("skips : {}".format( skips ))
         stocks = z.getp("listofstocks")
+
         import datetime
         now = datetime.datetime.now()
         missed = 0
@@ -83,13 +112,11 @@ if __name__ == '__main__':
                 continue
 
             apath = z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
-#            if not os.path.exists(apath):
-#                continue
-
             try:
                 t = os.path.getmtime(apath)
             except:
                 continue
+
             csvdate = datetime.datetime.fromtimestamp(t)
             csvday = csvdate.day
             csvmonth = csvdate.month
@@ -108,7 +135,7 @@ if __name__ == '__main__':
                 continue
 
             print("date: {}".format( date))
-            df = update_history.getDataFromYahoo(astock, date)
+            df = getDataFromYahoo(astock, date)
             if df is None:
                 print("problem downloading: {}".format( astock))
                 missed += 1
@@ -148,13 +175,6 @@ if __name__ == '__main__':
 
         import drop_finder
         drop_finder.procs()
-
-#        print("problems : {}".format( problems ))
-#        z.setp(problems, "problems")
-#            generateWorst30()
-#            import buyat
-#            buyat.runmain()
-
 
     except Exception as e:
         print ("problem with gbuy")

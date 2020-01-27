@@ -503,7 +503,7 @@ def single(value, avgOneYear, retval = None, lots = True):
     prev_close = c_close
     if args.live:
         try:
-            live = util.getLiveData(astock, key = "price")
+            live = z.getLiveData(astock, key = "price")
             if not live:
                 print("NO LIVE astock: {}".format( astock))
             c_close = live if live else c_close
@@ -741,7 +741,6 @@ def multiplep(title):
     exit()
 
 args = None
-import util
 def init():
     import argparse
     global orders, torys, tory, mine, dict2, parser, args, savedhelper

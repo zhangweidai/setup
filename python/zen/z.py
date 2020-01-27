@@ -1,8 +1,8 @@
 from functools import lru_cache
 import os
-#import pandas
 import pickle
 import time
+from pandas_datareader import data as pdr
 
 closekey = "Adj Close"
 YEAR = 2020
@@ -186,4 +186,42 @@ def trace(e):
     import traceback
     print (traceback.format_exc())
     print (str(e))
+
+
+def getLiveData(astock, key = "price", andkey = None):
+    try :
+        ret = float(getLiveData.cached[astock][key])
+        if andkey:
+            andkey = float(getLiveData.cached[astock][andkey])
+            return ret, andkey
+        return ret
+    except:
+        try :
+            if not online():
+                getLiveData.cached[astock] = gyp(astock)
+                ret = float(getLiveData.cached[astock][key])
+                if andkey:
+                    andkey = float(getLiveData.cached[astock][andkey])
+                    return ret, andkey
+                return ret
+        except:
+            pass
+    if not online():
+        return None
+    try:
+        print("downloading astock: {}".format( astock))
+        astockdf = pdr.get_quote_yahoo([astock])
+        getLiveData.cached[astock] = astockdf
+        syp(astockdf, "{}".format(astock))
+
+        ret = float(getLiveData.cached[astock][key])
+        if andkey:
+            andkey = float(getLiveData.cached[astock][andkey])
+            return ret, andkey
+        return ret
+    except:
+        pass
+
+    return None
+getLiveData.cached = dict()
 
