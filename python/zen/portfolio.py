@@ -220,8 +220,9 @@ def saveGain(account, astock, c_gain, quant):
     except Exception as e:
         pass
 
+cash = 0
 def simple(path, dontknow, etfs, total):
-    global ports, second, mine, tory, sset, cost_change
+    global ports, second, mine, tory, sset, cost_change, cash
 
     print("path : {}".format( path ))
     for row in csv.DictReader(open(path)):
@@ -234,7 +235,9 @@ def simple(path, dontknow, etfs, total):
             pass
 
         astock = row['Symbol'] 
-        if "*" in astock:
+        if "**" in astock:
+            c_value = float(row['Current Value'].strip("$").strip(" ").replace(',',''))
+            cash += c_value
             continue
 
         if len(astock) >= 1 and astock not in skips:
@@ -313,10 +316,17 @@ def getPorts():
     print("total2 : {}".format( total2 ))
     total += total2
 
-    z.setp(cost_change, "cost_change", True)
-    z.setp(saved_gain, "saved_gain", True)
-    z.setp(down_gain, "down_gain", True)
-    z.setp(downps, "downps", True)
+    vg = round(vanguard())
+    print("vg : {}".format( vg ))
+    total += vg
+    etfs += vg
+    total += cash
+    total = round(total)
+
+    z.setp(cost_change, "cost_change")
+    z.setp(saved_gain, "saved_gain")
+    z.setp(down_gain, "down_gain")
+    z.setp(downps, "downps")
 
     z.setp(ports,"ports")
     z.setp(mine, "mine")
@@ -341,11 +351,33 @@ def getPorts():
         print(" {:>10} {:>6}% {:>6}".format( "etfs", res, round(etfs)))
     except:
         pass
+    print("cash : {}".format( cash ))
 
     z.setp(sset, "mcranges")
 
+def vanguard():
+    global ports
+    parentdir = "/mnt/c/Users/Zoe/Downloads"
+    if not os.path.exists(parentdir):
+        parentdir = "/mnt/c/Users/pzhang/Downloads"
+    csvfile = "ofxdownload.csv"
+    path = "{}/{}".format(parentdir, csvfile)
+    ret = 0
+    for row in csv.DictReader(open(path)):
+        try:
+            val = float(row["Total Value"])
+            astock = row["Symbol"]
+        except:
+            val = 0
+            pass
+
+        if val:
+            ports[astock] = round(ports[astock] + val, 2)
+            ret += val
+    return ret
 
 if __name__ == '__main__':
+
 #    saved_gain = z.getp("saved_gain") or dict()
 #    down_gain = z.getp("down_gain") or dict()
     downps = defaultdict(list)

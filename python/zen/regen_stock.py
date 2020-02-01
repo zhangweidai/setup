@@ -61,12 +61,27 @@ def process(astock, one_at_a_time = True):
                 f = open(apath, "w")
                 f.write("Date,Open,High,Low,Close,Adj Close,Volume\n")
 
-            opend = df.at[idx, "Open"]
-            high = df.at[idx, "High"]
-            low = df.at[idx, "Low"]
-            closed = df.at[idx, "Close"]
-            adj = df.at[idx, "Adj Close"]
-            vol = df.at[idx, "Volume"]
+            try:
+                opend = round(df.at[idx, "Open"],3)
+                high = round(df.at[idx, "High"],3)
+                low = round(df.at[idx, "Low"],3)
+                closed = round(df.at[idx, "Close"],3)
+                adj = round(df.at[idx, "Adj Close"],3)
+                vol = df.at[idx, "Volume"]
+            except:
+                opend = round(df.at[idx, "Open"][0],3)
+                high = round(df.at[idx, "High"][0],3)
+                low = round(df.at[idx, "Low"][0],3)
+                closed = round(df.at[idx, "Close"][0],3)
+                adj = round(df.at[idx, "Adj Close"][0],3)
+                vol = df.at[idx, "Volume"][0]
+
+#            opend = df.at[idx, "Open"]
+#            high = df.at[idx, "High"]
+#            low = df.at[idx, "Low"]
+#            closed = df.at[idx, "Close"]
+#            adj = df.at[idx, "Adj Close"]
+#            vol = df.at[idx, "Volume"]
             f.write("{},{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, adj, vol)) 
 
         if one_at_a_time:
@@ -90,6 +105,14 @@ def process(astock, one_at_a_time = True):
 
 date = "2000-01-01"
 if __name__ == '__main__':
+
+#    stocks = z.getp("listofstocks")
+#    for astock in stocks:
+#        if astock == "AVA":
+#            exit()
+#        process(astock)
+
+#    exit()
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--skips', default=False)
@@ -104,3 +127,5 @@ if __name__ == '__main__':
         gbuy.setlistofstocks()
         exit()
     process(astock)
+
+

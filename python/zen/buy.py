@@ -5,6 +5,7 @@ import table_print
 import statistics
 import os
 from sortedcontainers import SortedSet
+from rows import *
 
 # mc 30.00B to 1.54T
 # mc 7.5B to 30.00B 
@@ -174,38 +175,38 @@ def getPrice(astock, date = dates[-1], openp=False):
 getPrice.last = None
 getPrice.recent = dict()
 
-def getFiles(astock, date = "2000"):
+#def getFiles(astock, date = "2000"):
 #    yield z.getPath("historical/{}.csv".format(astock))
 #    return
-    added = False
-    for year in getYears(date):
-        apath = z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
-        if os.path.exists(apath):
-            added = True
-            yield apath
+#    added = False
+#    for year in getYears(date):
+#        apath = z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
+#        if os.path.exists(apath):
+#            added = True
+#            yield apath
 
-def getYears(date):
-    away_year = int(date.split("-")[0])
-    dates = z.getp("dates")
-    date_away = dates[-1]
-    while int(away_year) != z.YEAR:
-        yield away_year
-        away_year += 1
-    yield away_year
-
-def getRows(astock, date = "2000"):
-    date_year = date.split("-")[0]
-    for apath in getFiles(astock, date):
-
-        started = False
-        for row in csv.DictReader(open(apath)):
-            if date_year not in apath:
-                yield row
-            elif started:
-                yield row
-            elif row['Date'] == date:
-                started = True
-                yield row
+#def getYears(date):
+#    away_year = int(date.split("-")[0])
+#    dates = z.getp("dates")
+#    date_away = dates[-1]
+#    while int(away_year) != z.YEAR:
+#        yield away_year
+#        away_year += 1
+#    yield away_year
+#
+#def getRows(astock, date = "2000"):
+#    date_year = date.split("-")[0]
+#    for apath in getFiles(astock, date):
+#
+#        started = False
+#        for row in csv.DictReader(open(apath)):
+#            if date_year not in apath:
+#                yield row
+#            elif started:
+#                yield row
+#            elif row['Date'] == date:
+#                started = True
+#                yield row
 
 def updateDates():
     dates = z.getp("dates")
@@ -618,7 +619,7 @@ def single(value, avgOneYear, retval = None, lots = True):
     try:
         val = ivv if ivv < 1.4 else 1.4 
         score = round(val + ivv2 + probu + dayup, 2)
-    except:
+    except Exception as e:
         score = 0
 
     try:

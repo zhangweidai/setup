@@ -13,4 +13,6 @@ sudo pip3 install yfinance
 sudo pip3 install fix_yahoo_finance
 sudo pip3 install readchar
 sudo pip3 install pandas_datareader
+sudo pip3 install matplotlib
+sudo apt-get install python3-tk
 

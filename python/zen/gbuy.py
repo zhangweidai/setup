@@ -21,16 +21,21 @@ def getDataFromYahoo(astock, cdate):
             z.trace(e)
             return None
     
-    for idx in df.index:
-        try:
-            change = df.at[idx, "Close"] / df.at[idx+1, "Close"]
-            if change > 5 or change < 0.15 or df.at[idx, "Volume"] == 0:
-                print ("may have problem {}".format(astock))
-        except Exception as e:
-            pass
+#    for idx in df.index:
+#        print("idx : {}".format( idx ))
+#        print("idx : {}".format( df.at[idx+1, "Close"] ))
+#        try:
+#            change = df.at[idx, "Close"] / df.at[idx+1, "Close"]
+#            if change > 5 or change < 0.15 or df.at[idx, "Volume"] == 0:
+#                print ("may have problem {}".format(astock))
+#        except Exception as e:
+#            z.trace(e)
+#            pass
 
-        for label in ["Open", "Close", "High", "Low", "Adj Close"]:
-            df.at[idx, label] = round(df.at[idx, label], 3)
+#        for label in ["Open", "Close", "High", "Low", "Adj Close"]:
+#            print (df.at[idx, label][0])
+#        for label in ["Open", "Close", "High", "Low", "Adj Close"]:
+#            df.at[idx, label][0] = round(df.at[idx, label][0], 3)
 
     return df
 
@@ -153,12 +158,20 @@ if __name__ == '__main__':
                         first = False
                         continue
                     cdate = str(idx.to_pydatetime()).split(" ")[0]
-                    opend = df.at[idx, "Open"]
-                    high = df.at[idx, "High"]
-                    low = df.at[idx, "Low"]
-                    closed = df.at[idx, "Close"]
-                    adj = df.at[idx, "Adj Close"]
-                    vol = df.at[idx, "Volume"]
+                    try:
+                        opend = round(df.at[idx, "Open"],3)
+                        high = round(df.at[idx, "High"],3)
+                        low = round(df.at[idx, "Low"],3)
+                        closed = round(df.at[idx, "Close"],3)
+                        adj = round(df.at[idx, "Adj Close"],3)
+                        vol = df.at[idx, "Volume"]
+                    except:
+                        opend = round(df.at[idx, "Open"][0],3)
+                        high = round(df.at[idx, "High"][0],3)
+                        low = round(df.at[idx, "Low"][0],3)
+                        closed = round(df.at[idx, "Close"][0],3)
+                        adj = round(df.at[idx, "Adj Close"][0],3)
+                        vol = df.at[idx, "Volume"][0]
                     added = True
                     f.write("{},{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, adj, vol))
 
@@ -171,10 +184,11 @@ if __name__ == '__main__':
         gained_discount.dosomething()
         gained_discount.genUlt()
 
-        buy.genRecentStats()
 
         import drop_finder
         drop_finder.procs()
+
+        buy.genRecentStats()
 
     except Exception as e:
         print ("problem with gbuy")
