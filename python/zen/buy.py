@@ -805,8 +805,12 @@ if __name__ == '__main__':
     z.online.online = args.live
 
     if args.mode == "special":
-        multiple("worst_smallcalp")
-        multiple("best_smallcalp")
+#        multiple("worst_smallcalp")
+#        multiple("best_smallcalp")
+
+        multiple("lowbeta")
+        multiple("highbeta")
+
         table_print.initiate()
         exit()
 
