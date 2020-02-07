@@ -42,22 +42,27 @@ def proc(astock):
         total2 += abs(prev_close - c_close)
         count += 1
 
+    buy.addSorted("hlchg", round(change,2), astock, keeping = 6)
     if c_close > 5 and count > 90:
         buy.addSortedLow("lowbeta", round(total,1), astock, keeping = 30)
         buy.addSortedHigh("highbeta", round(total2,1), astock, keeping = 30)
 
 def procs():
-    stocks = z.getp("listofstocks")
+#    stocks = z.getp("listofstocks")
+    stocks = ["BA"]
     for astock in stocks:
         try:
             proc(astock)
         except:
             pass
-    low = buy.getSorted("lowbeta")
-    z.setp(low, "lowbeta")
 
-    high = buy.getSorted("highbeta")
-    z.setp(high, "highbeta")
+    data = buy.getSorted("hlchg")
+    print("data : {}".format( data ))
+    if len(stocks) > 10:
+        low = buy.getSorted("lowbeta")
+        z.setp(low, "lowbeta")
+        high = buy.getSorted("highbeta")
+        z.setp(high, "highbeta")
 
 if __name__ == '__main__':
     procs()
