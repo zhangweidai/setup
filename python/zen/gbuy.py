@@ -187,6 +187,9 @@ if __name__ == '__main__':
         import drop_finder
         drop_finder.procs()
 
+        import slow_and_steady
+        slow_and_steady.procs()
+
         import buy
         buy.genRecentStats()
 

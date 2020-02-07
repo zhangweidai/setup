@@ -30,6 +30,9 @@ def addSortedHigh(title, val, astock, keeping = 30):
 
 addSorted.dic = defaultdict(SortedSet)
 
+def clearSorted(title):
+    addSorted.dic[title] = SortedSet()
+
 def getSorted(title):
     return addSorted.dic[title]
 
@@ -662,6 +665,7 @@ def single(value, avgOneYear, retval = None, lots = True):
         ("y1w", y1w2),
         ("mcc", mcc),
         ("upd", upd),
+        ("hldic", getFrom("hldic", astock, "")),
         (fromtop, (lowFromHigh/high)),
         ("dr", dr),
         ("pe", pe),
