@@ -184,10 +184,10 @@ if __name__ == '__main__':
         gained_discount.dosomething()
         gained_discount.genUlt()
 
-
         import drop_finder
         drop_finder.procs()
 
+        import buy
         buy.genRecentStats()
 
     except Exception as e:

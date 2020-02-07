@@ -22,11 +22,14 @@ def proc(astock):
     if mc > 2000:
         return
 
-    upd, c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last = buy.getFrom("recentStats", astock)
+    try:
+        upd, c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last = buy.getFrom("recentStats", astock)
+    except Exception as e:
+        return
 
     extra = 0
     try:
-        y1w2, y1m2, y1l, y1l2 = buy.getYearly2(astock)
+        y1w2, y1m2, y1l, y1l2 = buy.getFrom("annuals", astock)
         if y1w2 > .95:
             extra += .2
         if y1l > 1:
@@ -35,7 +38,7 @@ def proc(astock):
             extra += .2
         if y1m2 > 1:
             extra += .2
-    except:
+    except Exception as e:
         pass
 
     ivv = buy.getFrom("ivvCompare", astock)
@@ -47,20 +50,20 @@ def proc(astock):
         score = round(val + ivv2 + probu + dayup + extra, 2)
     except Exception as e:
         score = 0
+        print("astock : {}".format( astock ))
 
     buy.addSortedHigh("highscore", round(score,1), astock, keeping = 40)
 
 def procs():
     buy.init()
     stocks = z.getp("listofstocks")
-#    stocks = ["BA"]
+#    stocks = ["ZNGA"]
     for astock in stocks:
         try:
             proc(astock)
         except:
             pass
     bar = buy.getSorted("highscore")
-    print("bar : {}".format( bar ))
     z.setp(bar, "highscore")
     buy.multiple("highscore")
     table_print.initiate()

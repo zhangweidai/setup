@@ -435,6 +435,7 @@ def genRecentStat(astock):
 
     dayup = "NA"
     lengs = len(daysup)
+    bar = lengs-start 
     if lengs-start < 2:
         dayup = round(sum(daysup)/lengs,2)
     last = round(c_close/seen[-2],3)
@@ -444,6 +445,7 @@ def genRecentStat(astock):
 
 def genRecentStats():
     global recentStats
+    recentStats = dict()
     stocks = z.getp("listofstocks")
 #    stocks = ["BA"]
     for idx, astock in enumerate(stocks):
