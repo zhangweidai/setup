@@ -472,10 +472,10 @@ def single(value, avgOneYear, retval = None, lots = True):
         astock = value
 
     try:
-        if lots:
-            upd, c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last = getFrom("recentStats", astock)
-        else:
-            upd, c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last = genRecentStat(astock)
+#        if lots:
+#            upd, c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last = getFrom("recentStats", astock)
+#        else:
+        upd, c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last = genRecentStat(astock)
     except Exception as e:
         print("astock: {}".format( astock))
 #        z.trace(e)
