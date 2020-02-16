@@ -816,6 +816,7 @@ if __name__ == '__main__':
 
         multiple("lowbeta")
         multiple("highbeta")
+        multiple("highscore")
 
         table_print.initiate()
         exit()

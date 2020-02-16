@@ -268,14 +268,20 @@ def initiate():
                 avgidx = True
                 printTable()
 
-            elif key == "g":
-                ticker = clist[0]
-                webpage = 'https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/research?symbol={}&appCode='.format(ticker)
-                os.system("powershell.exe /c start firefox.exe \"'{}'\"".format(webpage))
+#            elif key == "g":
+#                ticker = clist[0]
+#                webpage = 'https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/research?symbol={}&appCode='.format(ticker)
+#                os.system("powershell.exe /c start firefox.exe \"'{}'\"".format(webpage))
 
             elif key == "r":
                 reversing = not reversing
                 printTable()
+
+            elif key == "g":
+                import sys
+                python = sys.executable
+                types = titles[cidx]
+                os.execl(python, python, "stock_plot.py", types)
 
             elif key == "s":
                 bar = input("Enter Column: ")

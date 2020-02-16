@@ -7,6 +7,22 @@ from pandas_datareader import data as pdr
 closekey = "Adj Close"
 YEAR = 2020
 
+def getStocks(title):
+    stocks = getp(title)
+    if not stocks or len(stocks) == 0:
+        stocks = getEtfList(buys=True)
+        return "ETFS", stocks
+
+    rebuilt = list()
+    for idx, value in enumerate(stocks):
+        if type(value) is tuple:
+            rebuilt.append(value[1])
+        else:
+            rebuilt.append(value)
+    return title, rebuilt
+
+
+
 def getPath(path, allowmake = True):
     path = "{}/../zen_dump/{}".format(os.getcwd(), path)
     parent = os.path.dirname(path)
