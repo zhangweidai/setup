@@ -136,6 +136,7 @@ if __name__ == '__main__':
                 pass
             try:
                 date = row['Date']
+                cclose = row['Adj Close']
             except:
                 continue
 
@@ -172,8 +173,14 @@ if __name__ == '__main__':
                         closed = round(df.at[idx, "Close"][0],3)
                         adj = round(df.at[idx, "Adj Close"][0],3)
                         vol = df.at[idx, "Volume"][0]
+
+                    try:
+                        chg = round(adj/cclose,3)
+                    except:
+                        chg = 1
+                    cclose = adj
                     added = True
-                    f.write("{},{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, adj, vol))
+                    f.write("{},{},{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, adj, vol, chg))
 
         buy.updateDates()
 

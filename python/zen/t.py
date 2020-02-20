@@ -2,11 +2,23 @@ import timeit
 import z
 
 def Test1():
-    print ("hello")
+    global i
+    i += 1
 
+i = 0
+bar = -1
 def Test2():
-    z.getp("sorteddict")
-    z.getp("prices")
+    global i, bar
+    if i != bar:
+        i += 1
+
+def Test3():
+    global i
+    try:
+        i += 1
+    except:
+        pass
+
 
 if __name__ == '__main__':
     methods = dir()
@@ -20,7 +32,8 @@ if __name__ == '__main__':
         names.append(method)
         answer = timeit.timeit("{}()".format(method), 
                     setup="from __main__ import {}".format(method),
-                    number=30)
+                    number=100000000)
+        i = 0
         times.append(answer)
         print (round(answer,4))
 

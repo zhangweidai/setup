@@ -2,7 +2,6 @@ from functools import lru_cache
 import os
 import pickle
 import time
-from pandas_datareader import data as pdr
 
 closekey = "Adj Close"
 YEAR = 2020
@@ -205,6 +204,7 @@ def trace(e):
 
 
 def getLiveData(astock, key = "price", andkey = None):
+    from pandas_datareader import data as pdr
     try :
         ret = float(getLiveData.cached[astock][key])
         if andkey:

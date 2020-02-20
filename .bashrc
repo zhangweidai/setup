@@ -209,5 +209,6 @@ export SDKMAN_DIR="/home/zoe/.sdkman"
 LANG=en_US.utf8
 export DISPLAY=:0.0
 export PULSE_SERVER=tcp:localhost
+alias  bd='python ~/setup2/python/bd.py'
 # awk '{ print $1 }'
 go1

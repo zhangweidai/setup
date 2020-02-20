@@ -244,7 +244,8 @@ def initiate():
     printTable()
 
 #    os.system("powershell.exe /c start firefox.exe ")
-#    exit()
+    if args.nc:
+        exit()
     key = readchar.readkey()
     while (key != "q"):
         avgidx = None
