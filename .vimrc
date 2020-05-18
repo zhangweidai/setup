@@ -73,7 +73,8 @@ imap <c-k>   ()<esc>
 
 
 " exec extension / reload vimrc
-nmap <leader>b   :let @* = expand('%:p')<cr>:call ExecExtension()<cr>
+nmap <leader>b   :call ExecExtension()<cr>
+"nmap <leader>b   :let @* = expand('%:p')<cr>:call ExecExtension()<cr>
 nmap <silent> <leader><leader><leader> :source %:p<cr>
 
 " copy file
@@ -285,7 +286,7 @@ fu! ExecExtension()
     if l:path =~ ".ahk"
       :silent !"C:\Program Files\AutoHotkey\AutoHotkey.exe" %:p
     elseif l:path =~ ".py"
-      :silent !python -i %:p
+      :!python3  %:p
     elseif l:path =~ ".reg"
       :silent !%:p
     elseif l:path =~ ".bat"
@@ -325,12 +326,12 @@ let g:indent_guides_guie_size=1
 set noerrorbells visualbell t_vb=
 autocmd GUIEnter * set visualbell t_vb=
 
-if has("windows")
-    set shell=C:\Windows\System32\bash.exe
-    set shellpipe=|
-    set shellredir=>
-    set shellcmdflag=
-endif
+"if has("windows")
+"    set shell=C:\Windows\System32\bash.exe
+"    set shellpipe=|
+"    set shellredir=>
+"    set shellcmdflag=
+"endif
 
 if executable('ag')
   let g:ackprg = 'ag --vimgrep'

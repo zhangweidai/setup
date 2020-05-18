@@ -56,6 +56,7 @@ def proc(astock):
 
 def procs():
     stocks = z.getp("listofstocks")
+#    stocks = ['FIT']
     hldic = dict()
     prols = list()
     for astock in stocks:
@@ -64,14 +65,20 @@ def procs():
             sub = 0
             for ba, stock in vals[:3]:
                 sub += ba
-            bad = z.percentage(sub/3, 2)
+            bv = sub/3
+#            print("bv : {}".format( bv ))
+            bad = z.percentage(bv, 2)
 
             sub = 0
             for ba, stock in vals[-3:]:
                 sub += ba
-            good = z.percentage(sub/3, 2)
+            gv = sub/3
+#            print("gv : {}".format( gv ))
+            good = z.percentage(gv, 2)
+            ratio = round((gv-1)/(1-bv),2)
+#            print("ratio : {}".format( ratio ))
             answer = "{}/{}".format(bad, good)
-            hldic[astock] = answer.replace('%',"")
+            hldic[astock] = answer.replace('%',""), ratio
 
         except Exception as e:
             prols.append(astock)

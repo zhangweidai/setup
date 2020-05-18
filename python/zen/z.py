@@ -59,7 +59,7 @@ def syp(data, name):
 
 getpd = set()
 @lru_cache(maxsize=40)
-def getp(name, override="pkl"):
+def getp(name, override="pkl", retfile=False):
     getpd.add(name)
     try:
         path = getPath("{}/{}.pkl".format(override, name))

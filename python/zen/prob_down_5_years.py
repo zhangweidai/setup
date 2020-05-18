@@ -20,20 +20,14 @@ def prob():
     global close, args
 
     bar, leng, ivvchanges = getetfChanges()
+    print("leng: {}".format( leng))
+    print("bar: {}".format( bar))
+    print("ivvchanges : {}".format( ivvchanges ))
 
     lens = len(dates)
-    sdate = "2014-01-02"
     starting = "2014-01-02"
-
-    didx = dates.index(sdate)
-    ayear = 252
-    startTime = -1*(lens-didx)
-    endTime = (-1*ayear)+1
     
-    month3 = lens-int(3.8*(ayear/12)) 
-    month3 = dates[month3]
-
-    stocks = []
+    stocks = ["BA"]
     if not stocks:
         try:
             if args.helpers:
@@ -56,7 +50,7 @@ def prob():
         if not idx % 100:
             print("idx: {}".format( idx))
 
-#        print("starting: {}".format( starting))
+        print("starting: {}".format( starting))
         started = False
         prices_for_a_year = list()
         all_prices = list()
@@ -99,8 +93,8 @@ def prob():
                 ivvCompare[astock] = round(sum(changes) / bar,3)
                 ivvDaily[astock] = round(sum(ivvur) / leng, 3)
 
-        except:
-            print("exception 1 astock: {}".format( astock))
+        except Exception as e:
+#            print("exception 1 astock: {}".format( astock))
             pass
 
         if len(ups) > 100:

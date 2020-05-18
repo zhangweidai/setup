@@ -1,4 +1,5 @@
 import z
+import math
 import csv
 from collections import defaultdict
 import table_print
@@ -6,6 +7,8 @@ import statistics
 import os
 from sortedcontainers import SortedSet
 from rows import *
+
+#table_print.accurate = 2
 
 # mc 30.00B to 1.54T
 # mc 7.5B to 30.00B 
@@ -29,6 +32,21 @@ def addSortedHigh(title, val, astock, keeping = 30):
 
 
 addSorted.dic = defaultdict(SortedSet)
+
+def getapd(values):
+    count = len(values)
+    change = values[-1]/values[0] if count < 15 else min(values[-5:]) / max(values[:5])
+    return change**(1/count)
+
+def getapds(changes):
+    half = math.ceil(len(changes)/2)
+    half1 = changes[:half]
+    half2 = changes[-1*half:]
+    apd1 = getapd(half1)
+    apd2 = getapd(half2)
+    apd = getapd(changes)
+    return apd1, apd2, round(apd2/apd1,3), apd
+
 
 def clearSorted(title):
     addSorted.dic[title] = SortedSet()
@@ -362,6 +380,9 @@ def genRecentStat(astock):
     maxdown = 0 
     upd = ""
 
+    prices = list()
+    bchanges = list()
+
     for i, row in enumerate(getRows(astock, dates[istart])):
         c_open = float(row['Open'])
 
@@ -372,6 +393,15 @@ def genRecentStat(astock):
             firstPrice = c_open
 
         c_close = float(row[z.closekey])
+        prices.append(c_close)
+
+        try:
+            change = round(c_close / prev_close,3)
+            bchange = (change) if (change > 1) else round(prev_close/c_close,3)
+            bchanges.append(bchange)
+        except:
+            prev_close = c_close
+
         upchange = (c_open <= c_close)
         if upchange:
             c_maxups += 1
@@ -388,10 +418,6 @@ def genRecentStat(astock):
 
         if i >= five_from_start:
             dchange = c_close / c_open
-            if dchange >= 1:
-                upd += "U" if dchange >= 1.04 else "u"
-            else:
-                upd += "D" if dchange <= .96 else "d"
 
         if i < ten_from_start:
             if c_open > high:
@@ -443,8 +469,9 @@ def genRecentStat(astock):
         dayup = round(sum(daysup)/lengs,2)
     last = round(c_close/seen[-2],3)
 
-    recentStats[astock] = (upd, c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last)
-    return upd, c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last
+    be = round(sum(bchanges)/len(bchanges),2)
+    recentStats[astock] = (c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last, prices, be)
+    return c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last, prices, be
 
 def genRecentStats():
     global recentStats
@@ -478,9 +505,9 @@ def single(value, avgOneYear, retval = None, lots = True):
 
     try:
 #        if lots:
-#            upd, c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last = getFrom("recentStats", astock)
+#            c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last = getFrom("recentStats", astock)
 #        else:
-        upd, c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last = genRecentStat(astock)
+        c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last, prices, be = genRecentStat(astock)
     except Exception as e:
         print("astock: {}".format( astock))
 #        z.trace(e)
@@ -531,7 +558,7 @@ def single(value, avgOneYear, retval = None, lots = True):
 
     if order != "NA":
         orderstr = round(order[0])
-        orderchange = order[1]/c_close
+#        orderchange = order[1]/c_close
         if astock in torys:
             name += "_T"
     if astock in mine:
@@ -543,32 +570,6 @@ def single(value, avgOneYear, retval = None, lots = True):
         y1wm2 = round(dict2[astock],2)
     except:
         y1wm2 = "NA"
-
-    try:
-        dr, ebit, r_value, slope = getFrom("wlp_lasts", astock)
-    except:
-        dr = "NA"
-        ebit = "NA"
-        r_value = "NA"
-        slope = "NA"
-    try:
-        mc_size = getFrom("latest_mc", astock)
-#        fcf_mc = getFrom("fcfdic2", astock)
-#        fcf_mc = round((fcf_mc/mc_size)*10,2)
-    except:
-#        fcf_mc = "NA"
-        mcc = "NA"
-
-    try:
-        yearagomc_size = getFrom("yearagomc", astock)
-        mcc = round(mc_size/yearagomc_size,2)
-    except:
-        mcc = 0
-
-#    try:
-#        ui, di, l60 = getFrom("ud_dict", astock)
-#    except:
-#        ui, di, l60 = "NA", "NA", "NA"
 
     try:
         basischange = getFrom("cost_change", astock)[1]
@@ -586,30 +587,16 @@ def single(value, avgOneYear, retval = None, lots = True):
         except:
             downs = ""
 
-#        fromtopgain = "{}gain".format(start)
-#        (fromtopgain, (c_close/lowFromHigh)),
-#        ("fcf", getFrom("fcfdic", astock)),
-#        ("ebit", ebit),
-#        ("avg5", z.avg(avg5Change)),
-#        ("6u_i", ui),
-#        ("d_i", di),
-#        ("rsi", rsi),
-#        ("rsiid", getFrom("rsi_indicator_dic", astock)),
-#        ("fcf", fcf_mc),
-#        ("last60", l60),
-#        ("os_r", r_value),
-#        ("os_s", slope),
-
-#    if len(upd) > 5:
-#        print("PROBLEMATIC DATA astock: {}".format( astock))
-#        print("upd: {}".format( upd))
-#        exit()
-
     score = 0
-    
-    ivv = getFrom("ivvCompare", astock)
-    ivv2 = getFrom("ivvDaily", astock)
-    probu =  getLongProbDown(astock)
+#    ivv = getFrom("ivvCompare", astock)
+#    ivv2 = getFrom("ivvDaily", astock)
+#    probu =  getLongProbDown(astock)
+
+    try:
+        probu, ivv = getFrom("probs", astock)
+    except Exception as e:
+        z.trace(e)
+        exit()
 
     val = 0
     try:
@@ -617,14 +604,15 @@ def single(value, avgOneYear, retval = None, lots = True):
     except:
         pass
     try:
-        val += .3 if pe < 100 else 0 
+        val += .2 if pe < 100 else 0 
     except:
         pass
 
     try:
-        val = ivv if ivv < 1.4 else 1.4 
-        score = round(val + ivv2 + probu + dayup, 2)
+#        val = ivv if ivv < 1.4 else 1.4 
+        score = round(val + probu + dayup, 2)
     except Exception as e:
+        print ("no score")
         score = 0
 
     try:
@@ -633,15 +621,25 @@ def single(value, avgOneYear, retval = None, lots = True):
         med_15, tgt_15 = "NA", "NA"
 
     chgchg= 0
-    try:
-        chgchg = round(med_15/ orderchange,3)
-    except:
-        pass
+#    try:
+#        chgchg = round(med_15/ orderchange,3)
+#    except:
+#        pass
+
+    hld, hlr = getFrom("hldic", astock, ("",""))
+    apd1, apd2, apdc, apd = getapds(prices)
+
+#        ("maxu", maxup),
+#        ("maxd", maxdown),
+#        ("orderc", orderchange),
+#        ("chgchg", chgchg),
+#        ("mcc", mcc),
+#        ("upd", upd),
 
     values = [
         ("stock", inPortfolio(astock)),
-        ("strat", getFrom("strat", astock)),
         ("price", c_close),
+        ("beta", be),
         ("min5", min5),
         ("med5", med_15),
         ("last5", last5),
@@ -654,30 +652,25 @@ def single(value, avgOneYear, retval = None, lots = True):
         ("score", score),
         ("probu", probu),
         ("daily", dayup),
-        ("maxu", maxup),
-        ("maxd", maxdown),
-        ("ivv", ivv), 
-        ("ivv2", ivv2),
+        ("ivvb", ivv), 
+        ("1apd", apd1),
+        ("2apd", apd2),
+        ("apdc", apdc),
+        ("apd", apd),
         ("div", div),
         ("y1l", y1l),
         ("y1l2", y1l2),
         ("y1m", y1m2),
         ("y1w", y1w2),
-        ("mcc", mcc),
-        ("upd", upd),
-        ("hldic", getFrom("hldic", astock, "")),
         (fromtop, (lowFromHigh/high)),
-        ("dr", dr),
-        ("pe", pe),
         ("meandrop", meandrop),
         ("tgt15", tgt_15),
         ("basisc", basischange),
-        ("down", downs),
         ("owned", portFolioValue(astock)),
-        ("Orders", orderstr),
-        ("orderc", orderchange),
-        ("chgchg", chgchg),
         ("name", name) ]
+#        ("down", downs),
+#        ("hldic", hld),
+#        ("ratio", hlr),
 
     if args.live:
         values.append(("last", (c_close/prev_close)))
@@ -685,8 +678,8 @@ def single(value, avgOneYear, retval = None, lots = True):
         values.append(("last", last))
 
     table_print.store(values)
-    table_print.use_percentages = ["avg5", "min5", "last5", lastchange, "orderc", "mcc", "basisc", fromtop, wcchange, diffS, "med5", "strat"]
-    table_print.gavgs = ["107chg", "y1w", "probu", "ivv"]
+    table_print.use_percentages = ["avg5", "min5", "last5", lastchange, "orderc", "mcc", "basisc", fromtop, wcchange, diffS, "med5", "strat", "1apd", "2apd", "apd"]
+    table_print.gavgs = ["107chg", "y1w", "probu", "ivvb"]
 
 #    if args.live:
     table_print.use_percentages.append("last")
@@ -748,7 +741,7 @@ def multiplep(title):
     exit()
 
 args = None
-def init():
+def init(live=False):
     import argparse
     global orders, torys, tory, mine, dict2, parser, args, savedhelper
 
@@ -759,6 +752,8 @@ def init():
     parser.add_argument('--section', default=None)
     parser.add_argument('helpers', type=str, nargs='?', default = [])
     args = parser.parse_args()
+    if live:
+        args.live = True
     savedhelper = None
     if args.helpers:
         savedhelper = args.helpers
@@ -817,20 +812,29 @@ if __name__ == '__main__':
         multiple("lowbeta")
         multiple("highbeta")
         multiple("highscore")
+        multiple("highscore_large")
 
         table_print.initiate()
         exit()
 
     if args.mode == "single":
         astock = savedhelper.upper()
-        ret = multiple([astock], "single", retval=False)
-        if ret == False:
-            import regen_stock
-            regen_stock.process(astock)
-            ret = multiple([astock], "single")
+        print("astock : {}".format( astock ))
+        try:
+            ret = multiple([astock], "single", retval=False)
+            print("ret : {}".format( ret ))
+
             if ret == False:
-                exit()
-        table_print.initiate()
+                import regen_stock
+                regen_stock.process(astock)
+                ret = multiple([astock], "single")
+                if ret == False:
+                    exit()
+
+            table_print.initiate()
+        except Exception as e:
+            z.trace(e)
+
         exit()
 
     if args.mode == "multiple":
@@ -889,14 +893,13 @@ if __name__ == '__main__':
         exit()
 
     if "mc" in args.mode:
-        wlp_sorted_mc = z.getp("wlp_sorted_mc")
-        items = wlp_sorted_mc[dates[-252]]
-        items = sorted(items, reverse=True)
-        multiple(items[:30], title = "MC1")
-        multiple(items[30:60], title = "MC2")
-        multiple(items[210:240], title = "MC1")
-        multiple(items[240:270], title = "MC2")
-        multiple(items[270:300], title = "MC3")
+        mcdic = z.getp("latestmc")
+        topmc = list(mcdic.keys())[100:200]
+        multiple(topmc, title = "MC1")
+#        multiple(items[30:60], title = "MC2")
+#        multiple(items[210:240], title = "MC1")
+#        multiple(items[240:270], title = "MC2")
+#        multiple(items[270:300], title = "MC3")
         table_print.initiate()
         exit()
 
@@ -906,18 +909,17 @@ if __name__ == '__main__':
         multiple("worst30c")
     except:
         pass
-
+#
     m1 = ["COST", "WMT", "NKE", "FB", "MSFT", "TGT", "BABA", "NFLX", "AMZN", "GOOG", "AMD", "ADBE", "DIS", "KO", "TSLA", "WM", "BA", "JNJ", "BLK", "VMW"]
     multiple(m1, title="Other")
 
-    try:
-        multiple("gained_discount")
-        multiple("low_high_sort")
-
-        multiple(orders.keys(), title = "Orders")
-        z.setp(problems, "problems")
-    except:
-        pass
+#    try:
+#        multiple("gained_discount")
+#        multiple("low_high_sort")
+#        multiple(orders.keys(), title = "Orders")
+#        z.setp(problems, "problems")
+#    except:
+#        pass
 
     print ("{} days ago was : {} \tLatest {}".format(start, dates[-1*start], dates[-1]))
     z.setp(getDropScore.cache, "newdropcache")

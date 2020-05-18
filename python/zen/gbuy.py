@@ -1,4 +1,5 @@
 import z
+import math
 import buy
 import os
 from sortedcontainers import SortedSet
@@ -178,14 +179,19 @@ if __name__ == '__main__':
                         chg = round(adj/cclose,3)
                     except:
                         chg = 1
-                    cclose = adj
-                    added = True
-                    f.write("{},{},{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, adj, vol, chg))
+
+                    if not math.isnan(opend):
+                        cclose = adj
+                        added = True
+                        f.write("{},{},{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, adj, vol, chg))
 
         buy.updateDates()
 
-        import prob_down_5_years
-        prob_down_5_years.prob()
+#        import prob_down_5_years
+#        prob_down_5_years.prob()
+
+        import prob_up_1_year
+        prob_up_1_year.procs()
 
         import gained_discount
         gained_discount.dosomething()

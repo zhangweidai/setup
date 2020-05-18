@@ -139,6 +139,7 @@ def getFidelities():
         if ".csv" not in entry:
             continue
         fullpath = "{}/{}".format(parentdir, entry)
+        print("fullpath : {}".format( fullpath ))
         tim = os.path.getmtime(fullpath)
         bar.add((tim, fullpath))
         os.system("chmod 777 {}".format(fullpath) )
@@ -221,10 +222,11 @@ def saveGain(account, astock, c_gain, quant):
         pass
 
 cash = 0
+cashlist = list()
 def simple(path, dontknow, etfs, total):
-    global ports, second, mine, tory, sset, cost_change, cash
+    global ports, second, mine, tory, sset, cost_change, cash, cashlist
+    ccash = 0
 
-    print("path : {}".format( path ))
     for row in csv.DictReader(open(path)):
         isetf = False
         astock = row['Description'] 
@@ -235,9 +237,11 @@ def simple(path, dontknow, etfs, total):
             pass
 
         astock = row['Symbol'] 
-        if "**" in astock:
+        if "**" in astock or astock == "FNSXX":
             c_value = float(row['Current Value'].strip("$").strip(" ").replace(',',''))
             cash += c_value
+            ccash += c_value
+            cashlist.append(c_value)
             continue
 
         if len(astock) >= 1 and astock not in skips:
@@ -249,8 +253,10 @@ def simple(path, dontknow, etfs, total):
                 c_account = row['Account Name/Number']
                 saveGain(c_account, astock, c_gain, quant)
             except Exception as e:
+                print("astock: {}".format( astock))
+                print("row: {}".format( row))
                 z.trace(e)
-                exit()
+#                exit()
                 continue
 
             try:
@@ -285,16 +291,19 @@ def simple(path, dontknow, etfs, total):
                 etfs += c_value
 
             ports[astock] = round(ports[astock] + c_value,2)
-    return dontknow, etfs, total
+    return dontknow, etfs, total, ccash
 
 ports = None
 tory = None
 mine = None
 sset = None
 def getPorts():
+    import locale
+    locale.setlocale( locale.LC_ALL, '' )
+
     paths = getFidelities()
     if len(paths) != 2:
-        print ("not enough files")
+        print ("Unexpected number of files")
         exit()
 
     global ports, second, ports, tory, mine, sset, saved_gain, cost_change
@@ -303,25 +312,32 @@ def getPorts():
     tory = list()
     sset = defaultdict(int)
 
-    total = 0
+    total = 2838
+    ccash = 0
     dontknow = 0
     etfs = 0
 
-    dontknow, etfs, total = simple(paths[0][1], dontknow, etfs, total)
-    print("total : {}".format( total ))
+    dontknow, etfs, total, ccash = simple(paths[0][1], dontknow, etfs, total)
+    print("P total : {}".format(locale.currency( total+ccash , grouping=True )))
+    print("P cash  : {}".format(locale.currency( ccash , grouping=True )))
+    print("        : {}".format(round(ccash/(total+ccash),2)))
+
     second = True
     total2 = 0
 
-    dontknow, etfs, total2 = simple(paths[1][1], dontknow, etfs, total2)
-    print("total2 : {}".format( total2 ))
+    dontknow, etfs, total2, ccash = simple(paths[1][1], dontknow, etfs, total2)
+    print("T total : {}".format(locale.currency( total2+ccash , grouping=True )))
+    print("T cash  : {}".format(locale.currency( ccash , grouping=True )))
+    print("        : {}".format(round(ccash/(total2+ccash),2)))
     total += total2
 
     vg = round(vanguard())
-    print("vg : {}".format( vg ))
+    print("Vanguard: {}".format(locale.currency( vg , grouping=True )))
     total += vg
     etfs += vg
     total += cash
     total = round(total)
+    print("Total  : {}".format(locale.currency( total , grouping=True )))
 
     z.setp(cost_change, "cost_change")
     z.setp(saved_gain, "saved_gain")
@@ -331,10 +347,10 @@ def getPorts():
     z.setp(ports,"ports")
     z.setp(mine, "mine")
     z.setp(tory, "tory")
-    print("dontknow : {}".format( dontknow ))
+    if dontknow:
+        print("dontknow : {}".format( dontknow ))
 
     skeys = sorted(sset.keys())
-    print("total: {}".format( total))
     for akey in skeys:
         res = round(round(sset[akey] / total,3) * 100,2)
         dkey = "{}-{}".format(akey*50, (akey+1)*50)
@@ -351,12 +367,12 @@ def getPorts():
         print(" {:>10} {:>6}% {:>6}".format( "etfs", res, round(etfs)))
     except:
         pass
-    print("cash : {}".format( cash ))
+    print("Cash  : {}".format(locale.currency( cash , grouping=True )))
 
     z.setp(sset, "mcranges")
 
 def vanguard():
-    global ports
+    global ports, cash, cashlist
     parentdir = "/mnt/c/Users/Zoe/Downloads"
     if not os.path.exists(parentdir):
         parentdir = "/mnt/c/Users/pzhang/Downloads"
@@ -367,6 +383,10 @@ def vanguard():
         try:
             val = float(row["Total Value"])
             astock = row["Symbol"]
+            if astock == "VMFXX":
+                cash += val
+                cashlist.append(c_value)
+                continue
         except:
             val = 0
             pass

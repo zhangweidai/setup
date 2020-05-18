@@ -197,6 +197,7 @@ alias well='cd ~/setup/csharp; mcs hello.cs; mono hello.exe'
 alias well='cd ~/setup/python/motivation; py main.py'
 alias mko='cd ~/setup/csharp; mcs hello.cs'
 alias gos='cd /mnt/c/Users/Zoe/SandBox'
+alias delstock='py gained_discount.py --delete'
 alias gos2='cd /mnt/c/Users/Zoe/3D_SandBox'
 #alias xdg-open='wsl-open'
 #sudo -S true
@@ -212,3 +213,4 @@ export PULSE_SERVER=tcp:localhost
 alias  bd='python ~/setup2/python/bd.py'
 # awk '{ print $1 }'
 go1
+alias well='cd ~/setup2/python/; python watchfile.py'

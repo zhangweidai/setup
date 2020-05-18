@@ -6,6 +6,8 @@ import buy
 import os
 import argparse
 
+accurate = True
+g_allow_clearing = True
 args = None
 cidx = 0
 use_percentages = list()
@@ -65,16 +67,24 @@ titles = dict()
 dates = z.getp("dates")
 clist = list()
 def printTable(tablename ="default"):
-    global args
-    if args.nc == False:
-        os.system("clear")
+    global g_allow_clearing
+    global args, accurate
+
+    try:
+        if args.nc == False and g_allow_clearing:
+            os.system("clear")
+    except:
+        import argparse
+        parser = argparse.ArgumentParser()
+        args = parser.parse_args()
+
 
     global cidx, mm, ivv, iusg, clist, avgidx
     headerWidths = defaultdict(int)
 
     if cidx not in titles:
         titles[cidx] = tablename
-    print ("\n=== " , titles[cidx] , dates[-1], "===")
+    print ("\n=== " , titles[cidx] , dates[-1], "\t\t50:", dates[-50], " \t100:", dates[-100], "===")
 
     # determine headerWidths
     dics = defaultdict(list)
@@ -190,7 +200,7 @@ def printTable(tablename ="default"):
 
             try:
                 if ctitle in use_percentages:
-                    saveme.append(bar.format(z.percentage(individual)))
+                    saveme.append(bar.format(z.percentage(individual, accurate=accurate)))
                 else:
                     saveme.append(bar.format(individual))
             except:
@@ -216,7 +226,7 @@ def printTable(tablename ="default"):
 
         try:
             if ctitle in use_percentages:
-                avgs.append(bar.format(z.percentage(val)))
+                avgs.append(bar.format(z.percentage(val, accurate=accurate)))
             else:
                 avgs.append(bar.format(val))
         except:
@@ -231,12 +241,15 @@ def printTable(tablename ="default"):
     print("IVV:  {}\nIUSG: {}".format(ivv, iusg))
 
 lastf = 0
-def initiate():
+def initiate(allow_clearing = True):
+    global args
     global cidx
     global currentsort
     global clist
     global reversing
     global avgidx, lastf
+    global g_allow_clearing
+    g_allow_clearing = allow_clearing
     import readchar
     import os
 
@@ -244,8 +257,14 @@ def initiate():
     printTable()
 
 #    os.system("powershell.exe /c start firefox.exe ")
-    if args.nc:
-        exit()
+    try:
+        if args.nc:
+            exit()
+    except:
+        import argparse
+        parser = argparse.ArgumentParser()
+        args = parser.parse_args()
+
     key = readchar.readkey()
     while (key != "q"):
         avgidx = None
@@ -322,19 +341,19 @@ def initiate():
 
             elif key == "=":
                 currentsort = currentsort + 1
-                if args.nc == False:
+                if args.nc == False and allow_clearing:
                     os.system("clear")
                 printTable()
 
             elif key == "-":
                 currentsort = currentsort - 1
-                if args.nc == False:
+                if args.nc == False and allow_clearing:
                     os.system("clear")
                 printTable()
 
             elif int(key):
                 currentsort = int(key) - 1
-                if args.nc == False:
+                if args.nc == False and allow_clearing:
                     os.system("clear")
                 printTable()
         except:

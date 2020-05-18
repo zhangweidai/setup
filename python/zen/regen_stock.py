@@ -3,6 +3,7 @@ import buy
 import os
 from sortedcontainers import SortedSet
 import gbuy
+import math
 
 def generateWorst30():
     dates = z.getp("dates")
@@ -82,7 +83,8 @@ def process(astock, one_at_a_time = True):
 #            closed = df.at[idx, "Close"]
 #            adj = df.at[idx, "Adj Close"]
 #            vol = df.at[idx, "Volume"]
-            f.write("{},{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, adj, vol)) 
+            if not math.isnan(opend):
+                f.write("{},{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, adj, vol)) 
 
         if one_at_a_time:
             import json_util

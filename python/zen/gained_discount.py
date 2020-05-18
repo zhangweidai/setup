@@ -84,8 +84,8 @@ def genUlt(stocks = None):
             pass
 
         try:
-            mcrank = buy.getMCRank(astock)
-            if int(mcrank) < 420 or c_close >= 200:
+            mcrank = int(buy.getMCRank(astock))
+            if (mcrank < 280) or (c_close >= 200 and mcrank < 420):
                 avg30c.add((score,astock))
                 worst30c.add((y1l,astock))
         except:
@@ -97,8 +97,8 @@ def genUlt(stocks = None):
     if allofthem:
         z.setp(avg30[-30:], "avg30")
         z.setp(avg30c[-30:], "avg30c")
-        z.setp(worst30c[:30], "worst30c", True)
-        z.setp(worst30c[-30:], "best30c")
+        z.setp(worst30c[:40], "worst30c", True)
+        z.setp(worst30c[-40:], "best30c")
         z.setp(savedic, "annuals");
         z.setp(saveme, "y1wm2");
 
@@ -265,6 +265,7 @@ def dosomething():
 #        z.breaker(5)
 
 def delstock(astock):
+    import rows
     try:
         data = z.getp("div_mc_dict")
         del(data[astock])
@@ -272,21 +273,32 @@ def delstock(astock):
     except:
         pass
 
-    import split_data
     afile = z.getPath("historical/{}.csv".format(astock))
     if os.path.exists(afile):
         os.remove(afile)
-    for afile in buy.getFiles(astock):
-        if os.path.exists(afile):
-            os.remove(afile)
-            print("afile : {}".format( afile ))
-    split_data.setlistofstocks()
+    try:
+        for afile in rows.getFiles(astock):
+            if os.path.exists(afile):
+                os.remove(afile)
+                print("removed  : {}".format( afile ))
+    except Exception as e:
+        z.trace(e)
+        print("1problem  : {}".format( afile ))
+        pass
+    import gbuy
+    gbuy.setlistofstocks()
 
 if __name__ == '__main__':
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--delete')
+    args = parser.parse_args()
+    if args.delete:
+        delstock(args.delete.upper())
+#    else:
+    genUlt()
 #    dosomething2()
 #    dosomething3()
 #    dosomething()
-#    delstock("CJ")
 #    genUlt(['FAST'])
-    genUlt()
 

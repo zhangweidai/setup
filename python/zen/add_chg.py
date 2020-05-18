@@ -1,5 +1,6 @@
 import z
 import os
+import datetime
 import csv
 
 def getYears(date):
@@ -17,6 +18,22 @@ def getRows(astock, date = "2000"):
     date_year = date.split("-")[0]
     prev_c = None
     for apath in getFiles(astock, date):
+
+        try:
+            t = os.path.getmtime(apath)
+        except:
+            continue
+
+        csvdate = datetime.datetime.fromtimestamp(t)
+        csvday = csvdate.day
+        csvmonth = csvdate.month
+        ttoday = datetime.date.today().day
+        tmonth = datetime.date.today().month
+
+        if csvday >= ttoday and tmonth == csvmonth:
+            missed = 0
+            continue
+
         try:
             with open(apath, "r") as f:
                 lines = f.readlines()
@@ -37,6 +54,8 @@ def getRows(astock, date = "2000"):
                     prev_c = cclose
 
 stocks = z.getp("listofstocks")
-for astock in stocks:
+for idx, astock in enumerate(stocks):
+    if not idx % 100:
+        print("idx: {}".format( idx))
     getRows(astock)
 

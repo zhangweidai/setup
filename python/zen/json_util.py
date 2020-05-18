@@ -1,7 +1,9 @@
 import urllib.request, json
 from bs4 import BeautifulSoup
 import z
+import datetime
 import buy
+import os
 
 def getMarketCapPage(astock):
     addy = "https://finance.yahoo.com/quote/{}/key-statistics?p={}".format(\
@@ -21,11 +23,30 @@ def getMarketCapPage(astock):
 
     return decoded.split("\n")
 
+ttoday = datetime.date.today().day
+print("ttoday : {}".format( ttoday ))
+tmonth = datetime.date.today().month
+print("tmonth : {}".format( tmonth ))
+
 billion = 1000000000
 def parsePage(astock, update=False):
 
     live = None
-    if not update:
+    if update:
+        path = z.getPath("{}/{}.pkl".format("yahoo_mc", astock))
+        try:
+            t = os.path.getmtime(path)
+            csvdate = datetime.datetime.fromtimestamp(t)
+            csvday = csvdate.day
+            csvmonth = csvdate.month
+
+            if csvday == ttoday and tmonth == csvmonth:
+                live = z.getp(astock, override="yahoo_mc")
+                update = False
+        except Exception as e:
+            z.trace(e)
+            pass
+    else: 
         live = z.getp(astock, override="yahoo_mc")
 
     if live is None or update:
@@ -54,6 +75,8 @@ def parsePage(astock, update=False):
         more = line.split(":")
         for i,aline in enumerate(more):
 
+            aline = aline.lower()
+
             if lookingfor in aline:
                 nextone = True
 
@@ -65,14 +88,14 @@ def parsePage(astock, update=False):
 #                    pass
 ##                    return True
 
-            elif nextone and "marketCap" in aline:
+            elif nextone and "marketcap" in aline:
                 try:
                     if not cap:
                         cap = round(int(more[i+2].split(",")[0])/billion,5)
                 except Exception as e:
                     pass
 
-            elif nextone and "freeCashflow" in aline:
+            elif nextone and "freecashflow" in aline:
                 try:
                     if not fcf:
                         fcf = round(int(more[i+2].split(",")[0])/billion,5)
@@ -87,7 +110,10 @@ def parsePage(astock, update=False):
 #                except:
 #                    pass
 
-            elif nextone and "dividendYield" in aline:
+#            elif nextone and "dividend" in aline:
+#                print("aline: {}".format( aline))
+
+            elif nextone and "dividendyield" in aline:
                 try:
                     if not dividend:
                         dividend=float(more[i+2].split(",")[0])
@@ -101,9 +127,10 @@ def parsePage(astock, update=False):
                 except:
                     pass
 
-            elif nextone and "trailingPE" in aline:
+            elif nextone and "trailingpe" in aline:
                 try:
-                    pe=round(float(more[i+2].split(",")[0]),2)
+                    if not pe:
+                        pe=round(float(more[i+2].split(",")[0]),2)
                     #return (cap, beta, pe, dividend, fcf)
                 except:
                     pass
@@ -494,9 +521,9 @@ def parses(stocks, update=True, addone = False):
             mcs.add((cap, astock))
             divdict[astock] = div, cap, pe
         except Exception as e:
-#            z.trace(e)
+            z.trace(e)
             continue
-
+#
     z.setp(divdict, "mcdivdict")
     if not addone:
         buy.sortedSetToRankDict("latestmc", mcs, reverse=True)
@@ -505,7 +532,8 @@ if __name__ == '__main__':
 #    updateOldYahoos()
 #    iterateStocks()
     stocks = z.getp("listofstocks")
-    parses(stocks, update=False)
+#    stocks = ["BA"]
+    parses(stocks, update=True)
 #    remaining()
 
 #    print (parsePage("EC"))

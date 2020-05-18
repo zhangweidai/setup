@@ -4,15 +4,15 @@ import buy
 import sliding
 import statistics
 
-start = 107
+start = 50
 istart = -1*start
-req = start - 30
+req = start - 20
 dates = z.getp("dates")
 
 def proc(astock):
     prev_close = None
-    closes = sliding.WindowQueue(15)
-    lows = sliding.WindowQueue(15, needMin=True)
+    closes = sliding.WindowQueue(9)
+    lows = sliding.WindowQueue(9, needMin=True)
     mins = list()
 
     for i, row in enumerate(buy.getRows(astock, dates[istart])):
@@ -29,8 +29,10 @@ def proc(astock):
 
     if len(mins) >= req:
         med_15 = statistics.median(mins)
-        tgt_15 = round(med_15 * c_close,2)
-        return med_15, tgt_15
+        means = statistics.mean(mins)
+        useme = (med_15 + means) /2
+        tgt_15 = round(useme * c_close,2)
+        return useme, tgt_15
 
 def procs():
     stocks = z.getp("listofstocks")

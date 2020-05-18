@@ -18,7 +18,7 @@ def proc(astock):
     count = 0 
     score = 0
 
-    mc = buy.getFrom("latestmc", astock)
+    mc = buy.getFrom("latestmc", astock, 3000)
     if mc > 2000:
         return
 
@@ -52,7 +52,10 @@ def proc(astock):
         score = 0
         print("astock : {}".format( astock ))
 
-    buy.addSortedHigh("highscore", round(score,1), astock, keeping = 40)
+    rscore = round(score,1)
+    buy.addSortedHigh("highscore", rscore, astock, keeping = 40)
+    if mc < 300:
+        buy.addSortedHigh("highscore_large", rscore, astock, keeping = 40)
 
 def procs():
     buy.init()
@@ -63,6 +66,9 @@ def procs():
             proc(astock)
         except:
             pass
+    bar = buy.getSorted("highscore_large")
+    z.setp(bar, "highscore_large")
+
     bar = buy.getSorted("highscore")
     z.setp(bar, "highscore")
     buy.multiple("highscore")

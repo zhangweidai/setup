@@ -55,7 +55,10 @@ def rebuild():
         for i, row in enumerate(getRowsRange(cstock, count=end, date=startdate)):
             c_close = float(row[z.closekey])
             values.append(c_close)
-        fv = values[0]
+        try:
+            fv = values[0]
+        except:
+            break
         v1 = [ round((i/fv)-1,3) for i in values ]
         vdict[cstock] = v1
         minv = min(v1)
@@ -356,17 +359,8 @@ def plot():
     fig, ax = plt.subplots()
     configurePlots(fig)
     rebuild()
-#    fig.canvas.get_tk_widget().focus_set()
-    gui_env = ['TKAgg','GTKAgg','Qt4Agg','WXAgg']
-    for gui in gui_env:
-        try:
-            print ("testing", gui)
-            matplotlib.use(gui,warn=False, force=True)
-            break
-        except:
-            continue
-        print ("Using:",matplotlib.get_backend())
-        plt.show()
+    fig.canvas.get_tk_widget().focus_set()
+    plt.show(block=True)
 
 if __name__ == "__main__":
     lap = False
@@ -384,7 +378,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('helpers', type=str, nargs='?', default = "")
     parser.add_argument('refs', type=str, nargs='?', default = "")
-#    parser.add_argument('--mode', default="default")
+    parser.add_argument('--s', default=None)
     args = parser.parse_args()
 
 
@@ -396,10 +390,15 @@ if __name__ == "__main__":
 #        exit()
 
     stocks = []
-    if args.helpers == "":
-        stocks = z.getEtfList(buys=True)
+    if args.s:
+        stocks = args.s.upper().split(",")
+    elif "," in args.helpers:
+        stocks = args.helpers.upper().split(",")
     else:
-        types, stocks = z.getStocks(args.helpers)
+        if args.helpers == "":
+            stocks = z.getEtfList(buys=True)
+        else:
+            types, stocks = z.getStocks(args.helpers)
 
     savedhelper = args.refs
 
