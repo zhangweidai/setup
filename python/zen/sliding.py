@@ -3,15 +3,19 @@ import collections
 class WindowQueue(object):
     
     def __init__(self, maxsize=15, needMin=False, needMax=False):
-        self.main = collections.deque()
         self.maxsize = maxsize
         self.needMin = needMin
         self.needMax = needMax
-        if needMin:
-            self.mindeque = collections.deque()
-        if needMax:
-            self.maxdeque = collections.deque()
+
+        self.clear()
     
+    def clear(self):
+        self.main = collections.deque()
+        if self.needMin:
+            self.mindeque = collections.deque()
+        if self.needMax:
+            self.maxdeque = collections.deque()
+
     def get_minimum(self):
         return self.mindeque[0]
     

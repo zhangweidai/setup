@@ -616,13 +616,14 @@ def single(value, avgOneYear, retval = None, lots = True):
         score = 0
 
     try:
-        med_15, tgt_15 = getFrom("low_target", astock)
+        med_9, tgt_9, often = getFrom("low_target", astock)
+        often = round(often, 2)
     except:
-        med_15, tgt_15 = "NA", "NA"
+        med_9, tgt_9, often = "NA", "NA", "NA"
 
     chgchg= 0
 #    try:
-#        chgchg = round(med_15/ orderchange,3)
+#        chgchg = round(med_9/ orderchange,3)
 #    except:
 #        pass
 
@@ -641,7 +642,6 @@ def single(value, avgOneYear, retval = None, lots = True):
         ("price", c_close),
         ("beta", be),
         ("min5", min5),
-        ("med5", med_15),
         ("last5", last5),
         (lastchange, lchange),
         (wcchange, wcc),
@@ -664,7 +664,9 @@ def single(value, avgOneYear, retval = None, lots = True):
         ("y1w", y1w2),
         (fromtop, (lowFromHigh/high)),
         ("meandrop", meandrop),
-        ("tgt15", tgt_15),
+        ("tgt9", tgt_9),
+        ("med9", med_9),
+        ("often", often),
         ("basisc", basischange),
         ("owned", portFolioValue(astock)),
         ("name", name) ]
@@ -678,7 +680,7 @@ def single(value, avgOneYear, retval = None, lots = True):
         values.append(("last", last))
 
     table_print.store(values)
-    table_print.use_percentages = ["avg5", "min5", "last5", lastchange, "orderc", "mcc", "basisc", fromtop, wcchange, diffS, "med5", "strat", "1apd", "2apd", "apd"]
+    table_print.use_percentages = ["avg5", "min5", "last5", lastchange, "orderc", "mcc", "basisc", fromtop, wcchange, diffS, "med9", "strat", "1apd", "2apd", "apd"]
     table_print.gavgs = ["107chg", "y1w", "probu", "ivvb"]
 
 #    if args.live:
@@ -891,6 +893,21 @@ if __name__ == '__main__':
 #        multiple("probs_added_up")
         table_print.initiate()
         exit()
+
+    if "accounts" in args.mode:
+        multiple(["CI", "IGM", "IHI", "IJH", "IJR", "IUSG", "USMV", "VOO"], title = "traditiona_ira_zhang")
+        multiple(["GOOGL", "ICLN", "IGM", "IHI", "IUSG", "IVV", "IWB", "MTUM", "PFE", "SAP", "SPGI", "USMV" ], title = "traditiona_ira_zhang")
+        multiple(["BDX", "IGM", "IVV", "IYH", "USMV"], title = "brokerage_roth_zhang")
+        multiple(["ATO", "BYND", "CDW", "ELS", "EXPO", "FIS", "HDB", "HEI", "MPWR", "NKE", "VFMV", "VPU", "VUG"], title = "traditional_tat")
+        multiple(["AYX", "GE", "HQY", "IUSG", "SNAP", "SO", "SOXX", "TNDM", "VTI", "VUG", "WM"], title = "roth_tat")
+        multiple(["AYX", "GE", "HQY", "IUSG", "SNAP", "SO", "SOXX", "TNDM", "VTI", "VUG", "WM"], title = "roth_tat")
+#        multiple(items[30:60], title = "MC2")
+#        multiple(items[210:240], title = "MC1")
+#        multiple(items[240:270], title = "MC2")
+#        multiple(items[270:300], title = "MC3")
+        table_print.initiate()
+        exit()
+
 
     if "mc" in args.mode:
         mcdic = z.getp("latestmc")

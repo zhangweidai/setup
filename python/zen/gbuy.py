@@ -13,7 +13,7 @@ yf.pdr_override()
 def getDataFromYahoo(astock, cdate):
     df = None
     try:
-        print("astock: {}".format( astock))
+        print("d astock: {}".format( astock))
         df = pdr.get_data_yahoo([astock], start=cdate)
     except Exception as e:
         try:
@@ -112,6 +112,7 @@ if __name__ == '__main__':
         import datetime
         now = datetime.datetime.now()
         missed = 0
+        started = False
         for astock in stocks:
 
             if astock in skips:
@@ -128,6 +129,7 @@ if __name__ == '__main__':
             csvmonth = csvdate.month
             ttoday = datetime.date.today().day
             tmonth = datetime.date.today().month
+
 
             if csvday >= ttoday and tmonth == csvmonth:
                 missed = 0
@@ -197,8 +199,8 @@ if __name__ == '__main__':
         gained_discount.dosomething()
         gained_discount.genUlt()
 
-        import drop_finder
-        drop_finder.procs()
+        import drop_finder2
+        drop_finder2.procs()
 
         import slow_and_steady
         slow_and_steady.procs()
