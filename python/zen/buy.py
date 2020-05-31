@@ -616,10 +616,10 @@ def single(value, avgOneYear, retval = None, lots = True):
         score = 0
 
     try:
-        med_9, tgt_9, often = getFrom("low_target", astock)
+        med_9, tgt_9, often, adl = getFrom("low_target", astock)
         often = round(often, 2)
     except:
-        med_9, tgt_9, often = "NA", "NA", "NA"
+        med_9, tgt_9, often, adl = "NA", "NA", "NA", "NA"
 
     chgchg= 0
 #    try:
@@ -667,6 +667,7 @@ def single(value, avgOneYear, retval = None, lots = True):
         ("tgt9", tgt_9),
         ("med9", med_9),
         ("often", often),
+        ("adl", adl),
         ("basisc", basischange),
         ("owned", portFolioValue(astock)),
         ("name", name) ]
@@ -680,7 +681,7 @@ def single(value, avgOneYear, retval = None, lots = True):
         values.append(("last", last))
 
     table_print.store(values)
-    table_print.use_percentages = ["avg5", "min5", "last5", lastchange, "orderc", "mcc", "basisc", fromtop, wcchange, diffS, "med9", "strat", "1apd", "2apd", "apd"]
+    table_print.use_percentages = ["avg5", "min5", "last5", lastchange, "orderc", "mcc", "basisc", fromtop, wcchange, diffS, "med9", "strat", "1apd", "2apd", "apd", "adl"]
     table_print.gavgs = ["107chg", "y1w", "probu", "ivvb"]
 
 #    if args.live:

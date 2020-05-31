@@ -20,6 +20,8 @@ def proc(astock):
     prevbuy = None
     bought = None
     boughts = list()
+    c_close = None
+    dailys = list() 
 
     for i, row in enumerate(buy.getRows(astock, firstdate)):
         try:
@@ -27,6 +29,12 @@ def proc(astock):
         except:
             print("no low? astock: {}".format( astock))
             return "NA", "NA", "NA"
+
+
+        if c_close and c_close > c_low:
+            daily_low = round(c_low/c_close,3)
+            dailys.append(daily_low)
+
         c_close = float(row[z.closekey])
         date = row['Date']
 #        print("date {} c_low : {} c_close: {} cclose {}".format( date, c_low, c_close, c_cclose ))
@@ -46,7 +54,7 @@ def proc(astock):
         if bar and not bar % 52:
             med_15 = statistics.median(mins)
             means = statistics.mean(mins)
-            useme = min((med_15 , means))
+            useme = round(min((med_15 , means)),3)
             tgt_15 = round(useme * c_close,2)
             answers.append((useme, tgt_15))
             
@@ -69,18 +77,23 @@ def proc(astock):
 #        useme = (med_15 + means) /2
 #        tgt_15 = round(useme * c_close,2)
     boughtsanswer = "NA"
-    if len(boughts) >= 5:
-        boughtsanswer = statistics.mean(boughts)
     try:
-        return answers[-1][0], answers[-1][1], boughtsanswer
+        adl = round((statistics.mean(dailys) + statistics.median(dailys))/2,3)
+    except:
+        adl = "NA"
+
+    if len(boughts) >= 5:
+        boughtsanswer = round(statistics.mean(boughts),3)
+    try:
+        return answers[-1][0], answers[-1][1], boughtsanswer, adl
     except:
         print("astock: {}".format( astock))
-    return "NA", "NA", "NA"
+    return "NA", "NA", "NA", "NA"
 
 
 def procs():
     stocks = z.getp("listofstocks")
-#    stocks = ["BA"]
+    #stocks = ["BA", "KO", "NKE", "TSLA", "COST", "AMD"]
     low_target = dict()
     for astock in stocks:
         try:
@@ -89,6 +102,7 @@ def procs():
             z.trace(e)
             pass
     z.setp( low_target, "low_target")
+    print("low_target: {}".format( low_target))
 
 if __name__ == '__main__':
     procs()
