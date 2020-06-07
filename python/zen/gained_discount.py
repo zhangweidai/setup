@@ -285,8 +285,8 @@ def delstock(astock):
         z.trace(e)
         print("1problem  : {}".format( afile ))
         pass
-    import gbuy
-    gbuy.setlistofstocks()
+#    import gbuy
+#    gbuy.setlistofstocks()
 
 if __name__ == '__main__':
     import argparse
@@ -296,7 +296,7 @@ if __name__ == '__main__':
     if args.delete:
         delstock(args.delete.upper())
 #    else:
-    genUlt()
+#    genUlt()
 #    dosomething2()
 #    dosomething3()
 #    dosomething()

@@ -368,6 +368,7 @@ def getPorts():
     except:
         pass
     print("Cash  : {}".format(locale.currency( cash , grouping=True )))
+    print("cashlist: {}".format( cashlist))
 
     z.setp(sset, "mcranges")
 

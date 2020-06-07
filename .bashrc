@@ -145,7 +145,8 @@ alias vgitrc='vim ~/.gitconfig'
 if [ `whoami` ==  "zoe" ]; then
     alias pl="cds; b; cd setup2; cd python/zen; py ~/setup2/python/zen/stock_plot.py"
     export PYTHONSTARTUP=~/setup2/python/zen/.pystart
-    alias cds="cd /home/zoe/setup2"
+    export SETUP="/home/zoe/setup2"
+    alias cds="cd $SETUP"
 else
     export PYTHONSTARTUP=~/setup/python/zen/.pystart
     alias pl="cds; cd python/zen; py ~/setup/python/zen/stock_plot.py"
@@ -156,7 +157,8 @@ alias go2="cd /mnt/c/Users/Zoe/Documents/setup/java/HelloWorld/app/src/main/java
 alias gof="cds; cd python/zen_dump/final"
 alias goh="cds; cd python/zen_dump/holdings"
 alias god="cds; cd python/zen_dump"
-alias goc="cds; cd python/zen_dump/split"
+export SPLIT="$SETUP/python/zen_dump/split"
+alias goc="cd $SPLIT"
 alias gop="cds; cd python/zen_dump/pkl"
 alias goj="cds; cd java;"
 alias gok="cds; cd kotlin;"
@@ -213,5 +215,5 @@ export DISPLAY=:0.0
 export PULSE_SERVER=tcp:localhost
 alias  bd='python ~/setup2/python/bd.py'
 # awk '{ print $1 }'
-go1
+#go1
 alias well='cd ~/setup2/python/; python watchfile.py'

@@ -11,6 +11,7 @@ orders = defaultdict(list)
 tory = False
 torys = list()
 stocks = z.getp("listofstocks")
+total = 0
 for aline in bar:
     if "Z03895009" in aline:
         tory = True
@@ -38,10 +39,12 @@ for aline in bar:
                     print("WHAT IS THIS astock : {}".format( astock ))
                     print("WHAT IS THIS astock : {}".format( aline ))
                 value = count * price
+                total += value
                 orders[astock].append((value, price))
                 if tory:
                     torys.append(astock)
         
+print("total : {}".format( total ))
 z.setp(torys, "torys")
 z.setp(orders, "orders", printdata=True)
 exit()

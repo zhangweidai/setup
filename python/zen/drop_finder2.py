@@ -4,6 +4,8 @@ import buy
 import sliding
 import statistics
 
+debug = "HSBC"
+
 start = 60
 each = 10
 istart = -1*start
@@ -12,6 +14,7 @@ dates = z.getp("dates")
 que = 12
 firstdate = dates[istart*15]
 print("firstdate : {}".format( firstdate ))
+
 def proc(astock):
     closes = sliding.WindowQueue(que)
     lows = sliding.WindowQueue(que, needMin=True)
@@ -37,6 +40,8 @@ def proc(astock):
 
         c_close = float(row[z.closekey])
         date = row['Date']
+#        print("date : {}".format( date ))
+#        print("c_close : {}".format( c_close ))
 #        print("date {} c_low : {} c_close: {} cclose {}".format( date, c_low, c_close, c_cclose ))
 
         closes.add_tail(c_close)
@@ -48,10 +53,12 @@ def proc(astock):
             first_close = closes.get()
             lowest = lows.get_minimum()
             chg = round(lowest / first_close,3)
-            mins.append(chg)
+            if chg < 1:
+                mins.append(chg)
 
         bar = len(mins)
         if bar and not bar % 52:
+            print("bar is good : {}".format( date))
             med_15 = statistics.median(mins)
             means = statistics.mean(mins)
             useme = round(min((med_15 , means)),3)
@@ -60,10 +67,12 @@ def proc(astock):
             
             if bought == True:
                 boughts.append(1)
+                print("bough date {} ".format(date))
             elif bought == False:
                 boughts.append(0)
-#            else:
-#                print("date {} cprice {} {} {}".format(date, c_close, "bought" if bought else "nope", tgt_15))
+                print("no bought date {} ".format(date))
+            else:
+                print("date {} cprice {} {} {}".format(date, c_close, "bought" if bought else "nope", tgt_15))
 
             bought = False
             prevbuy = tgt_15
@@ -92,8 +101,7 @@ def proc(astock):
 
 
 def procs():
-    stocks = z.getp("listofstocks")
-    #stocks = ["BA", "KO", "NKE", "TSLA", "COST", "AMD"]
+    stocks = [debug.upper()] if debug else z.getp("listofstocks")
     low_target = dict()
     for astock in stocks:
         try:
@@ -101,8 +109,13 @@ def procs():
         except Exception as e:
             z.trace(e)
             pass
-    z.setp( low_target, "low_target")
-    print("low_target: {}".format( low_target))
+
+    try:
+        print("low_target: {}".format( low_target[0]))
+    except:
+        pass
+    if not debug:
+        z.setp( low_target, "low_target")
 
 if __name__ == '__main__':
     procs()

@@ -69,6 +69,7 @@ def getSorted(title):
 #start = 37
 start = 107
 istart = 107 * -1
+thirty = start - 25
 ten_from_start = start - 10
 five_from_start = start - 5
 dates = z.getp("dates")
@@ -358,9 +359,9 @@ lastosDate2 = None
 HIGHEST = 10000
 dict2 = None
 daysAgo5 = 5
-recentStats = dict()
+#recentStats = dict()
 def genRecentStat(astock):
-    global recentStats
+#    global recentStats
 
     seen = list()
     avg5Change = list()
@@ -470,21 +471,21 @@ def genRecentStat(astock):
     last = round(c_close/seen[-2],3)
 
     be = round(sum(bchanges)/len(bchanges),2)
-    recentStats[astock] = (c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last, prices, be)
-    return c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last, prices, be
+    ravg = round(statistics.mean(prices[-20:]),2)
+    return c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last, prices, be, ravg
 
 def genRecentStats():
-    global recentStats
-    recentStats = dict()
+#    global recentStats
+#    recentStats = dict()
     stocks = z.getp("listofstocks")
 #    stocks = ["BA"]
     for idx, astock in enumerate(stocks):
         try:
             genRecentStat(astock)
         except Exception as e:
-            print("astock: {}".format( astock))
+            print("no astock: {}".format( astock))
             pass
-    z.setp(recentStats, "recentStats")
+#    z.setp(recentStats, "recentStats")
 
 #genRecentStats()
 #exit()
@@ -507,11 +508,10 @@ def single(value, avgOneYear, retval = None, lots = True):
 #        if lots:
 #            c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last = getFrom("recentStats", astock)
 #        else:
-        c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last, prices, be = genRecentStat(astock)
+        c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last, prices, be, ravg = genRecentStat(astock)
     except Exception as e:
-        print("astock: {}".format( astock))
-#        z.trace(e)
-#        exit()
+        print("problem astock: \"{}\"".format( astock))
+        exit()
         return retval
 
     y1w2, y1m2, y1l, y1l2 = getYearly2(astock)
@@ -559,8 +559,7 @@ def single(value, avgOneYear, retval = None, lots = True):
     if order != "NA":
         orderstr = round(order[0])
 #        orderchange = order[1]/c_close
-        if astock in torys:
-            name += "_T"
+        name = "_TO" if astock in torys else "_PO"
     if astock in mine:
         name = "(m)" + name
     if astock in tory:
@@ -571,12 +570,12 @@ def single(value, avgOneYear, retval = None, lots = True):
     except:
         y1wm2 = "NA"
 
-    try:
-        basischange = getFrom("cost_change", astock)[1]
-        basischange = c_close/basischange
-    except:
-        basischange = "NA"
-
+#    try:
+#        basischange = getFrom("cost_change", astock)[1]
+#        basischange = c_close/basischange
+#    except:
+#        basischange = "NA"
+#
     downs = ""
     owned = portFolioValue(astock)
     if owned:
@@ -640,6 +639,8 @@ def single(value, avgOneYear, retval = None, lots = True):
     values = [
         ("stock", inPortfolio(astock)),
         ("price", c_close),
+        ("ravg", ravg),
+        ("change", c_close/ravg),
         ("beta", be),
         ("min5", min5),
         ("last5", last5),
@@ -668,7 +669,6 @@ def single(value, avgOneYear, retval = None, lots = True):
         ("med9", med_9),
         ("often", often),
         ("adl", adl),
-        ("basisc", basischange),
         ("owned", portFolioValue(astock)),
         ("name", name) ]
 #        ("down", downs),
@@ -681,7 +681,7 @@ def single(value, avgOneYear, retval = None, lots = True):
         values.append(("last", last))
 
     table_print.store(values)
-    table_print.use_percentages = ["avg5", "min5", "last5", lastchange, "orderc", "mcc", "basisc", fromtop, wcchange, diffS, "med9", "strat", "1apd", "2apd", "apd", "adl"]
+    table_print.use_percentages = ["avg5", "min5", "last5", lastchange, "orderc", "mcc", "basisc", fromtop, wcchange, diffS, "med9", "strat", "1apd", "2apd", "apd", "adl", "change"]
     table_print.gavgs = ["107chg", "y1w", "probu", "ivvb"]
 
 #    if args.live:
@@ -691,7 +691,10 @@ def single(value, avgOneYear, retval = None, lots = True):
 #exit()
 
 problems = set()
-def multiple(stocks, title = None, helpers = True, runinit = False, retval=None):
+def multiple(stocks, title = None, helpers = True, runinit = False, retval=None, cleartable=True):
+    if args == None:
+        init()
+
     global problems
     if runinit:
         init()
@@ -726,7 +729,8 @@ def multiple(stocks, title = None, helpers = True, runinit = False, retval=None)
             continue
 
     table_print.printTable(title)
-    table_print.clearTable()
+    if cleartable:
+        table_print.clearTable()
 
     try:
         yearone = z.avgp(avgOneYear)
@@ -803,6 +807,14 @@ def testLoop(astock):
         if i >= five_from_start:
             upd += "u" if upchange else "d"
 
+def handleDic(mode):
+    bar = z.getp(str(mode))
+    for key, value in bar.items():
+        if "ITOT" in key:
+            continue
+        multiple(value, title = key)
+    table_print.initiate()
+            
 if __name__ == '__main__':
     init()
     probms = ['RLGT', 'RNR', 'STLD', 'TCFC', 'TMUS', 'WHLR']
@@ -812,9 +824,10 @@ if __name__ == '__main__':
 #        multiple("worst_smallcalp")
 #        multiple("best_smallcalp")
 
-        multiple("lowbeta")
-        multiple("highbeta")
-        multiple("highscore")
+        multiple(["CMD", "WBA", "MET", "BFAM", "ALGN"])
+#        multiple("lowbeta")
+#        multiple("highbeta")
+#        multiple("highscore")
         multiple("highscore_large")
 
         table_print.initiate()
@@ -822,7 +835,6 @@ if __name__ == '__main__':
 
     if args.mode == "single":
         astock = savedhelper.upper()
-        print("astock : {}".format( astock ))
         try:
             ret = multiple([astock], "single", retval=False)
             print("ret : {}".format( ret ))
@@ -867,7 +879,7 @@ if __name__ == '__main__':
         table_print.initiate()
         exit()
 
-    if "benchmark" in args.mode or "etf" in args.mode:
+    if "benchmark" in args.mode or "etfs" in args.mode:
         multiple(z.getEtfList(buys=True), title = "Standard ETFS")
         table_print.initiate()
         exit()
@@ -921,6 +933,9 @@ if __name__ == '__main__':
         table_print.initiate()
         exit()
 
+    if not args.mode == "default":
+        handleDic(args.mode)
+        exit()
     try:
         multiple("avg30c")
         multiple("best30c")

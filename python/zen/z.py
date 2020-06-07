@@ -152,7 +152,7 @@ def listen():
 
 def getEtfList(forEtfs = False, buys=False):
     if buys:
-        return [ "ITOT" , "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV", "BNDX", "VEA", "VIG", "VNQ", "VOO", "VTI", "VTV", "VUG", "VIG"]
+        return [ "ITOT" , "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV", "BNDX", "VEA", "VIG", "VNQ", "VOO", "VTI", "VTV", "VUG", "VIG", "VO", "VDE", "VCIT"]
     if forEtfs:
         return [ "ITOT" , "IJH", "IJR", "IVV", "IWB", "IUSG", "USMV", "VOO", "VUG"]
     return [ "IUSG", "IJH", "IJR", "IVV", "ITOT" ]

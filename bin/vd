@@ -1,0 +1,6 @@
+#/bin/bash
+export bar=`python <<HEREDOC
+astock = str("$1").upper()
+print ("\$SPLIT/{}/{}_2020.csv".format(astock[0], astock))
+HEREDOC`
+vim $bar

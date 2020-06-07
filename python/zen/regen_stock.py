@@ -35,6 +35,7 @@ def generateWorst30():
     z.setp(answer, "worst30")
 
 problems = list()
+
 def process(astock, one_at_a_time = True):
     global problems
     try:
@@ -89,17 +90,10 @@ def process(astock, one_at_a_time = True):
         if one_at_a_time:
             import json_util
             json_util.parses([astock], addone = True)
-            
             stocks = z.getp("listofstocks")
             stocks.append(astock)
             z.setp(stocks, "listofstocks")
 
-            try:
-                stocks = z.getp("listofs")
-                stocks.append(astock)
-                z.setp(stocks, "listofs")
-            except:
-                pass
         
     except Exception as e:
         print ("problem with gbuy")

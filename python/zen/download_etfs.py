@@ -125,25 +125,19 @@ def diffISharesEtfs():
         print ("missing data")
         return
     allthesame = True
-    for key,value in latest.items():
-        diff = value ^ previous[key]
-        print("value : {}".format( len(value)))
-        print("value2 : {}".format( len(previous[key])))
-        print("key: {}".format( key))
-        if diff:
-#            print("key: {}".format( key))
-            print(len(diff))
-            print("diff: {}".format( diff))
-            allthesame = False
-            for adiff in diff:
-                if adiff in dels:
-                    continue
-#                if adiff in value:
-#                    print("adiff : missing in previous {}".format( adiff ))
-#                else:
-#                    print("adiff : missing now {}".format( adiff ))
-    if allthesame:
-        print ("all the same")
+    changes = dict()
+    for key,list1 in latest.items():
+        list2 = previous[key]
+        print("\nkey: {}".format( key))
+        s1 = set(list1).difference(list2)
+        s2 = set(list2).difference(list1)
+
+#        print("Added:", (set(list1).difference(list2)))
+#        print("Removed:", (set(list2).difference(list1)))
+        changes["{}_added".format(key)] = s1
+        changes["{}_removed".format(key)] = s2
+    print("changes: {}".format( changes))
+    z.setp(changes, "etfchanges")
 
 if __name__ == '__main__':
 #    doit()
