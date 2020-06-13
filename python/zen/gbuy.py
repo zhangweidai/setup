@@ -13,7 +13,7 @@ yf.pdr_override()
 def getDataFromYahoo(astock, cdate):
     df = None
     try:
-        print("d astock: {}".format( astock))
+        print("dl astock: {}".format( astock))
         df = pdr.get_data_yahoo([astock], start=cdate)
     except Exception as e:
         try:
@@ -21,23 +21,6 @@ def getDataFromYahoo(astock, cdate):
         except Exception as e:
             z.trace(e)
             return None
-    
-#    for idx in df.index:
-#        print("idx : {}".format( idx ))
-#        print("idx : {}".format( df.at[idx+1, "Close"] ))
-#        try:
-#            change = df.at[idx, "Close"] / df.at[idx+1, "Close"]
-#            if change > 5 or change < 0.15 or df.at[idx, "Volume"] == 0:
-#                print ("may have problem {}".format(astock))
-#        except Exception as e:
-#            z.trace(e)
-#            pass
-
-#        for label in ["Open", "Close", "High", "Low", "Adj Close"]:
-#            print (df.at[idx, label][0])
-#        for label in ["Open", "Close", "High", "Low", "Adj Close"]:
-#            df.at[idx, label][0] = round(df.at[idx, label][0], 3)
-
     return df
 
 def setlistofstocks():
@@ -54,89 +37,34 @@ def setlistofstocks():
         listofs.append(astock)
     z.setp(listofs, "listofs")
 
-
-def generateWorst30():
-    dates = z.getp("dates")
-    stocks = z.getp("listofstocks")
-    yearlydic = z.getp("latestAnnual")
-    answer = SortedSet()
-    for idx,astock in enumerate(stocks):
-        mcrank = buy.getMCRank(astock)
-        try:
-            if int(mcrank) > 320:
-                continue
-
-            price = buy.getPrice(astock, dates[-252])
-            if price < 5:
-                continue
-        except Exception as e:
-            continue
-
-
-        try:
-            annual = yearlydic[astock]
-        except:
-            print("missing annual for : {}".format( astock))
-            continue
-
-        answer.add((annual, astock))
-        if len(answer) > 30:
-            answer.remove(answer[-1])
-
-    print("answer: {}".format( answer))
-    z.setp(answer, "worst30")
-
-
-#generateWorst30()
-#exit()
 if __name__ == '__main__':
-    import argparse
-    import csv
+#    setlistofstocks()
+
     import datetime
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--skips', default=False)
-    args = parser.parse_args()
-
-    setlistofstocks()
-
+    problems = [] 
+    stocks = z.getp("listofstocks")
     try:
-        latestprices = dict()
-        problems = [] 
-        skips = list()
-        if args.skips:
-            skips = z.getp("problems")
-            print("skips : {}".format( skips ))
-        stocks = z.getp("listofstocks")
-
-        import datetime
         now = datetime.datetime.now()
-        missed = 0
-        started = False
+        consecutive_misses = 0
+
         for astock in stocks:
-
-            if astock in skips:
-                continue
-
             apath = z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
             try:
-                t = os.path.getmtime(apath)
+                csvdate = datetime.datetime.fromtimestamp(os.path.getmtime(apath))
+                csvday = csvdate.day
+                csvmonth = csvdate.month
+                ttoday = datetime.date.today().day
+                tmonth = datetime.date.today().month
+
+                if csvday >= ttoday and tmonth == csvmonth:
+                    consecutive_misses = 0
+                    continue
             except:
-                continue
-
-            csvdate = datetime.datetime.fromtimestamp(t)
-            csvday = csvdate.day
-            csvmonth = csvdate.month
-            ttoday = datetime.date.today().day
-            tmonth = datetime.date.today().month
-
-
-            if csvday >= ttoday and tmonth == csvmonth:
-                missed = 0
                 continue
 
             for row in csv.DictReader(open(apath)):
                 pass
+
             try:
                 date = row['Date']
                 cclose = row['Adj Close']
@@ -147,14 +75,15 @@ if __name__ == '__main__':
             df = getDataFromYahoo(astock, date)
             if df is None:
                 print("problem downloading: {}".format( astock))
-                missed += 1
-                if missed > 5:
+                consecutive_misses += 1
+                if consecutive_misses > 5:
                     problems.append(astock)
                     print("problems : {}".format( problems ))
                     z.setp(problems, "problems")
                     exit()
                 continue
-            missed = 0
+            consecutive_misses = 0
+
             with open(apath, "a") as f:
                 first = True
                 for idx in df.index:
@@ -189,9 +118,6 @@ if __name__ == '__main__':
 
         print ("updating dates")
         buy.updateDates()
-
-#        import prob_down_5_years
-#        prob_down_5_years.prob()
 
         print ("prob up 1 year")
         import prob_up_1_year

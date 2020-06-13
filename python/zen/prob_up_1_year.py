@@ -1,3 +1,5 @@
+# how often does it beat ivv given 50 days? 
+# how often is 1 year up?
 import z
 import queue
 import buy
@@ -16,12 +18,12 @@ sdate = dates[istart]
 
 def getetfChanges():
     changes = list()
-    values = sliding.WindowQueue(50)
+    closes_50 = sliding.WindowQueue(50)
     for i, row in enumerate(buy.getRows("IVV", sdate)):
         c_close = float(row[z.closekey])
-        values.add_tail(c_close)
-        if values.full():
-            changes.append(round(values.main[-1]/values.main[0], 3))
+        closes_50.add_tail(c_close)
+        if closes_50.full():
+            changes.append(round(closes_50.main[-1]/closes_50.main[0], 3))
     return changes
 
 etfchanges = getetfChanges()
@@ -29,38 +31,40 @@ etfchanges = getetfChanges()
 
 def proc(astock):
     prev_close = None
-    closes = sliding.WindowQueue(252)
-    mins = list()
+    closes_252 = sliding.WindowQueue(252)
     ups = list()
     beativv = list()
 
-    values = sliding.WindowQueue(50)
-    c = 0
+    closes_50 = sliding.WindowQueue(50)
+    etf_idx = 0
 
     firstdate = None
-    dif = 0
+    index_adjust = 0
     for i, row in enumerate(buy.getRows(astock, sdate)):
+
+        # adjust for first available date
         if i == 0:
-            dif = dates.index(row['Date']) - dates.index(sdate)
+            index_adjust = dates.index(row['Date']) - dates.index(sdate)
 
         c_close = float(row[z.closekey])
-        values.add_tail(c_close)
-        closes.add_tail(c_close)
+        closes_50.add_tail(c_close)
+        closes_252.add_tail(c_close)
 
-        if values.full():
-            chg = round(values.main[-1]/values.main[0],3)
+        # ive got a year worth of closes_252
+        if closes_50.full():
+            annual_change = round(closes_50.main[-1]/closes_50.main[0],3)
             if debug:
                 date = row["Date"]
-                print("c : {} d : {} chg : {} close : {}".format( c, date, chg, c_close ))
+                print("etf_idx : {} date : {} annual_change : {} close : {}".format( etf_idx, date, annual_change, c_close ))
             try:
-                beativv.append(1 if chg >= etfchanges[c+dif] else 0)
+                beativv.append(1 if annual_change >= etfchanges[etf_idx + index_adjust] else 0)
             except:
                 pass
-            c += 1
+            etf_idx += 1
 
 
-        if closes.full():
-            ups.append(1 if closes.main[0] < closes.main[-1] else 0)
+        if closes_252.full():
+            ups.append(1 if closes_252.main[0] < closes_252.main[-1] else 0)
 
 
     ivvcounts = len(beativv)
@@ -69,19 +73,7 @@ def proc(astock):
         print("beativv: {}".format( beativv))
 
     count = len(ups)
-#    if count < 210:
-#        if debug:
-#            print("NA count less than 210 - {} ".format(count))
-#        return "NA", ivvb
-
-    return round(sum(ups) / count,3), ivvb
-#
-#    if len(mins) >= req:
-#        med_15 = statistics.median(mins)
-#        means = statistics.mean(mins)
-#        useme = (med_15 + means) /2
-#        tgt_15 = round(useme * c_close,2)
-#        return useme, tgt_15
+    return round(sum(ups) / count, 3), ivvb
 
 def procs():
     stocks = [debug.upper()] if debug else z.getp("listofstocks")
