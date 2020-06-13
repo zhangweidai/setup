@@ -8,6 +8,7 @@ import os
 from sortedcontainers import SortedSet
 from rows import *
 
+ordering = False
 #table_print.accurate = 2
 
 # mc 30.00B to 1.54T
@@ -475,17 +476,15 @@ def genRecentStat(astock):
     return c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last, prices, be, ravg
 
 def genRecentStats():
-#    global recentStats
-#    recentStats = dict()
+    recentStats = dict()
     stocks = z.getp("listofstocks")
-#    stocks = ["BA"]
     for idx, astock in enumerate(stocks):
         try:
-            genRecentStat(astock)
+            recentStats[astock] = genRecentStat(astock)
         except Exception as e:
             print("no astock: {}".format( astock))
             pass
-#    z.setp(recentStats, "recentStats")
+    z.setp(recentStats, "recentStats")
 
 #genRecentStats()
 #exit()
@@ -495,6 +494,8 @@ fromtop = "{}drop".format(start)
 wcchange = "{}wc".format(start)
 diffS = "{}diff".format(start)
 
+#genRecentStat("ANSS")
+#exit()
 
 def single(value, avgOneYear, retval = None, lots = True):
     global torys, mine, tory, dict2
@@ -504,14 +505,13 @@ def single(value, avgOneYear, retval = None, lots = True):
     else:
         astock = value
 
+#    try:
+#        c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last, prices, be, ravg = getFrom("recentStats", astock)
+#    except Exception as e:
     try:
-#        if lots:
-#            c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last = getFrom("recentStats", astock)
-#        else:
         c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last, prices, be, ravg = genRecentStat(astock)
-    except Exception as e:
+    except:
         print("problem astock: \"{}\"".format( astock))
-        exit()
         return retval
 
     y1w2, y1m2, y1l, y1l2 = getYearly2(astock)
@@ -553,12 +553,8 @@ def single(value, avgOneYear, retval = None, lots = True):
     name = ""
         
     order = getOrder(astock)
-    orderstr = ""
-    orderchange = 0
 
     if order != "NA":
-        orderstr = round(order[0])
-#        orderchange = order[1]/c_close
         name = "_TO" if astock in torys else "_PO"
     if astock in mine:
         name = "(m)" + name
@@ -611,7 +607,14 @@ def single(value, avgOneYear, retval = None, lots = True):
 #        val = ivv if ivv < 1.4 else 1.4 
         score = round(val + probu + dayup, 2)
     except Exception as e:
+        print("astock: {}".format( astock))
+        print("val : {}".format( val ))
+        z.trace(e)
+        print("dayup: {}".format( dayup))
+        print("probu : {}".format( probu ))
         print ("no score")
+        z.breaker(5)
+        
         score = 0
 
     try:
@@ -620,21 +623,16 @@ def single(value, avgOneYear, retval = None, lots = True):
     except:
         med_9, tgt_9, often, adl = "NA", "NA", "NA", "NA"
 
-    chgchg= 0
-#    try:
-#        chgchg = round(med_9/ orderchange,3)
-#    except:
-#        pass
 
     hld, hlr = getFrom("hldic", astock, ("",""))
     apd1, apd2, apdc, apd = getapds(prices)
 
 #        ("maxu", maxup),
 #        ("maxd", maxdown),
-#        ("orderc", orderchange),
-#        ("chgchg", chgchg),
 #        ("mcc", mcc),
 #        ("upd", upd),
+#        ("1apd", apd1),
+#        ("2apd", apd2),
 
     values = [
         ("stock", inPortfolio(astock)),
@@ -654,8 +652,6 @@ def single(value, avgOneYear, retval = None, lots = True):
         ("probu", probu),
         ("daily", dayup),
         ("ivvb", ivv), 
-        ("1apd", apd1),
-        ("2apd", apd2),
         ("apdc", apdc),
         ("apd", apd),
         ("div", div),
@@ -674,6 +670,19 @@ def single(value, avgOneYear, retval = None, lots = True):
 #        ("down", downs),
 #        ("hldic", hld),
 #        ("ratio", hlr),
+
+    if ordering:
+        chgchg = 0
+        try:
+            orderchange = order[1]/c_close
+            chgchg = round(med_9/ orderchange,3)
+        except:
+            pass
+
+        orderstr = round(order[0])
+        values.append(("order", orderstr))
+        values.append(("orderc", orderchange))
+        values.append(("chgchg", chgchg))
 
     if args.live:
         values.append(("last", (c_close/prev_close)))
@@ -875,6 +884,7 @@ if __name__ == '__main__':
         exit()
 
     if "order" in args.mode:
+        ordering = True
         multiple(orders.keys(), title = "Orders")
         table_print.initiate()
         exit()
@@ -921,15 +931,26 @@ if __name__ == '__main__':
         table_print.initiate()
         exit()
 
+    if "worst" in args.mode:
+
+        mcs = z.getp("worst")
+        for i in range(0, 5):
+            idx = i * 30
+            end = idx + 30
+            multiple(mcs[idx:end], title = "Worst {} to {}".format(idx, end))
+        table_print.initiate()
+        exit()
+
 
     if "mc" in args.mode:
         mcdic = z.getp("latestmc")
-        topmc = list(mcdic.keys())[100:200]
-        multiple(topmc, title = "MC1")
-#        multiple(items[30:60], title = "MC2")
-#        multiple(items[210:240], title = "MC1")
-#        multiple(items[240:270], title = "MC2")
-#        multiple(items[270:300], title = "MC3")
+
+        mcs = list(mcdic.keys())
+        for i in range(0, 5):
+            print (i)
+            idx = i * 30
+            end = idx + 30
+            multiple(mcs[idx:end], title = "MC {} to {}".format(idx, end))
         table_print.initiate()
         exit()
 

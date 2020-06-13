@@ -3,7 +3,7 @@ import os
 import pickle
 import time
 
-closekey = "Adj Close"
+closekey = "Close"
 YEAR = 2020
 
 def getStocks(title):
@@ -64,6 +64,7 @@ def getp(name, override="pkl", retfile=False):
     try:
         path = getPath("{}/{}.pkl".format(override, name))
         if not os.path.exists(path):
+            print ("does not exist {}".format(path))
             return None
         return pickle.load(open(path, "rb"))
     except:
@@ -112,16 +113,20 @@ def goodbye():
         if gsavedir:
             newpath = "{}/{}.pkl".format(gsavedir, save)
         copyfile(path, newpath)
-
+saving = True
 savedd = set()
 def setp(data, name, printdata = False, override="pkl"):
+    global saving
     savedd.add(name)
     path = getPath("{}/{}.pkl".format(override, name))
     if os.path.exists(path):
         os.remove(path)
     if printdata:
         print (" {} : {} \n".format(name, data))
-    pickle.dump(data, open(path, "wb"))
+    if saving: 
+        pickle.dump(data, open(path, "wb"))
+    else:
+        print ("not saving {} ".format(path))
 
 def online():
     return online.online

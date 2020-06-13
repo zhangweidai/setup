@@ -4,7 +4,9 @@ import buy
 import sliding
 import statistics
 
-debug = "HSBC"
+debug = None
+if debug:
+    print ("debugging {}".format(debug))
 
 start = 60
 each = 10
@@ -42,7 +44,7 @@ def proc(astock):
         date = row['Date']
 #        print("date : {}".format( date ))
 #        print("c_close : {}".format( c_close ))
-#        print("date {} c_low : {} c_close: {} cclose {}".format( date, c_low, c_close, c_cclose ))
+#        print("date {} c_low : {} c_close: {} ".format( date, c_low, c_close ))
 
         closes.add_tail(c_close)
         lows.add_tail(c_low)
@@ -58,7 +60,6 @@ def proc(astock):
 
         bar = len(mins)
         if bar and not bar % 52:
-            print("bar is good : {}".format( date))
             med_15 = statistics.median(mins)
             means = statistics.mean(mins)
             useme = round(min((med_15 , means)),3)
@@ -67,11 +68,13 @@ def proc(astock):
             
             if bought == True:
                 boughts.append(1)
-                print("bough date {} ".format(date))
+                if debug:
+                    print("yes {} ".format(date))
             elif bought == False:
                 boughts.append(0)
-                print("no bought date {} ".format(date))
-            else:
+                if debug:
+                    print("no {} ".format(date))
+            elif debug:
                 print("date {} cprice {} {} {}".format(date, c_close, "bought" if bought else "nope", tgt_15))
 
             bought = False
@@ -109,9 +112,8 @@ def procs():
         except Exception as e:
             z.trace(e)
             pass
-
     try:
-        print("low_target: {}".format( low_target[0]))
+        print("low_target: {}".format( low_target))
     except:
         pass
     if not debug:

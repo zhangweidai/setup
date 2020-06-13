@@ -8,6 +8,8 @@ import csv
 from collections import defaultdict
 from sortedcontainers import SortedSet
 
+#z.saving = False
+
 #"Account Name/Number","Symbol","Description","Quantity","Last Price","Last Price Change","Current Value","Today's Gain/Loss Dollar","Today's Gain/Loss Percent","Total Gain/Loss Dollar","Total Gain/Loss Percent","Cost Basis Per Share","Cost Basis Total","Type"
 
 port = dict()
@@ -223,8 +225,9 @@ def saveGain(account, astock, c_gain, quant):
 
 cash = 0
 cashlist = list()
+accounts = defaultdict(int)
 def simple(path, dontknow, etfs, total):
-    global ports, second, mine, tory, sset, cost_change, cash, cashlist
+    global ports, second, mine, tory, sset, cost_change, cash, cashlist, accounts
     ccash = 0
 
     for row in csv.DictReader(open(path)):
@@ -238,9 +241,14 @@ def simple(path, dontknow, etfs, total):
 
         astock = row['Symbol'] 
         if "**" in astock or astock == "FNSXX":
+            account = row['Account Name/Number'][-5:]
             c_value = float(row['Current Value'].strip("$").strip(" ").replace(',',''))
             cash += c_value
             ccash += c_value
+
+            print("account : {} {} ".format( account, c_value ))
+            accounts[account] += c_value
+
             cashlist.append(c_value)
             continue
 
@@ -253,9 +261,9 @@ def simple(path, dontknow, etfs, total):
                 c_account = row['Account Name/Number']
                 saveGain(c_account, astock, c_gain, quant)
             except Exception as e:
-                print("astock: {}".format( astock))
-                print("row: {}".format( row))
-                z.trace(e)
+#                print("astock: {}".format( astock))
+#                print("row: {}".format( row))
+#                z.trace(e)
 #                exit()
                 continue
 
@@ -298,6 +306,7 @@ tory = None
 mine = None
 sset = None
 def getPorts():
+    global accounts
     import locale
     locale.setlocale( locale.LC_ALL, '' )
 
@@ -343,6 +352,7 @@ def getPorts():
     z.setp(saved_gain, "saved_gain")
     z.setp(down_gain, "down_gain")
     z.setp(downps, "downps")
+    z.setp(accounts, "accounts")
 
     z.setp(ports,"ports")
     z.setp(mine, "mine")
@@ -367,6 +377,7 @@ def getPorts():
         print(" {:>10} {:>6}% {:>6}".format( "etfs", res, round(etfs)))
     except:
         pass
+
     print("Cash  : {}".format(locale.currency( cash , grouping=True )))
     print("cashlist: {}".format( cashlist))
 
@@ -379,6 +390,7 @@ def vanguard():
         parentdir = "/mnt/c/Users/pzhang/Downloads"
     csvfile = "ofxdownload.csv"
     path = "{}/{}".format(parentdir, csvfile)
+    print("path : {}".format( path ))
     ret = 0
     for row in csv.DictReader(open(path)):
         try:

@@ -187,24 +187,30 @@ if __name__ == '__main__':
                         added = True
                         f.write("{},{},{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, adj, vol, chg))
 
+        print ("updating dates")
         buy.updateDates()
 
 #        import prob_down_5_years
 #        prob_down_5_years.prob()
 
+        print ("prob up 1 year")
         import prob_up_1_year
         prob_up_1_year.procs()
 
+        print ("gained discout")
         import gained_discount
         gained_discount.dosomething()
         gained_discount.genUlt()
 
+        print ("drop finder")
         import drop_finder2
         drop_finder2.procs()
 
+        print ("slow and steady")
         import slow_and_steady
         slow_and_steady.procs()
 
+        print ("recent stats")
         import buy
         buy.genRecentStats()
 

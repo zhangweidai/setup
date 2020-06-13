@@ -22,7 +22,6 @@ ax = None
 ax2 = None
 axs = None
 fig = None
-astock = None
 lastworking = None
 ref_astock = "USMV"
 stocks = []
@@ -41,7 +40,7 @@ def roundup(x):
 
 startdate = None
 def rebuild():
-    global ax, fig, astock, start, lastworking, ax2, axs, stocks, startdate
+    global ax, fig, start, lastworking, ax2, axs, stocks, startdate
 
     vdict = dict()
     istart = start * -1
@@ -140,10 +139,10 @@ def interpret(answer):
     if not answer:
         return
 
-    if "regen" in answer:
-        import regen_stock
-        regen_stock.process(astock)
-        rebuild()
+#    if "regen" in answer:
+#        import regen_stock
+#        regen_stock.process(astock)
+#        rebuild()
 
     elif "reset" in answer:
         stock = getCurrentStock()
@@ -355,14 +354,19 @@ def configurePlots(fig):
 
 #plt.get_current_fig_manager().window.wm_geometry("+0+0")
 def plot():
-    global ax, fig, astock
+    global ax, fig 
     fig, ax = plt.subplots()
     configurePlots(fig)
     rebuild()
     fig.canvas.get_tk_widget().focus_set()
     plt.show(block=True)
 
-if __name__ == "__main__":
+def preplot(astocks = None):
+    global stocks
+
+    if astocks:
+        stocks = astocks
+
     lap = False
     if lap:
         plt.rcParams["figure.figsize"] = [10,5]
@@ -381,27 +385,18 @@ if __name__ == "__main__":
     parser.add_argument('--s', default=None)
     args = parser.parse_args()
 
-
-#    try:
-#        savedhelper = args.helpers
-#        args.helpers = args.helpers.upper()
-#        astock = args.helpers
-#    except:
-#        exit()
-
-    stocks = []
-    if args.s:
-        stocks = args.s.upper().split(",")
-    elif "," in args.helpers:
-        stocks = args.helpers.upper().split(",")
-    else:
-        if args.helpers == "":
-            stocks = z.getEtfList(buys=True)
+    if not stocks:
+        if args.s:
+            stocks = args.s.upper().split(",")
+        elif "," in args.helpers:
+            stocks = args.helpers.upper().split(",")
         else:
-            types, stocks = z.getStocks(args.helpers)
+            if args.helpers == "":
+                stocks = z.getEtfList(buys=True)
+            else:
+                types, stocks = z.getStocks(args.helpers)
 
-    savedhelper = args.refs
-
+    print("stocks : {}".format( stocks ))
     try:
         plot()
     except Exception as e:
@@ -410,3 +405,5 @@ if __name__ == "__main__":
         print ('Failed3: '+ str(e))
         pass
 
+if __name__ == "__main__":
+    preplot(["KO", "BA", "AMD"])

@@ -31,6 +31,7 @@ def genUlt(stocks = None):
     avg30c = SortedSet()
     avg30 = SortedSet()
     worst30c = SortedSet()
+    worstset = SortedSet()
     prices = list()
     saveme = dict()
     for idx, astock in enumerate(stocks):
@@ -88,6 +89,9 @@ def genUlt(stocks = None):
             if (mcrank < 280) or (c_close >= 200 and mcrank < 420):
                 avg30c.add((score,astock))
                 worst30c.add((y1l,astock))
+
+            if (mcrank < 1200) and (c_close > 10):
+                worstset.add((y1l,astock))
         except:
             prices.append(c_close)
             pass
@@ -97,10 +101,11 @@ def genUlt(stocks = None):
     if allofthem:
         z.setp(avg30[-30:], "avg30")
         z.setp(avg30c[-30:], "avg30c")
-        z.setp(worst30c[:40], "worst30c", True)
+        z.setp(worst30c[:40], "worst30c")
         z.setp(worst30c[-40:], "best30c")
         z.setp(savedic, "annuals");
-        z.setp(saveme, "y1wm2");
+        z.setp(saveme, "y1wm2")
+        z.setp(worstset[:300], "worst", True)
 
 
 HIGHEST = 10000
@@ -295,8 +300,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.delete:
         delstock(args.delete.upper())
-#    else:
-#    genUlt()
+    else:
+        genUlt()
 #    dosomething2()
 #    dosomething3()
 #    dosomething()

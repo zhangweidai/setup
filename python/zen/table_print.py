@@ -288,6 +288,10 @@ def initiate(allow_clearing = True):
                 avgidx = True
                 printTable()
 
+            elif key == "c":
+                import stock_plot
+                stock_plot.preplot(clist)
+
 #            elif key == "g":
 #                ticker = clist[0]
 #                webpage = 'https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/research?symbol={}&appCode='.format(ticker)
