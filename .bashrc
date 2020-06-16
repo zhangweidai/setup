@@ -180,7 +180,11 @@ alias gbuy="go1; py gbuy.py"
 alias owned="py buy.py --mode=owned"
 alias orders="py buy.py --mode=order"
 alias etfs="py buy.py --mode=etfs"
+alias better="py buy.py --mode=better_etf"
 alias mc="py buy.py --mode=mc"
+alias all="py buy.py --mode=all"
+alias one="all --live=True --drop=12"
+alias two="better --live=True --drop=12"
 alias accounts="py buy.py --mode=accounts"
 alias bench="py buy.py --mode=benchmark"
 alias live="py buy.py --live=True"
@@ -191,6 +195,8 @@ alias special="py buy.py --mode=special"
 alias notes="py buy.py --mode=notes"
 alias worst="py buy.py --mode=worst"
 alias rands="py buy.py --mode=rand"
+alias sorted="py buy.py --mode=sorted"
+alias daily="py buy.py --mode=daily"
 alias gbuy2="py zen.py gbuy2"
 alias gbuy2="py gbuy.py --skips=True"
 alias well='cd ~/gits/manim; python -m manim example_scenes.py SquareToCircle -pl; '
@@ -201,7 +207,7 @@ alias well='cd ~/setup/csharp; mcs hello.cs; mono hello.exe'
 alias well='cd ~/setup/python/motivation; py main.py'
 alias mko='cd ~/setup/csharp; mcs hello.cs'
 alias gos='cd /mnt/c/Users/Zoe/SandBox'
-alias delstock='py gained_discount.py --delete'
+alias delstock='py gained_discount.py --updatestocks=1 --delete'
 alias gos2='cd /mnt/c/Users/Zoe/3D_SandBox'
 #alias xdg-open='wsl-open'
 #sudo -S true

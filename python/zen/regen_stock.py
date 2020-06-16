@@ -37,6 +37,7 @@ def generateWorst30():
 problems = list()
 
 def process(astock, one_at_a_time = True):
+    dates = z.getp("dates")
     global problems
     try:
         latestprices = dict()
@@ -87,6 +88,9 @@ def process(astock, one_at_a_time = True):
             if not math.isnan(opend):
                 f.write("{},{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, adj, vol)) 
 
+        if cdate != dates[-1]:
+            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MISSING TODAY {}".format(astock))
+
         if one_at_a_time:
             import json_util
             json_util.parses([astock], addone = True)
@@ -99,16 +103,16 @@ def process(astock, one_at_a_time = True):
         print ("problem with gbuy")
         z.trace(e)
 
+
 date = "2000-01-01"
 if __name__ == '__main__':
 
-#    stocks = z.getp("listofstocks")
-#    for astock in stocks:
-#        if astock == "AVA":
-#            exit()
-#        process(astock)
 
+#    stocks = z.getp("listofstocks")
+#    for missing, astock in stocks:
+#        process(astock, False)
 #    exit()
+
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--skips', default=False)

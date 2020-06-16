@@ -1,5 +1,6 @@
 import z
 import math
+import csv
 import buy
 import os
 from sortedcontainers import SortedSet
@@ -37,16 +38,16 @@ def setlistofstocks():
         listofs.append(astock)
     z.setp(listofs, "listofs")
 
-if __name__ == '__main__':
-#    setlistofstocks()
-
+def updateStocks():
     import datetime
-    problems = [] 
     stocks = z.getp("listofstocks")
+    problems = [] 
     try:
         now = datetime.datetime.now()
         consecutive_misses = 0
 
+        cdate_missing = list()
+        current_cday = None
         for astock in stocks:
             apath = z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
             try:
@@ -116,29 +117,45 @@ if __name__ == '__main__':
                         added = True
                         f.write("{},{},{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, adj, vol, chg))
 
-        print ("updating dates")
-        buy.updateDates()
+    except Exception as e:
+        print ("problem with gbuy")
+        z.trace(e)
+        exit()
+
+
+if __name__ == '__main__':
+
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--noupdate', nargs='?', const=True, default=False)
+    args = parser.parse_args()
+#    setlistofstocks()
+    try:
+        if not args.noupdate:
+            updateStocks()
+            buy.updateDates()
 
         print ("prob up 1 year")
         import prob_up_1_year
         prob_up_1_year.procs()
 
-        print ("gained discout")
-        import gained_discount
-        gained_discount.dosomething()
-        gained_discount.genUlt()
+#        print ("gained discout")
+#        import gained_discount
+#        gained_discount.genUlt()
 
         print ("drop finder")
         import drop_finder2
         drop_finder2.procs()
 
-        print ("slow and steady")
-        import slow_and_steady
-        slow_and_steady.procs()
+        import next_day_drop_after_gain
+        next_day_drop_after_gain.procs()
+#        print ("slow and steady")
+#        import slow_and_steady
+#        slow_and_steady.procs()
 
-        print ("recent stats")
-        import buy
-        buy.genRecentStats()
+#        print ("recent stats")
+#        import buy
+#        buy.genRecentStats()
 
     except Exception as e:
         print ("problem with gbuy")

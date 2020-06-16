@@ -2,6 +2,7 @@ from functools import lru_cache
 import os
 import pickle
 import time
+import datetime
 
 closekey = "Close"
 YEAR = 2020
@@ -230,10 +231,24 @@ def getLiveData(astock, key = "price", andkey = None):
     if not online():
         return None
     try:
-        print("downloading astock: {}".format( astock))
+        try:
+            apath = getPath("yahoo/{}.pkl".format(astock))
+            csvdate = datetime.datetime.fromtimestamp(os.path.getmtime(apath))
+            csvday = csvdate.day
+            csvmonth = csvdate.month
+            ttoday = datetime.date.today().day
+            tmonth = datetime.date.today().month
+            if csvday >= ttoday and tmonth == csvmonth:
+                ret = gyp(astock)
+                getLiveData.cached[astock] = ret
+                return float(ret[key])
+        except:
+            exit()
+            pass
+
         astockdf = pdr.get_quote_yahoo([astock])
         getLiveData.cached[astock] = astockdf
-        syp(astockdf, "{}".format(astock))
+        syp(astockdf, astock)
 
         ret = float(getLiveData.cached[astock][key])
         if andkey:

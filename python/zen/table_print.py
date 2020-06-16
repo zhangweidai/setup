@@ -6,6 +6,8 @@ import buy
 import os
 import argparse
 
+titleColor = Fore.YELLOW
+color = Fore.MAGENTA
 accurate = True
 g_allow_clearing = True
 args = None
@@ -129,7 +131,7 @@ def printTable(tablename ="default"):
         headeritems.append(bar.format(ctitle[:width]))
 
     print("cidx: {} \tSorting By : '{}' ({})".format( cidx, store.title[currentsort], currentsort))
-    print(Fore.GREEN + Style.BRIGHT + "  ".join(headeritems) + Style.RESET_ALL)
+    print(titleColor + Style.BRIGHT + "  ".join(headeritems) + Style.RESET_ALL)
 
 #    try:
 #        bar = getItems()
@@ -161,7 +163,7 @@ def printTable(tablename ="default"):
         have = False
 
         if not x % 40 and x > 0:
-            print(Fore.GREEN + Style.BRIGHT + "  ".join(headeritems) + Style.RESET_ALL)
+            print(titleColor + Style.BRIGHT + "  ".join(headeritems) + Style.RESET_ALL)
 
         for j, individual in enumerate(items):
             if j == 0 and individual[0] == '*':
@@ -179,13 +181,13 @@ def printTable(tablename ="default"):
             try:
                 if individual != "NA" and j != 0 and type(individual) != str:
                     if individual == mm[j][0]:
-                        bar = Fore.YELLOW + "{:>" + "{}".format(headerWidths[ctitle]) + "}"
+                        bar = color + "{:>" + "{}".format(headerWidths[ctitle]) + "}"
                         updated = True
                     elif individual == mm[j][1]:
                         if have:
-                            bar = Fore.GREEN + "{:>" + "{}".format(headerWidths[ctitle]) + "}"
+                            bar = titleColor + "{:>" + "{}".format(headerWidths[ctitle]) + "}"
                         else:
-                            bar = Fore.GREEN + "{:>" + "{}".format(headerWidths[ctitle]) + "}"
+                            bar = titleColor + "{:>" + "{}".format(headerWidths[ctitle]) + "}"
                         updated = True
             except:
                 pass
@@ -232,13 +234,11 @@ def printTable(tablename ="default"):
         except:
             pass
 
-    print(Fore.GREEN + Style.BRIGHT + "  ".join(avgs) + Style.RESET_ALL  + "\nStocks Shown: " +str(len(store.items[cidx])))
+    print(titleColor + Style.BRIGHT + "  ".join(avgs) + Style.RESET_ALL  + "\nStocks Shown: " +str(len(store.items[cidx])))
     if not ivv:
-        bar, bar, ivv, bar = buy.getYearly2("IVV")
-        bar, bar, iusg, bar = buy.getYearly2("IUSG")
-        ivv = z.percentage(ivv)
-        iusg = z.percentage(iusg)
-    print("IVV:  {}\nIUSG: {}".format(ivv, iusg))
+        for anetf in ["IVV", "IUSG", "VUG"]:
+            y1pu, ivvb, wc, bc, avg, ly, l2y, avg8 = buy.getFrom("probs", anetf)
+            print("{:>4}:  {:>5} wc:{:>5} bc:{:>5}: avg:{:>5}, avg8:{:>5}".format(anetf, z.percentage(ly), z.percentage(wc), z.percentage(bc), z.percentage(avg), z.percentage(avg8)))
 
 lastf = 0
 def initiate(allow_clearing = True):
@@ -249,7 +249,7 @@ def initiate(allow_clearing = True):
     global reversing
     global avgidx, lastf
     global g_allow_clearing
-    g_allow_clearing = allow_clearing
+    allow_clearing = g_allow_clearing
     import readchar
     import os
 

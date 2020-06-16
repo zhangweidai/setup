@@ -385,10 +385,11 @@ def preplot(astocks = None):
     parser.add_argument('--s', default=None)
     args = parser.parse_args()
 
+    if args.s:
+        stocks = args.s.upper().split(",")
+
     if not stocks:
-        if args.s:
-            stocks = args.s.upper().split(",")
-        elif "," in args.helpers:
+        if "," in args.helpers:
             stocks = args.helpers.upper().split(",")
         else:
             if args.helpers == "":

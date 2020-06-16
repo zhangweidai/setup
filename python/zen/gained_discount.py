@@ -2,6 +2,7 @@ import math
 import z
 from sortedcontainers import SortedSet
 import os
+import rows
 import buy
 import statistics
 
@@ -218,6 +219,7 @@ def dosomething3():
 
 
 
+# to be removed
 def dosomething():
     savedSort = SortedSet()
     low_high_sort = SortedSet()
@@ -269,14 +271,15 @@ def dosomething():
 #    print("savedSort : {}".format( savedSort[:2] ))
 #        z.breaker(5)
 
-def delstock(astock):
-    import rows
-    try:
-        data = z.getp("div_mc_dict")
-        del(data[astock])
-        z.setp(data, "div_mc_dict")
-    except:
-        pass
+def delstock(astock, update = False):
+
+    if update:
+        try:
+            data = z.getp("div_mc_dict")
+            del(data[astock])
+            z.setp(data, "div_mc_dict")
+        except:
+            pass
 
     afile = z.getPath("historical/{}.csv".format(astock))
     if os.path.exists(afile):
@@ -290,20 +293,67 @@ def delstock(astock):
         z.trace(e)
         print("1problem  : {}".format( afile ))
         pass
-#    import gbuy
-#    gbuy.setlistofstocks()
+
+    if not update == False:
+        import gbuy
+        gbuy.setlistofstocks()
+
+def cleanup(astock, date):
+    tokens = date.split("-")
+    year = tokens[0]
+    try:
+        cyear = False
+        for afile in rows.getFiles(astock):
+            if not os.path.exists(afile):
+                continue
+
+            if year in afile:
+                cyear = True
+                with open(afile, "r") as f:
+                    lines = f.readlines()
+
+                with open(afile, "w") as f:
+                    started = False
+                    for i,line in enumerate(lines):
+                        if date in line:
+                            started = True
+                        if i == 0 or started:
+                            f.write(line)
+
+            if not cyear:
+                os.remove(afile)
+                print("deleted afile: {}".format( afile))
+
+    except Exception as e:
+        z.trace(e)
+        print("1problem  : {}".format( afile ))
+        pass
+
+def batchdelete(stocks):
+    data = z.getp("div_mc_dict")
+    for astock in stocks:
+        try:
+            del(data[astock])
+        except:
+            pass
+        delstock(astock, update=False)
+
+    import gbuy
+    z.setp(data, "div_mc_dict")
+    gbuy.setlistofstocks()
 
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument('--delete')
+    parser.add_argument('--updatestocks', default=False)
     args = parser.parse_args()
     if args.delete:
-        delstock(args.delete.upper())
+        if "," not in args.delete:
+            delstock(args.delete.upper(), update=args.updatestocks)
+        else:
+            stocks = args.delete.upper().split(",")
+            batchdelete(stocks)
     else:
         genUlt()
-#    dosomething2()
-#    dosomething3()
-#    dosomething()
-#    genUlt(['FAST'])
 
