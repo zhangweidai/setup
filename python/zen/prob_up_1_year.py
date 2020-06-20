@@ -89,8 +89,8 @@ def proc(astock):
             print("beativv: {}".format( beativv))
     except Exception as e:
         print("problem astock: {}".format( astock))
-        z.trace(e)
-        exit()
+#        z.trace(e)
+#        exit()
 
     wc, bc, avg, ly, l2y, avg8 = annuals(astock)
 

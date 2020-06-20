@@ -13,6 +13,7 @@ g_allow_clearing = True
 args = None
 cidx = 0
 use_percentages = list()
+use_often = list()
 gavgs = list()
 currentsort = 0
 ivv = 0
@@ -102,7 +103,7 @@ def printTable(tablename ="default"):
                 dics[j].append(individual)
             width = len(str(individual))
             if ctitle in use_percentages and type(individual) is float:
-                width = len(str(round(individual,2))) + 2
+                width = max((len(str(round(individual,2))) + 2,len(ctitle)))
 
             if width > headerWidths[ctitle]:
                 headerWidths[ctitle] = width
@@ -203,6 +204,11 @@ def printTable(tablename ="default"):
             try:
                 if ctitle in use_percentages:
                     saveme.append(bar.format(z.percentage(individual, accurate=accurate)))
+                elif ctitle in use_often:
+                    try:
+                        saveme.append(bar.format("{}%".format(round(individual*100,2))))
+                    except:
+                        saveme.append(bar.format(individual))
                 else:
                     saveme.append(bar.format(individual))
             except:
@@ -229,6 +235,8 @@ def printTable(tablename ="default"):
         try:
             if ctitle in use_percentages:
                 avgs.append(bar.format(z.percentage(val, accurate=accurate)))
+            elif ctitle in use_often:
+                avgs.append(bar.format("{}%".format(round(individual*100,2))))
             else:
                 avgs.append(bar.format(val))
         except:
@@ -265,7 +273,10 @@ def initiate(allow_clearing = True):
         parser = argparse.ArgumentParser()
         args = parser.parse_args()
 
-    key = readchar.readkey()
+    try:
+        key = readchar.readkey()
+    except:
+        key = None
     while (key != "q"):
         avgidx = None
         try:

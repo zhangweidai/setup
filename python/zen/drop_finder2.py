@@ -6,7 +6,6 @@ import sliding
 import statistics
 
 debug = None
-#debug = "BA"
 if debug:
     print ("debugging {}".format(debug))
 
@@ -118,7 +117,7 @@ def proc(astock):
 #        means = statistics.mean(mins)
 #        useme = (med_15 + means) /2
 #        tgt_15 = round(useme * c_close,2)
-    boughtsanswer = "NA"
+    often = "NA"
     try:
         adl = round((statistics.mean(dailys) + statistics.median(dailys))/2,3)
     except:
@@ -129,11 +128,13 @@ def proc(astock):
         print("boughts_avgs: {}".format( boughts_avgs))
 
     if len(boughts) >= 5:
-        boughtsanswer = round(statistics.mean(boughts),3)
+        often = round(statistics.mean(boughts),3)
 
     try:
         avgtgt = round(statistics.mean(boughts_avgs) ,3)
-        return answers[-1][0], answers[-1][1], boughtsanswer, adl,  avgtgt
+        tgt9 = answers[-1][1]
+        med9 = answers[-1][0]
+        return med9, tgt9, often, adl,  avgtgt
     except:
         print("astock: {}".format( astock))
     return "NA", "NA", "NA", "NA", "NA"
@@ -150,6 +151,7 @@ def procs():
             pass
     try:
         print("low_target: {}".format( low_target))
+        print("            med9, tgt9, often, adl,  avgtgt")
     except:
         pass
     if not debug:

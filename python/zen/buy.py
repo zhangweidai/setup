@@ -27,12 +27,17 @@ def addSortedLow(title, val, astock, keeping = 30):
     if len(addSorted.dic[title]) > keeping:
         addSorted.dic[title].pop()
 
-def addSortedHigh(title, val, astock, keeping = 30):
+def addSortedHigh(title, val, astock, keeping = 30, savingall = False):
     addSorted.dic[title].add((val, astock))
+
+    if savingall:
+        addSorted.dic2[astock] = val
+
     if len(addSorted.dic[title]) > keeping:
         addSorted.dic[title].pop(0)
 
 
+addSorted.dic2 = dict()
 addSorted.dic = defaultdict(SortedSet)
 
 def getapd(values):
@@ -57,6 +62,9 @@ def getSorted(title):
 
 def saveSorted(title):
     z.setp(list(addSorted.dic[title]), title, True)
+
+    if addSorted.dic2:
+        z.setp(addSorted.dic2, "{}dic".format(title))
 
 #for b in range(100):
 #    addSorted("blah", b, "KO")
@@ -240,6 +248,7 @@ def updateDates():
     for row in getRows("IVV", dates[0]):
         new.append(row['Date'])
     z.setp(new, "dates")
+    z.getp.cache_clear()
 
 #for afile in getFiles("KO", date_away):
 #    print("afile : {}".format( afile ))
@@ -503,6 +512,9 @@ def single(value, avgOneYear, retval = None, lots = True):
         print("problem astock: \"{}\"".format( astock))
         return retval
 
+#    if be > 1.10:
+#        return False
+
     mc = "NA"
     pe = "NA"
     try:
@@ -601,6 +613,11 @@ def single(value, avgOneYear, retval = None, lots = True):
 #        ("2apd", apd2),
 
 
+    try:
+        tgtchg = avgtgt/med9
+    except:
+        tgtchg = "NA"
+
     gain, drop = getFrom("prob_drop", astock, ("NA", "NA"))
     values = [
         ("stock", inPortfolio(astock)),
@@ -634,8 +651,10 @@ def single(value, avgOneYear, retval = None, lots = True):
         ("med9", med9),
         ("often", often),
         ("avgtgt", avgtgt),
+        ("tgtchg", tgtchg),
         ("gain", gain),
         ("drop", drop),
+        ("beta21", getFrom("beta21dic", astock)),
         ("adl", adl),
         ("owned", portFolioValue(astock)),
         ("name", name) ]
@@ -682,38 +701,37 @@ def multiple(stocks, title = None, helpers = True, runinit = False, retval=None,
 
     lots = len(stocks) > 15
     avgOneYear = list()
-    if args.drop:
-        print ("droppping")
-        print (args.drop)
-
-        for idx, astock in enumerate(stocks):
-
-            if type(astock) is tuple:
-                astock = astock[0] if type(astock[0]) is str else astock[1]
-
-            live = z.getLiveData(astock, key = "price")
-            prev = getFrom("last_prices", astock)
-            try:
-                change = live/prev
-                addSortedLow("show_these", change, astock, keeping = int(args.drop))
-            except:
-                pass
-        stocks = getSorted("show_these")
+#    if args.drop:
+#        print ("droppping")
+#        print (args.drop)
+#
+#        for idx, astock in enumerate(stocks):
+#            print("astock : {}".format( astock ))
+#
+#            if type(astock) is tuple:
+#                astock = astock[0] if type(astock[0]) is str else astock[1]
+#
+#            live = z.getLiveData(astock, key = "price")
+#            prev = getFrom("last_prices", astock)
+#            try:
+#                change = live/prev
+#                addSortedLow("show_these", change, astock, keeping = int(args.drop))
+#            except:
+#                pass
+#        stocks = getSorted("show_these")
 
     for idx, value in enumerate(stocks):
-        if args.helpers:
-            if type(value) is tuple:
-                astock = value[1]
-            else:
-                astock = value
-            if not astock.startswith(args.helpers) and helpers:
-                print("skipping astock : {}".format( astock ))
-                continue
+        astock = value 
+        if type(value) is tuple:
+            astock = value[1]
+#            if not astock.startswith(args.helpers) and helpers:
+#                print("skipping astock : {}".format( astock ))
+#                continue
         try:
-            ret = single(value, avgOneYear, retval=retval, lots=lots)
+            print("value: {}".format( astock))
+            ret = single(astock, avgOneYear, retval=retval, lots=lots)
             if ret == False:
                 print("astock : {}".format( astock ))
-                return False
         except Exception as e:
             z.trace(e)
             if type(value) is tuple:
@@ -723,7 +741,7 @@ def multiple(stocks, title = None, helpers = True, runinit = False, retval=None,
             problems.add(astock)
             continue
 
-    table_print.printTable(title)
+#    table_print.printTable(title)
     if cleartable:
         table_print.clearTable()
 
@@ -759,9 +777,10 @@ def init(live=False):
     if live:
         args.live = True
     savedhelper = None
+
     if args.helpers:
         savedhelper = args.helpers
-        args.helpers = args.helpers[0].upper()
+#        args.helpers = args.helpers[0].upper()
 
     table_print.setArgs(args)
 
@@ -776,7 +795,7 @@ def init(live=False):
         getDropScore.cache = defaultdict(dict)
     getDropScore.cache = defaultdict(dict)
 
-    table_print.use_percentages = ["avg5", "min5", "last5", lastchange, "orderc", "mcc", "basisc", fromtop, wcchange, diffS, "med9", "strat", "1apd", "2apd", "apd", "adl", "change", "ly", "bc", "wc", "avg", "avg8", "l2y", "gain", "drop", "avgtgt"]
+    table_print.use_percentages = ["avg5", "min5", "last5", lastchange, "orderc", "mcc", "basisc", fromtop, wcchange, diffS, "med9", "strat", "1apd", "2apd", "apd", "adl", "change", "ly", "bc", "wc", "avg", "avg8", "l2y", "gain", "drop", "avgtgt", "tgtchg"]
     table_print.gavgs = ["107chg", "y1w", "y1pu", "ivvb"]
 #    if args.live:
     table_print.use_percentages.append("last")
@@ -810,7 +829,9 @@ def testLoop(astock):
             upd += "u" if upchange else "d"
 
 def handleDic(mode):
+    print("mode: {}".format( mode))
     bar = z.getp(str(mode))
+    print("bar : {}".format( bar ))
     try:
         for key, value in bar.items():
             if "ITOT" in key:
@@ -818,10 +839,10 @@ def handleDic(mode):
             multiple(value, title = key)
     except:
         try:
+            print ("huh")
             multiple(bar, title = mode)
         except:
-            exit()
-
+            pass
     table_print.initiate()
             
 if __name__ == '__main__':
@@ -876,6 +897,10 @@ if __name__ == '__main__':
         exit()
 
     if args.mode == "multiple":
+
+        print("handleDic: {}".format( args.mode))
+        exit()
+
         print("savedhelper: {}".format( savedhelper))
         if args.section == "b":
             multiplep(savedhelper)
@@ -975,6 +1000,7 @@ if __name__ == '__main__':
         table_print.initiate()
         exit()
 
+    print("handleDic2: {}".format( args))
     if args.mode == "sorted":
         for cat in sortcats:
             print("cat: {}".format( cat))
@@ -988,18 +1014,25 @@ if __name__ == '__main__':
     if not args.mode == "default":
         handleDic(args.mode)
         exit()
+
+    if args.helpers:
+        handleDic(args.helpers)
+        exit()
+
     try:
         multiple("avg30c")
         multiple("best30c")
         multiple("worst30c")
     except:
         pass
+
+    exit()
 #
-    m1 = ["COST", "WMT", "NKE", "FB", "MSFT", "TGT", "BABA", "NFLX", "AMZN", "GOOG", "AMD", "ADBE", "DIS", "KO", "TSLA", "WM", "BA", "JNJ", "BLK", "VMW"]
-    multiple(m1, title="Other")
+#    m1 = ["COST", "WMT", "NKE", "FB", "MSFT", "TGT", "BABA", "NFLX", "AMZN", "GOOG", "AMD", "ADBE", "DIS", "KO", "TSLA", "WM", "BA", "JNJ", "BLK", "VMW"]
+#    multiple(m1, title="Other")
+#
+#    print ("{} days ago was : {} \tLatest {}".format(start, dates[-1*start], dates[-1]))
+#    z.setp(getDropScore.cache, "newdropcache")
 
-    print ("{} days ago was : {} \tLatest {}".format(start, dates[-1*start], dates[-1]))
-    z.setp(getDropScore.cache, "newdropcache")
-
-    table_print.initiate()
+#    table_print.initiate()
 

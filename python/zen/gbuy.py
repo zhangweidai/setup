@@ -133,7 +133,7 @@ if __name__ == '__main__':
     try:
         if not args.noupdate:
             updateStocks()
-            buy.updateDates()
+        buy.updateDates()
 
         print ("prob up 1 year")
         import prob_up_1_year
@@ -149,6 +149,10 @@ if __name__ == '__main__':
 
         import next_day_drop_after_gain
         next_day_drop_after_gain.procs()
+
+        import historical_changes
+        historical_changes.generate()
+
 #        print ("slow and steady")
 #        import slow_and_steady
 #        slow_and_steady.procs()

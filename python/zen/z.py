@@ -231,6 +231,7 @@ def getLiveData(astock, key = "price", andkey = None):
     if not online():
         return None
     try:
+
         try:
             apath = getPath("yahoo/{}.pkl".format(astock))
             csvdate = datetime.datetime.fromtimestamp(os.path.getmtime(apath))
@@ -242,10 +243,10 @@ def getLiveData(astock, key = "price", andkey = None):
                 ret = gyp(astock)
                 getLiveData.cached[astock] = ret
                 return float(ret[key])
-        except:
-            exit()
+        except Exception as e:
             pass
 
+        print("downloading astock: {}".format( astock))
         astockdf = pdr.get_quote_yahoo([astock])
         getLiveData.cached[astock] = astockdf
         syp(astockdf, astock)
