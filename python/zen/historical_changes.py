@@ -103,12 +103,13 @@ def proc(astock, days_at_a_time, orderchg):
     if savingallg and days_at_a_time == 15 and c_close >= 10:
         buy.addSortedHigh("beta21", beta21, astock, savingall=True)
 
-    return low, m1, mh, bomh, boc, m2, beta21, ab, ratio, rc
+    return round(m1 * c_close,2), m1, mh, bomh, boc, m2, beta21, ab, ratio, rc
 
-cats = ["low", "med1", "medh", "bomh", "boc", "med2"]
+cats = ["price", "med1", "medh", "bomh", "boc", "med2"]
 better = set(z.getp("better_etf"))
 torys = z.getp("torys")
-def procs(stocks, title, savingall = False):
+def procs(stocks, title, savingall = False, generate = False):
+    print("stocks: {}".format( stocks))
     global savingallg
     savingallg = savingall
     drop_data = dict()
@@ -132,10 +133,11 @@ def procs(stocks, title, savingall = False):
         for days_at_a_time in [5, 15, 30]:
             try:
 
-                if savingall:
+                if savingall or generate:
                     answer = proc(astock, days_at_a_time, chg)
                     drop_data[(astock, days_at_a_time)] = answer
-                    continue
+                    if savingall:
+                        continue
                 else:
                     answer = buy.getFrom("drop_data", (astock, days_at_a_time))
                 rc = answer[-1]
@@ -150,10 +152,11 @@ def procs(stocks, title, savingall = False):
             for i,cat in enumerate(cats):
                 display = "{}{}".format(days_at_a_time, cat)
                 if x == 0 :
-                    if "bo" not in cat :
-                        table_print.use_percentages.append(display)
-                    else:
-                        table_print.use_often.append(display)
+                    if "price" not in cat:
+                        if "bo" not in cat :
+                            table_print.use_percentages.append(display)
+                        else:
+                            table_print.use_often.append(display)
 
 #                if debug:
 #                    print("display : {}".format( display ))
@@ -195,31 +198,35 @@ def generate():
     buy.saveSorted("beta21")
 
 if __name__ == '__main__':
+    import args
 #    procs(better, "saveall")
 #    table_print.initiate()
 #    exit()
 #    generate()
 #    exit()
-
-    beta = z.getp("beta21")
-    beta = [item[1] for item in beta]
-    procs(beta,"beta21")
+    print ("huh")
+    if args.debug:
+        procs(args.stocks, "beta21", generate=True)
     table_print.initiate()
     exit()
+
+#    beta = z.getp("beta21")
+#    beta = [item[1] for item in beta]
+#    procs(beta,"beta21", generate=True)
 
     if debug:
         procs([debug],"owned")
         exit()
 
-    owned = z.getp("ports")
-    procs(owned.keys(),"owned")
+#    owned = z.getp("ports")
+#    procs(owned.keys(),"owned")
 
-    orders = z.getp("orders")
-    stocks = orders.keys()
-    procs(stocks,"orders")
+#    orders = z.getp("orders")
+#    stocks = orders.keys()
+#    procs(stocks,"orders")
 
-    procs(better,"better")
-    procs(["VOO", "VUG"],"etfs")
-
-
+    procs(better,"better", generate=True)
     table_print.initiate()
+#    procs(["VOO", "VUG"],"etfs")
+
+

@@ -268,7 +268,8 @@ def initiate(allow_clearing = True):
     try:
         if args.nc:
             exit()
-    except:
+    except Exception as e:
+        z.trace(e)
         import argparse
         parser = argparse.ArgumentParser()
         args = parser.parse_args()
