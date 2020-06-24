@@ -49,17 +49,23 @@ def rebuild():
     tminv = 1
     cstocks = stocks[starting + idx : showing + idx]
 
-    for cstock in cstocks:
+    print("stocks: {}".format( stocks))
+    for cstock in stocks:
         values = list()
+        print("startdate: {}".format( startdate))
         for i, row in enumerate(getRowsRange(cstock, count=end, date=startdate)):
+            print("row : {}".format( row ))
             c_close = float(row[z.closekey])
+            print("c_close : {}".format( c_close ))
             values.append(c_close)
         try:
             fv = values[0]
-        except:
+        except Exception as e:
+            z.trace(e)
             break
         v1 = [ round((i/fv)-1,3) for i in values ]
         vdict[cstock] = v1
+        print("cstock: {}".format( cstock))
         minv = min(v1)
         maxv = max(v1)
         tmaxv = max(maxv, tmaxv)
@@ -379,14 +385,14 @@ def preplot(astocks = None):
     import argparse
     plt.rcParams['toolbar'] = 'None'
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument('helpers', type=str, nargs='?', default = "")
-    parser.add_argument('refs', type=str, nargs='?', default = "")
-    parser.add_argument('--s', default=None)
-    args = parser.parse_args()
+#    parser = argparse.ArgumentParser()
+#    parser.add_argument('helpers', type=str, nargs='?', default = "")
+#    parser.add_argument('refs', type=str, nargs='?', default = "")
+#    parser.add_argument('--s', default=None)
+#    args = parser.parse_args()
 
-    if args.s:
-        stocks = args.s.upper().split(",")
+#    if args.s:
+#        stocks = args.s.upper().split(",")
 
     if not stocks:
         if "," in args.helpers:
@@ -407,4 +413,10 @@ def preplot(astocks = None):
         pass
 
 if __name__ == "__main__":
-    preplot(["KO", "BA", "AMD"])
+    import args
+    stocks = ["NKLA", "BA", "AMD"]
+    print("args: {}".format( args.stocks))
+    if len(args.stocks) == 1:
+        stocks.append(args.stocks[0])
+    print("stocks: {}".format( stocks))
+    preplot(stocks)

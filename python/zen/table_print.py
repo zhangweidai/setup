@@ -5,15 +5,22 @@ import z
 import buy
 import os
 import argparse
+import historical_changes
 
+mode = 0
 titleColor = Fore.YELLOW
 color = Fore.MAGENTA
 accurate = True
 g_allow_clearing = True
 args = None
 cidx = 0
+
 use_percentages = list()
 use_often = list()
+
+use_percentages2 = list()
+use_often2 = list()
+
 gavgs = list()
 currentsort = 0
 ivv = 0
@@ -33,13 +40,29 @@ def store(values):
 store.items = defaultdict(list)
 store.title = None
 
+use_stock_order = False
 from sortedcontainers import SortedSet
+stock_order = list()
 def getItems():
-    global currentsort, reversing
+    global currentsort, reversing, use_stock_order, stock_order
 
 #    if currentsort >= len(store.items[cidx]):
 #        currentsort = 0
 
+    if use_stock_order and stock_order:
+        realret = list()
+        for stock in stock_order:
+            if stock[0] == "*":
+                stock = stock[1:]
+            for item in store.items[cidx]:
+                citem = item[0]
+                if citem[0] == "*":
+                    citem = citem[1:]
+                if citem == stock:
+                    realret.append(item)
+                    break
+        return realret
+  
     ret = SortedSet()
     for item in store.items[cidx]:
         bar = item[currentsort]
@@ -56,13 +79,14 @@ def getItems():
             bar = 0
         ret.add((bar, item))
 
+    if reversing:
+        ret = reversed(ret)
+
+    stock_order = list()
     realret = list()
-    if not reversing: 
-        for item in ret:
-            realret.append(item[1])
-    else:
-        for item in reversed(ret):
-            realret.append(item[1])
+    for item in ret:
+        stock_order.append(item[1][0])
+        realret.append(item[1])
     return realret
 
 mm = dict()
@@ -77,10 +101,12 @@ def printTable(tablename ="default"):
         if args.nc == False and g_allow_clearing:
             os.system("clear")
     except:
+        print ("parsing here")
         import argparse
         parser = argparse.ArgumentParser()
+        parser.add_argument('stocks', type=str, nargs='?', default = [])
         args = parser.parse_args()
-
+        args.nc = True
 
     global cidx, mm, ivv, iusg, clist, avgidx
     headerWidths = defaultdict(int)
@@ -248,6 +274,16 @@ def printTable(tablename ="default"):
             y1pu, ivvb, wc, bc, avg, ly, l2y, avg8 = buy.getFrom("probs", anetf)
             print("{:>4}:  {:>5} wc:{:>5} bc:{:>5}: avg:{:>5}, avg8:{:>5}".format(anetf, z.percentage(ly), z.percentage(wc), z.percentage(bc), z.percentage(avg), z.percentage(avg8)))
 
+def resetAll():
+    global use_percentages, use_often
+    global use_percentages2, use_often2, currentsort
+    use_percentages, use_percentages2 = use_percentages2, use_percentages
+    use_often, use_often2 = use_often2, use_often
+    use_often = list()
+    store.items = defaultdict(list)
+    store.title = None
+    currentsort = 0
+
 lastf = 0
 def initiate(allow_clearing = True):
     global args
@@ -257,6 +293,8 @@ def initiate(allow_clearing = True):
     global reversing
     global avgidx, lastf
     global g_allow_clearing
+    global mode
+    global use_stock_order
     allow_clearing = g_allow_clearing
     import readchar
     import os
@@ -265,20 +303,24 @@ def initiate(allow_clearing = True):
     printTable()
 
 #    os.system("powershell.exe /c start firefox.exe ")
-    try:
-        if args.nc:
-            exit()
-    except Exception as e:
-        z.trace(e)
-        import argparse
-        parser = argparse.ArgumentParser()
-        args = parser.parse_args()
+#    try:
+#        print ("no keyd")
+#        if args.nc:
+##            exit()
+#    except Exception as e:
+#        z.trace(e)
+#        print ("parsing2")
+#        import argparse
+#        parser = argparse.ArgumentParser()
+#        args = parser.parse_args()
 
     try:
         key = readchar.readkey()
     except:
+        print ("no key")
         key = None
     while (key != "q"):
+        use_stock_order = False
         avgidx = None
         try:
             if key == "p":
@@ -323,6 +365,23 @@ def initiate(allow_clearing = True):
                 bar = input("Enter Column: ")
                 currentsort = store.title.index(bar)
                 print("currentsort : {}".format( currentsort ))
+                printTable()
+
+            elif key == "w":
+                stocks = [ bar[0].replace("*", "") for bar in store.items[0] ]
+                resetAll()
+                g_allow_clearing = False
+                use_stock_order = True
+
+                print("mode : {}".format( mode ))
+                if mode == 0:
+                    historical_changes.procs(stocks, "other", generate=True)
+                    mode += 1
+                else:
+                    buy.multiple(stocks, "other2")
+                    mode -= 1
+
+                cidx = 0
                 printTable()
 
             elif key == "l":
@@ -372,7 +431,8 @@ def initiate(allow_clearing = True):
                 if args.nc == False and allow_clearing:
                     os.system("clear")
                 printTable()
-        except:
+        except Exception as e:
+            z.trace(e)
             pass
 
         key = readchar.readkey()

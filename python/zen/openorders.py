@@ -106,3 +106,8 @@ for account in accounts:
         print("last5 : {:>5} \tcash : {:>8} \torders {:>8} \tratio {:>3}".format( mapped[str(last5)], one, two, round(two/one,2)))
     except Exception as e:
         pass
+
+import historical_changes
+import table_print
+historical_changes.procs(orders.keys(), "orders", generate=True)
+table_print.initiate()

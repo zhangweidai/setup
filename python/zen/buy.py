@@ -313,7 +313,10 @@ def getOrder(astock):
     global orders
     if astock not in orders:
         return "NA"
-    return orders[astock][0]
+    try:
+        return orders[astock][0]
+    except Exception as e:
+        return "NA"
 
 dic = dict()
 def getFrom(name, astock, default=0):
@@ -585,13 +588,13 @@ def single(value, avgOneYear, retval = None, lots = True):
     try:
         score = round(val + y1pu + dayup, 2)
     except Exception as e:
-        print("astock: {}".format( astock))
-        print("val : {}".format( val ))
-        z.trace(e)
-        print("dayup: {}".format( dayup))
-        print("y1pu : {}".format( y1pu ))
-        print ("no score")
-        z.breaker(5)
+#        print("astock: {}".format( astock))
+#        print("val : {}".format( val ))
+#        z.trace(e)
+#        print("dayup: {}".format( dayup))
+#        print("y1pu : {}".format( y1pu ))
+#        print ("no score")
+#        z.breaker(5)
         
         score = 0
 
@@ -728,7 +731,6 @@ def multiple(stocks, title = None, helpers = True, runinit = False, retval=None,
 #                print("skipping astock : {}".format( astock ))
 #                continue
         try:
-            print("value: {}".format( astock))
             ret = single(astock, avgOneYear, retval=retval, lots=lots)
             if ret == False:
                 print("astock : {}".format( astock ))

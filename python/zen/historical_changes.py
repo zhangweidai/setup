@@ -38,6 +38,7 @@ def proc(astock, days_at_a_time, orderchg):
     highChanges = list()
     betas = list()
     rc = None
+#    print("firstdate: {}".format( firstdate))
     for i, row in enumerate(buy.getRows(astock, firstdate)):
         try:
             c_low = float(row['Low'])
@@ -77,9 +78,17 @@ def proc(astock, days_at_a_time, orderchg):
                 print("\thighs : {}".format( highs.main ))
                 print("\tLchg : {} Hchg : {}".format( chg, chg2 ))
 
-    high = max(lowChanges)
+    try:
+        high = max(lowChanges)
+    except:
+        return None
     low = min(lowChanges)
     m1 = round(statistics.median(lowChanges),3)
+#    if days_at_a_time == 15:
+#        print("lowChanges: {}".format( len(lowChanges)))
+#        print("lowChanges: {}".format( lowChanges))
+#        print("m1 : {}".format( m1 ))
+
     m2 = round(statistics.median(highChanges),3)
     mh = round((m1 + high )/2,4)
     boughts = [1 if change < m1 else 0 for change in lowChanges]
@@ -100,16 +109,19 @@ def proc(astock, days_at_a_time, orderchg):
         print("ratio : {}".format( ratio ))
         print("beta21 : {}".format( beta21 ))
 
-    if savingallg and days_at_a_time == 15 and c_close >= 10:
-        buy.addSortedHigh("beta21", beta21, astock, savingall=True)
+#    if savingallg and days_at_a_time == 15 and c_close >= 10:
+#        buy.addSortedHigh("beta21", beta21, astock, savingall=True)
+
+    if savingallg and days_at_a_time == 15 and c_close >= 5:
+        buy.addSortedHigh("median_gains", m2, astock)
 
     return round(m1 * c_close,2), m1, mh, bomh, boc, m2, beta21, ab, ratio, rc
 
 cats = ["price", "med1", "medh", "bomh", "boc", "med2"]
 better = set(z.getp("better_etf"))
 torys = z.getp("torys")
+orders = z.getp("orders")
 def procs(stocks, title, savingall = False, generate = False):
-    print("stocks: {}".format( stocks))
     global savingallg
     savingallg = savingall
     drop_data = dict()
@@ -125,8 +137,20 @@ def procs(stocks, title, savingall = False, generate = False):
 
         imbetter = "B" if astock in better else ""
         values = [("stock", astock),("close",prev), ("orderchg", chg), ("better", "{}{}".format(imbetter, who))]
-        table_print.use_percentages.append("orderchg")
-        table_print.use_percentages.append("recover")
+
+        bar = buy.getFrom("howoftendic", astock, ["NA", "NA", "NA", "NA"])
+        values.append(("off5", bar[0]))
+        values.append(("off10", bar[1]))
+        values.append(("off15", bar[2]))
+        values.append(("off20", bar[3]))
+
+        if x == 0:
+            table_print.use_percentages.append("orderchg")
+            table_print.use_percentages.append("recover")
+            table_print.use_often.append("off5")
+            table_print.use_often.append("off10")
+            table_print.use_often.append("off15")
+            table_print.use_often.append("off20")
 
         rc = None
 
@@ -195,7 +219,8 @@ def procs(stocks, title, savingall = False, generate = False):
 def generate():
     stocks = z.getp("listofstocks")
     procs(stocks, "saveall", True)
-    buy.saveSorted("beta21")
+#    buy.saveSorted("beta21")
+    buy.saveSorted("median_gains")
 
 if __name__ == '__main__':
     import args
@@ -204,7 +229,7 @@ if __name__ == '__main__':
 #    exit()
 #    generate()
 #    exit()
-    print ("huh")
+#    print ("huh")
     if args.debug:
         procs(args.stocks, "beta21", generate=True)
     table_print.initiate()

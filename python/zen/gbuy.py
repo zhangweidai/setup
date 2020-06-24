@@ -1,5 +1,6 @@
 import z
 import math
+import readchar
 import csv
 import buy
 import os
@@ -17,6 +18,8 @@ def getDataFromYahoo(astock, cdate):
         print("dl astock: {}".format( astock))
         df = pdr.get_data_yahoo([astock], start=cdate)
     except Exception as e:
+        z.trace(e)
+        exit()
         try:
             df = pdr.get_data_yahoo([astock], start=cdate)
         except Exception as e:
@@ -38,16 +41,18 @@ def setlistofstocks():
         listofs.append(astock)
     z.setp(listofs, "listofs")
 
+problems = set()
 def updateStocks():
+    global problems
     import datetime
     stocks = z.getp("listofstocks")
-    problems = [] 
     try:
         now = datetime.datetime.now()
         consecutive_misses = 0
 
         cdate_missing = list()
         current_cday = None
+        added = False
         for astock in stocks:
             apath = z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
             try:
@@ -78,7 +83,7 @@ def updateStocks():
                 print("problem downloading: {}".format( astock))
                 consecutive_misses += 1
                 if consecutive_misses > 5:
-                    problems.append(astock)
+                    problems.add(astock)
                     print("problems : {}".format( problems ))
                     z.setp(problems, "problems")
                     exit()
@@ -116,6 +121,10 @@ def updateStocks():
                         cclose = adj
                         added = True
                         f.write("{},{},{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, adj, vol, chg))
+
+            if not added:
+                problems.add(astock)
+                print ("problem with {}".format(astock))
 
     except Exception as e:
         print ("problem with gbuy")
@@ -166,4 +175,10 @@ if __name__ == '__main__':
         z.trace(e)
         exit()
 
+    if problems:
+        print("delete problems: {}".format( problems))
+        key = readchar.readkey()
+        if key == "y":
+            import gained_discount
+            gained_discount.batchdelete(problems)
 

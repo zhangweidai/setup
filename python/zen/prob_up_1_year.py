@@ -88,6 +88,7 @@ def proc(astock):
         if debug:
             print("beativv: {}".format( beativv))
     except Exception as e:
+        ivvb = None
         print("problem astock: {}".format( astock))
 #        z.trace(e)
 #        exit()
