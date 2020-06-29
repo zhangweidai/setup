@@ -61,12 +61,18 @@ def syp(data, name):
 getpd = set()
 @lru_cache(maxsize=40)
 def getp(name, override="pkl", retfile=False):
+
+    if getp.quick_list and name == "listofstocks":
+        return getp("quick")
+
     getpd.add(name)
     try:
         path = getPath("{}/{}.pkl".format(override, name))
         if not os.path.exists(path):
             print ("does not exist {}".format(path))
             return None
+        if retfile:
+            return path
         return pickle.load(open(path, "rb"))
     except:
         try:
@@ -74,6 +80,7 @@ def getp(name, override="pkl", retfile=False):
         except:
             pass
     return None
+getp.quick_list = False
 
 import atexit
 gsave = False
@@ -209,7 +216,7 @@ def trace(e):
     print (str(e))
 
 
-def getLiveData(astock, key = "price", andkey = None):
+def getLiveData(astock, key = "price", andkey = None, force = False):
     from pandas_datareader import data as pdr
     try :
         ret = float(getLiveData.cached[astock][key])
@@ -229,6 +236,7 @@ def getLiveData(astock, key = "price", andkey = None):
         except:
             pass
     if not online():
+        print ("not online")
         return None
     try:
 
@@ -239,7 +247,7 @@ def getLiveData(astock, key = "price", andkey = None):
             csvmonth = csvdate.month
             ttoday = datetime.date.today().day
             tmonth = datetime.date.today().month
-            if csvday >= ttoday and tmonth == csvmonth:
+            if not force and (csvday >= ttoday and tmonth == csvmonth):
                 ret = gyp(astock)
                 getLiveData.cached[astock] = ret
                 return float(ret[key])

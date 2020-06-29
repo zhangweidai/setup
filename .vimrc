@@ -219,8 +219,10 @@ endf
 
 fu! DebugExtension2()
    if expand('%:p') =~ ".py"
-      norm bywoprint(
-      :norm pA)
+      norm bywo("
+      :norm pi",
+      :norm p
+      :norm i)
    endif 
 endf
 

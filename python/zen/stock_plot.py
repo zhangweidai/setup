@@ -248,7 +248,6 @@ def press(event):
         rebuild()
         return
 
-
     elif event.key == '=':
         start += 20
         end += 20
@@ -349,7 +348,7 @@ def configurePlots(fig):
 #    adjust = 0.25
 #    fig.subplots_adjust(left=adjust, bottom=adjust, 
 #                        right=1-adjust, top=1-adjust)
-    move_figure(fig, 1920, 0)
+    move_figure(fig, 0, 0)
 #    move_figure(fig, 0, 0)
     fig.canvas.mpl_connect('key_press_event', press)
     fig.canvas.mpl_connect('scroll_event', handle_scroll)
@@ -414,7 +413,7 @@ def preplot(astocks = None):
 
 if __name__ == "__main__":
     import args
-    stocks = ["NKLA", "BA", "AMD"]
+    stocks = ["BA", "AMD"]
     print("args: {}".format( args.stocks))
     if len(args.stocks) == 1:
         stocks.append(args.stocks[0])

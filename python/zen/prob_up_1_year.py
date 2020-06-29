@@ -6,9 +6,9 @@ import buy
 import sliding
 import statistics
 from sortedcontainers import SortedSet
+import args
 
 debug = None
-
 ETF = "IVV"
 etf_wc, etf_bc, etf_ly, etf_l2y, etf_avg = 0, 0, 0, 0, 0
 
@@ -94,6 +94,12 @@ def proc(astock):
 #        exit()
 
     wc, bc, avg, ly, l2y, avg8 = annuals(astock)
+    if args.args.bta:
+        buy.addPDic(astock, "ly", ly)
+        buy.addPDic(astock, "avg8", avg8)
+        buy.addPDic(astock, "l2y", l2y)
+        buy.addPDic(astock, "avg", avg)
+        buy.addPDic(astock, "wc", wc)
 
     last_prices[astock] = c_close
     count = len(ups)
@@ -130,6 +136,8 @@ etf_dates = list()
 missing_days = list()
 
 def annuals(astock):
+    if debug:
+        print("astock: {}".format( astock))
     global etf_dates, missing_days
     closes_252 = sliding.WindowQueue(252)
     if debug:
@@ -211,6 +219,8 @@ def annuals(astock):
             pass
         prevprice = price
 
+    if debug:
+        print("annuals8: {}".format( annuals8))
     avg8 = round((statistics.mean(annuals8) + statistics.median(annuals8))/2,3) if len(annuals8) > 4 and days_missing < 20 else "NA"
 
     try:
@@ -230,7 +240,12 @@ def annuals(astock):
     if started_annuals:
         wc = min(annual_list)
         bc = max(annual_list)
-        avg = round((statistics.mean(annual_list) + statistics.median(annual_list))/2,3)
+        median = statistics.median(annual_list)
+        mean = statistics.mean(annual_list)
+        avg = round((median + median + mean) / 3,3)
+#        print("mean : {}".format( mean ))
+#        print("median : {}".format( median ))
+#        print("avg : {}".format( avg ))
 
     return wc, bc, avg, ly, l2y, avg8
 #
@@ -238,10 +253,14 @@ def annuals(astock):
 #    bar = annuals(debug)
 #    print("bar : {}".format( bar ))
 #    exit()
-
-def procs():
+import sys
+def procs(astocks = None):
     global better_etf, missing_days
-    stocks = [debug.upper()] if debug else z.getp("listofstocks")
+
+    if astocks:
+        current_module = sys.modules[__name__]
+        current_module.stocks = astocks
+        
     try:
         stocks.pop(stocks.index(ETF))
     except:
@@ -268,8 +287,12 @@ def procs():
         z.setp(last_prices, "last_prices")
     else:
         print("prob_dic: {}".format( prob_dic))
+        print("wc, bc, avg, ly, l2y, avg8")
 
     print("missing_days : {}".format( missing_days ))
 
 if __name__ == '__main__':
+
     procs()
+    if args.args.bta:
+        buy.savePs()

@@ -5,6 +5,7 @@ import buy
 import sliding
 import statistics
 import table_print
+from scipy import stats
 
 debug = None
 if debug:
@@ -25,8 +26,9 @@ print("firstdate : {}".format( firstdate ))
 recovdate = "2020-03-23"
 #print("firstdate : {}".format( firstdate ))
 #exit()
-
+special = dict()
 def proc(astock, days_at_a_time, orderchg):
+    global special
     if debug:
         print("days_at_a_time: {}".format( days_at_a_time))
 
@@ -34,10 +36,13 @@ def proc(astock, days_at_a_time, orderchg):
     lows = sliding.WindowQueue(days_at_a_time, needMin=True)
     highs = sliding.WindowQueue(days_at_a_time, needMax=True)
 
+    saved_dates = list()
     lowChanges = list()
     highChanges = list()
     betas = list()
     rc = None
+    chgs = list()
+    prevclose = None
 #    print("firstdate: {}".format( firstdate))
     for i, row in enumerate(buy.getRows(astock, firstdate)):
         try:
@@ -51,11 +56,17 @@ def proc(astock, days_at_a_time, orderchg):
             print("no low? astock: {}".format( astock))
             return None
 
+        if days_at_a_time == 5 and prevclose:
+            chgs.append(round(c_close/prevclose,3))
+
+        prevclose = c_close
+
         if debug and i == 0:
             print("first date:{}  c_close: {}".format( date, c_close ))
 
         if date == recovdate:
             rc = c_close
+        saved_dates.append(date)
 
         closes.add_tail(c_close)
         lows.add_tail(min(c_low, c_close))
@@ -84,6 +95,9 @@ def proc(astock, days_at_a_time, orderchg):
         return None
     low = min(lowChanges)
     m1 = round(statistics.median(lowChanges),3)
+    latest_change =  ( closes.main[-1]/ closes.main[-1*days_at_a_time] )
+    percentile = round(100 - stats.percentileofscore(lowChanges, latest_change, kind ='strict'),4)
+
 #    if days_at_a_time == 15:
 #        print("lowChanges: {}".format( len(lowChanges)))
 #        print("lowChanges: {}".format( lowChanges))
@@ -115,13 +129,47 @@ def proc(astock, days_at_a_time, orderchg):
     if savingallg and days_at_a_time == 15 and c_close >= 5:
         buy.addSortedHigh("median_gains", m2, astock)
 
-    return round(m1 * c_close,2), m1, mh, bomh, boc, m2, beta21, ab, ratio, rc
+    dc = None
+    dp = None
+    dp2 = None
+    if days_at_a_time == 5:
+        if debug:
+            print("closes: {}".format( closes.main))
+        try:
+            if args.args.live:
+                live = z.getLiveData(astock, key = "price", force = True)
+                print("live : {}".format( live ))
+                dc =  round(( live / closes.main[-1] ),4)
+            else:
+                dc = round( closes.main[-1]/ closes.main[-2] ,4)
 
-cats = ["price", "med1", "medh", "bomh", "boc", "med2"]
+            dp = round(100 - stats.percentileofscore(chgs, dc, kind ='strict'),1)
+
+            nchgs = [b for b in chgs if b < 1 ]
+            if debug:
+                print("nchgs : {}".format( nchgs ))
+            dp2 = round(100 - stats.percentileofscore(nchgs, dc, kind ='strict'),1)
+        except:
+            pass
+
+        if debug:
+            print("dc : {}".format( dc ))
+            print("dp : {}".format( dp ))
+            print("chgs: {}".format( chgs))
+    return percentile, latest_change, round(m1 * c_close,2), m1, mh, bomh, boc, m2, dc, dp, dp2, beta21, ab, ratio, rc
+
+cats = ["percentile", "change", "targetprice", "med1", "medh", "bomh", "boc", "med2"]
 better = set(z.getp("better_etf"))
 torys = z.getp("torys")
 orders = z.getp("orders")
+args = None
 def procs(stocks, title, savingall = False, generate = False):
+    global args
+    try:
+        args.args.live
+    except:
+        import args as args
+
     global savingallg
     savingallg = savingall
     drop_data = dict()
@@ -145,12 +193,13 @@ def procs(stocks, title, savingall = False, generate = False):
         values.append(("off20", bar[3]))
 
         if x == 0:
-            table_print.use_percentages.append("orderchg")
-            table_print.use_percentages.append("recover")
-            table_print.use_often.append("off5")
-            table_print.use_often.append("off10")
-            table_print.use_often.append("off15")
-            table_print.use_often.append("off20")
+            table_print.use_percentages.add("orderchg")
+            table_print.use_percentages.add("dc")
+            table_print.use_percentages.add("recover")
+            table_print.use_often.add("off5")
+            table_print.use_often.add("off10")
+            table_print.use_often.add("off15")
+            table_print.use_often.add("off20")
 
         rc = None
 
@@ -176,16 +225,21 @@ def procs(stocks, title, savingall = False, generate = False):
             for i,cat in enumerate(cats):
                 display = "{}{}".format(days_at_a_time, cat)
                 if x == 0 :
-                    if "price" not in cat:
+                    if "price" not in cat and "percentile" not in cat:
                         if "bo" not in cat :
-                            table_print.use_percentages.append(display)
+                            table_print.use_percentages.add(display)
                         else:
-                            table_print.use_often.append(display)
+                            table_print.use_often.add(display)
 
 #                if debug:
 #                    print("display : {}".format( display ))
 #                    print("answer : {}".format( answer[i] ))
                 values.append((display, answer[i]))
+
+            if days_at_a_time == 5:
+                values.append(("dc", answer[-7]))
+                values.append(("dp", answer[-6]))
+                values.append(("dp2", answer[-5]))
 
             if days_at_a_time == 15:
                 values.append(("ratio21", answer[-4]))
@@ -229,9 +283,10 @@ if __name__ == '__main__':
 #    exit()
 #    generate()
 #    exit()
-#    print ("huh")
-    if args.debug:
-        procs(args.stocks, "beta21", generate=True)
+
+#    if args.stocks:
+#        debug = args.stocks
+    procs(args.stocks, "beta21", generate=True)
     table_print.initiate()
     exit()
 

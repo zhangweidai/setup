@@ -4,22 +4,21 @@ import statistics
 import z
 import buy
 import os
-import argparse
-import historical_changes
+import current
+import args
 
 mode = 0
 titleColor = Fore.YELLOW
-color = Fore.MAGENTA
+color = Fore.CYAN
 accurate = True
 g_allow_clearing = True
-args = None
 cidx = 0
 
-use_percentages = list()
-use_often = list()
+use_percentages = set()
+use_often = set()
 
-use_percentages2 = list()
-use_often2 = list()
+use_percentages2 = set()
+use_often2 = set()
 
 gavgs = list()
 currentsort = 0
@@ -27,16 +26,28 @@ ivv = 0
 iusg = 0
 reversing = False
 avgidx = False
-def setArgs(largs):
-    global args
-    args = largs
-
+#def setArgs(largs):
+#    global args
+#    args = largs
+#
 def store(values):
+    if args.args.bta:
+        return
     global cidx
     res = list(zip(*values))
     if not store.title:
         store.title = res[0]
+        for item in values:
+            if len(item) != 3:
+                continue
+
+            if item[-1] == '%':
+                use_percentages.add(item[0])
+            else:
+                use_often.add(item[0])
+
     store.items[cidx].append(res[1])
+
 store.items = defaultdict(list)
 store.title = None
 
@@ -94,26 +105,24 @@ titles = dict()
 dates = z.getp("dates")
 clist = list()
 def printTable(tablename ="default"):
-    global g_allow_clearing
-    global args, accurate
 
-    try:
-        if args.nc == False and g_allow_clearing:
-            os.system("clear")
-    except:
-        print ("parsing here")
-        import argparse
-        parser = argparse.ArgumentParser()
-        parser.add_argument('stocks', type=str, nargs='?', default = [])
-        args = parser.parse_args()
-        args.nc = True
+    if args.args.bta:
+        return
+    global g_allow_clearing, accurate
+
+#    try:
+    if args.args.nc == False and g_allow_clearing:
+        os.system("clear")
+#        print ("parsing here")
+#        if args.nc == False and g_allow_clearing:
+#            os.system("clear")
 
     global cidx, mm, ivv, iusg, clist, avgidx
     headerWidths = defaultdict(int)
 
     if cidx not in titles:
         titles[cidx] = tablename
-    print ("\n=== " , titles[cidx] , dates[-1], "\t\t50:", dates[-50], " \t100:", dates[-100], "===")
+    print ("\n=== " , titles[cidx] , dates[-1], "\t\t5:", dates[-5], "\t\t15:", dates[-15], "\t\t30:", dates[-30], "\t\t50:", dates[-50], " \t100:", dates[-100], "===")
 
     # determine headerWidths
     dics = defaultdict(list)
@@ -127,9 +136,11 @@ def printTable(tablename ="default"):
                     pass
             elif type(individual) is not str:
                 dics[j].append(individual)
-            width = len(str(individual))
+            ctitle_len = len(ctitle)
+            width = max((len(str(individual)),  ctitle_len))
             if ctitle in use_percentages and type(individual) is float:
-                width = max((len(str(round(individual,2))) + 2,len(ctitle)))
+                useme = z.percentage(individual, accurate=accurate)
+                width = max((len(str(useme)) + 1, ctitle_len))
 
             if width > headerWidths[ctitle]:
                 headerWidths[ctitle] = width
@@ -140,7 +151,7 @@ def printTable(tablename ="default"):
         try:
             m1 = round(min(dics[key]),3)
             m2 = round(max(dics[key]),3)
-            avg = round(statistics.mean(dics[key]),2)
+            avg = round(statistics.mean(dics[key]),1)
 
             width = len(str(avg))
             if width > headerWidths[ctitle]:
@@ -149,7 +160,6 @@ def printTable(tablename ="default"):
         except:
             mm[key] = ("NA","NA", "NA")
             pass
-    
 
     headeritems = list()
     for ctitle in store.title:
@@ -203,18 +213,20 @@ def printTable(tablename ="default"):
             if individual == "NA":
                 individual = ""
 
-            bar = "{:>" + "{}".format(headerWidths[ctitle]) + "}"
+            ctitle_width = headerWidths[ctitle]
+            bar = None
+            if have and j == 0:
+                bar = Back.LIGHTBLACK_EX + "{:>" + "{}".format(ctitle_width) + "}"
+            else:
+                bar = "{:>" + "{}".format(ctitle_width) + "}"
             updated = False
             try:
                 if individual != "NA" and j != 0 and type(individual) != str:
                     if individual == mm[j][0]:
-                        bar = color + "{:>" + "{}".format(headerWidths[ctitle]) + "}"
+                        bar = color + "{:>" + "{}".format(ctitle_width) + "}"
                         updated = True
                     elif individual == mm[j][1]:
-                        if have:
-                            bar = titleColor + "{:>" + "{}".format(headerWidths[ctitle]) + "}"
-                        else:
-                            bar = titleColor + "{:>" + "{}".format(headerWidths[ctitle]) + "}"
+                        bar = titleColor + "{:>" + "{}".format(ctitle_width) + "}"
                         updated = True
             except:
                 pass
@@ -222,14 +234,20 @@ def printTable(tablename ="default"):
 #            if individual == "NA":
 #                individual = Style.DIM + individual
 
-            if updated:
+            if updated or (have and j == 0):
                 bar = bar + Style.RESET_ALL
-                if have:
-                    bar = bar + Back.LIGHTBLACK_EX
+#                if have and j == 0:
+#                    bar = bar + Back.LIGHTBLACK_EX
 
             try:
                 if ctitle in use_percentages:
-                    saveme.append(bar.format(z.percentage(individual, accurate=accurate)))
+                    useme = z.percentage(individual, accurate=accurate)
+                    if len(useme) > ctitle_width:
+                        print("ctitle_width: {}".format( ctitle_width))
+                        print("useme : {}".format( len(useme)))
+                        print("ctitle: {}".format( ctitle))
+                        exit()
+                    saveme.append(bar.format(useme))
                 elif ctitle in use_often:
                     try:
                         saveme.append(bar.format("{}%".format(round(individual*100,2))))
@@ -241,14 +259,15 @@ def printTable(tablename ="default"):
                 print ("problem with {} {}".format(ctitle, individual))
                 exit()
 
+
         saveme.append("{:>3}".format(str(x)))
-        if not have:
-            print("  ".join(saveme))
-        else:
-            print(Back.LIGHTBLACK_EX + "  ".join(saveme) + Style.RESET_ALL)
+#        if not have:
+#        print("  ".join(saveme))
+#        else:
+        print("  ".join(saveme))
 
     avgs = list()
-    for i,ctitle in enumerate(store.title):
+    for i, ctitle in enumerate(store.title):
         width = headerWidths[ctitle]
         bar = "{:>" + "{}".format(width) + "}"
         val = ""
@@ -260,9 +279,11 @@ def printTable(tablename ="default"):
 
         try:
             if ctitle in use_percentages:
-                avgs.append(bar.format(z.percentage(val, accurate=accurate)))
+                useme = z.percentage(val)
+                useme = useme[:width]
+                avgs.append(bar.format(useme))
             elif ctitle in use_often:
-                avgs.append(bar.format("{}%".format(round(individual*100,2))))
+                avgs.append(bar.format("{}%".format(round(individual*100))))
             else:
                 avgs.append(bar.format(val))
         except:
@@ -279,14 +300,14 @@ def resetAll():
     global use_percentages2, use_often2, currentsort
     use_percentages, use_percentages2 = use_percentages2, use_percentages
     use_often, use_often2 = use_often2, use_often
-    use_often = list()
     store.items = defaultdict(list)
     store.title = None
     currentsort = 0
 
 lastf = 0
 def initiate(allow_clearing = True):
-    global args
+    if args.args.bta:
+        return
     global cidx
     global currentsort
     global clist
@@ -309,10 +330,6 @@ def initiate(allow_clearing = True):
 ##            exit()
 #    except Exception as e:
 #        z.trace(e)
-#        print ("parsing2")
-#        import argparse
-#        parser = argparse.ArgumentParser()
-#        args = parser.parse_args()
 
     try:
         key = readchar.readkey()
@@ -373,12 +390,12 @@ def initiate(allow_clearing = True):
                 g_allow_clearing = False
                 use_stock_order = True
 
-                print("mode : {}".format( mode ))
                 if mode == 0:
-                    historical_changes.procs(stocks, "other", generate=True)
+                    current.procs(stocks)
                     mode += 1
                 else:
-                    buy.multiple(stocks, "other2")
+                    for astock in stocks:
+                        buy.single(astock)
                     mode -= 1
 
                 cidx = 0
@@ -416,23 +433,23 @@ def initiate(allow_clearing = True):
 
             elif key == "=":
                 currentsort = currentsort + 1
-                if args.nc == False and allow_clearing:
+                if args.args.nc == False and allow_clearing:
                     os.system("clear")
                 printTable()
 
             elif key == "-":
                 currentsort = currentsort - 1
-                if args.nc == False and allow_clearing:
+                if args.args.nc == False and allow_clearing:
                     os.system("clear")
                 printTable()
 
             elif int(key):
                 currentsort = int(key) - 1
-                if args.nc == False and allow_clearing:
+                if args.args.nc == False and allow_clearing:
                     os.system("clear")
                 printTable()
         except Exception as e:
-            z.trace(e)
+            args.restart_program()
             pass
 
         key = readchar.readkey()

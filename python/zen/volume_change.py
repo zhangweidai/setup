@@ -1,47 +1,40 @@
 import z
 import buy
 import statistics
-from sortedcontainers import SortedSet
+from scipy import stats
 
-stocks = z.getp("listofstocks")
+# calculate vol percentile
 
-# shrinking outstanding shares and increasing marketcap with slight volume
-
-dates = z.getp("dates")
-sset = SortedSet()
-volcdict = dict()
-for idx, astock in enumerate(stocks):
-
-    if not idx % 100:
-        print("idx: {}".format( idx))
-
-    try:
-        avg = list()
-
-
-        for i, row in enumerate(buy.getRows(astock, dates[-252])):
-            try:
-                avg.append(int(row['Volume']))
-            except:
-                break
-
-        if len(avg) < 250:
+def proc():
+    check = ["BA", "IVV", "AMD"]
+    volcdict = dict()
+    volp = dict()
+    for idx, astock in enumerate(stocks):
+        if debug:
+            print("astock : {}".format( astock ))
+        try:
+            avg = list()
+            for i, row in enumerate(buy.getRows(astock, dates[-107])):
+                if not i % 3:
+                    continue
+                try:
+                    avg.append(int(row['Volume']))
+                except:
+                    break
+            volcdict[astock] = round(statistics.median(avg))
+        except Exception as e:
             continue
 
-        avgo = round(statistics.mean(avg[:30]))
-        avgn = round(statistics.mean(avg[-30:]))
-        volch = round(avgn/avgo,3)
+    vols =  list(volcdict.values())[::2]
+    for astock in stocks:
+        try:
+            volp[astock] = round(stats.percentileofscore(vols, volcdict[astock]),2)
+        except:
+            pass
+    if not debug:
+        z.setp(volp, "volp", True)
 
-        if buy.getFrom("latestmc", astock, None) < 2200:
-            buy.addSorted("vol_change", volch, astock)
+if __name__ == '__main__':
+    import args
+    proc()
 
-        volcdict[astock] = volch
-    except Exception as e:
-        continue
-        pass
-
-items = buy.getSorted("vol_change")
-print("items : {}".format( items ))
-buy.multiple(items[-30:], runinit = True)
-buy.multiple(items[:30], runinit = True)
-z.setp(volcdict, "volcdict")

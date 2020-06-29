@@ -91,10 +91,10 @@ def process(astock, one_at_a_time = True):
         if cdate != dates[-1]:
             print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MISSING TODAY {}".format(astock))
 
-        if one_at_a_time:
+        stocks = z.getp("listofstocks")
+        if astock not in stocks:
             import json_util
             json_util.parses([astock], addone = True)
-            stocks = z.getp("listofstocks")
             stocks.append(astock)
             z.setp(stocks, "listofstocks")
 

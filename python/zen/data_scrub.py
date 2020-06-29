@@ -6,7 +6,6 @@ import regen_stock
 import gained_discount
 
 debug = None
-debug = "LLY"
 
 dates = z.getp("dates")
 years8 = -1*252*8
@@ -20,9 +19,8 @@ def proc(astock):
     prev = None
     for i, row in enumerate(buy.getRows(astock, asdate8)):
         c_date = row['Date']
-        buy.addSortedHigh("a", float(row['Chg']), c_date, 5)
+#        buy.addSortedHigh("a", float(row['Chg']), c_date, 5)
         mdates.append(c_date)
-    print (buy.getSorted("a"))
     mdates.reverse()
     prevdate = None
     for i,date in enumerate(mdates):
@@ -50,6 +48,7 @@ def procs( cleanup = True):
             pass
 
     if not cleanup:
+        print("missmatch: {}".format( missmatch))
         return
 
     delets = list()

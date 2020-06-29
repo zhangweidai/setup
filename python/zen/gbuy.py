@@ -46,6 +46,7 @@ def updateStocks():
     global problems
     import datetime
     stocks = z.getp("listofstocks")
+    already_updated = 0
     try:
         now = datetime.datetime.now()
         consecutive_misses = 0
@@ -64,7 +65,15 @@ def updateStocks():
 
                 if csvday >= ttoday and tmonth == csvmonth:
                     consecutive_misses = 0
-                    continue
+                    already_updated += 1
+
+#                    readFile = open(apath)
+#                    lines = readFile.readlines()
+#                    readFile.close()
+#                    if lines[-1] == lines[-2]:
+#                        w = open(apath,'w')
+#                        w.writelines([item for item in lines[:-1]])
+#                        w.close()
             except:
                 continue
 
@@ -130,37 +139,71 @@ def updateStocks():
         print ("problem with gbuy")
         z.trace(e)
         exit()
+    print("already_updated : {}".format( already_updated ))
 
+
+def saveQuick():
+    portFolioValue= z.getp("ports")
+    quick = z.getp("savePs")
+    quick = [ stock[1] for stock in quick ]
+    quick += list(portFolioValue.keys())
+    orders = z.getp("orders")
+    quick += list(orders.keys())
+    quick = list(set(quick))
+    z.setp(quick, "quick")
 
 if __name__ == '__main__':
+    import args
+    args.args.bta = True
 
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--noupdate', nargs='?', const=True, default=False)
-    args = parser.parse_args()
-#    setlistofstocks()
+    import datetime
+    cdate = dates[-1].split("-")
+    day_of_week = datetime.datetime(int(cdate[0]), int(cdate[1]),int(cdate[2])).weekday()
+
+    if day_of_week == 4:
+        args.args.noupdate = True
+
+#    import argparse
+#    parser = argparse.ArgumentParser()
+#    parser.add_argument('--noupdate', nargs='?', const=True, default=False)
+#    parser.add_argument('--quick', nargs='?', const=True, default=True)
+#    args = parser.parse_args()
+#    print("args : {}".format( args ))
+
+#    if args.quick == True:
+#        z.getp.quick_list = True
+
+#    stocks = z.getp("listofstocks")
     try:
-        if not args.noupdate:
+        if not args.args.noupdate:
             updateStocks()
-        buy.updateDates()
+            buy.updateDates()
 
         print ("prob up 1 year")
         import prob_up_1_year
-        prob_up_1_year.procs()
+        prob_up_1_year.procs(stocks)
+
+        import current
+        print ("current")
+        current.procs(stocks)
+
+        buy.savePs()
+        saveQuick()
 
 #        print ("gained discout")
 #        import gained_discount
 #        gained_discount.genUlt()
 
-        print ("drop finder")
-        import drop_finder2
-        drop_finder2.procs()
+#        print ("drop finder")
+#        import drop_finder2
+#        drop_finder2.procs()
 
-        import next_day_drop_after_gain
-        next_day_drop_after_gain.procs()
+#        import next_day_drop_after_gain
+#        next_day_drop_after_gain.procs()
 
-        import historical_changes
-        historical_changes.generate()
+#        import historical_changes
+#        historical_changes.generate()
+
 
 #        print ("slow and steady")
 #        import slow_and_steady
