@@ -399,6 +399,9 @@ def genRecentStat(astock):
 
     prices = list()
     bchanges = list()
+    last = getFrom("last_prices", astock)
+
+    above_cprice = list()
 
     for i, row in enumerate(getRows(astock, dates[istart])):
         c_open = float(row['Open'])
@@ -410,6 +413,8 @@ def genRecentStat(astock):
             firstPrice = c_open
 
         c_close = float(row[z.closekey])
+        above_cprice.append(1 if c_close >= last else 0)
+            
         prices.append(c_close)
 
         try:
@@ -461,7 +466,6 @@ def genRecentStat(astock):
             avg5Change.append(change5)
             if change5 < 1:
                 mins.append(change5)
-
     try:
         wcc = round(min(wc_lows)/ max(wc_highs),3)
         lchange = round(c_close / firstPrice,3)
@@ -470,6 +474,7 @@ def genRecentStat(astock):
         wcc = "NA"
         lchange = "NA"
         diff = "NA"
+
 
     min5 = round(min(avg5Change),3)
     last5 = round(avg5Change[-1],3)
@@ -488,7 +493,11 @@ def genRecentStat(astock):
 
     be = round(sum(bchanges)/len(bchanges),2)
     ravg = round(statistics.mean(prices[-20:]),2)
-    return c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last, prices, be, ravg
+
+    above_cprice.pop(-1)
+    abov_cprice = round(sum(above_cprice) / len(above_cprice),3)
+
+    return c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last, prices, be, ravg, abov_cprice
 
 def genRecentStats():
     recentStats = dict()
@@ -513,8 +522,11 @@ pdics = defaultdict(list)
 pmap = defaultdict(dict)
 pneg = dict()
 def addPDic(astock, category, value, neg_is_good = False):
-    if type(value) != float:
-        return
+    try:
+        value = float(round(value,3))
+    except:
+        value = 0.0
+
     pdics[category].append(value)
     pmap[astock][category] = value
     pneg[category] = neg_is_good
@@ -525,7 +537,8 @@ def calcPs():
         for astock in pmap.keys():
             try:
                 value = pmap[astock][cat]
-                mycp = round(stats.percentileofscore(values, value, kind ='strict'),3)
+                mycp = round(stats.percentileofscore(values, value, kind='rank'),3)
+#                mycp = round(stats.percentileofscore(values, value, kind ='strict'),3)
 
                 if pneg[cat]:
                     mycp = 100 - mycp
@@ -546,15 +559,15 @@ def calcPs():
 #addPDic("B", "cat2", 6)
 #addPDic("C", "cat2", 7)
 #calcPs()
-def savePs():
+def savePs(save_name = "savePs"):
     scores = calcPs()
     savedScores = dict()
     for astock, values in scores.items():
-        addSortedHigh("savePs", round(sum(values),1), astock, keeping = 100, savingall = True)
-    saveSorted("savePs")
-    bar = z.getp("savePsdic")
-    print("bar  : {}".format( bar  ))
-    print (pdics.keys())
+        addSortedHigh(save_name, round(sum(values),1), astock, keeping = 100, savingall = True)
+
+    saveSorted(save_name)
+    bar = z.getp("{}dic".format(save_name))
+
 #bar  = z.getp("savePs")
 
 #savePs()
@@ -565,8 +578,9 @@ def savePs():
 
 def single(astock):
     try:
-        c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last, prices, be, ravg = genRecentStat(astock)
-    except:
+        c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last, prices, be, ravg, abov_cprice = genRecentStat(astock)
+    except Exception as e:
+        z.trace(e)
         print("problem astock: \"{}\"".format( astock))
         return
 
@@ -599,7 +613,6 @@ def single(astock):
 
     name = ""
     order = getOrder(astock)
-
     if order != "NA":
         name = "_TO" if astock in torys else "_PO"
     if astock in mine:
@@ -619,10 +632,18 @@ def single(astock):
     score = 0
 
     try:
-        y1pu, ivvb, wc, bc, avg, ly, l2y, avg8 = getFrom("probs", astock)
-    except Exception as e:
-        z.trace(e)
-        exit()
+        y1pu, ivvb, wc, bc, avg, ly, l2y, avg8, dfh1y, gfl1y = getFrom("probs", astock)
+    except:
+        import prob_up_1_year
+        try:
+            y1pu, ivvb, wc, bc, avg, ly, l2y, avg8, dfh1y, gfl1y = prob_up_1_year.proc(astock)
+        except Exception as e:
+            z.trace(e)
+            exit()
+            pass
+#        print("astock: {}".format( astock))
+#        print(getFrom("probs", astock))
+        
 
     val = 0
     try:
@@ -686,6 +707,13 @@ def single(astock):
 #        ("adl", adl),
 
 #    gain, drop = getFrom("prob_drop", astock, ("NA", "NA"))
+
+    try:
+        m2y, wc2y, avg1, wc1, avg82, avg83 =  getFrom("2probs", astock)
+    except Exception as e:
+        import avgs
+        m2y, wc2y, avg1, wc1, avg82, avg83 = avgs.proc(astock)
+
     values = [
         ("stock", inPortfolio(astock)),
         ("price", c_close),
@@ -701,6 +729,14 @@ def single(astock):
         ("wc", wc),
         ("avg", avg),
         ("avg8", avg8),
+        ("avg82", avg82, "%"),
+        ("avg83", avg83, "%"),
+        ("m2y",m2y, "%"),
+        ("wc2y",wc2y, "%"),
+        ("dfh1y",dfh1y, "%"),
+        ("gfl1y",gfl1y, "%"),
+        ("abov_cprice",abov_cprice, "o"),
+
         (fromtop, (lowFromHigh/high)),
         ("owned", portFolioValue(astock)),
         ("volp", getFrom("volp", astock)),
@@ -709,18 +745,21 @@ def single(astock):
 #        ("hldic", hld),
 #        ("ratio", hlr),
 
-    if ordering:
-        chgchg = 0
-        try:
-            orderchange = order[1]/c_close
-            chgchg = round(med9/ orderchange,3)
-        except:
-            pass
+#    if ordering:
+    try:
+        orderchange = order[1]/c_close
+    except:
+        orderchange = "NA"
+        pass
 
+
+    try:
         orderstr = round(order[0])
-        values.append(("order", orderstr))
-        values.append(("orderc", orderchange))
-        values.append(("chgchg", chgchg))
+    except:
+        orderstr = "NA"
+
+    values.append(("order", orderstr))
+    values.append(("orderc", orderchange))
 
     if args.args.live:
         values.append(("last", (c_close/prev_close)))
@@ -728,98 +767,6 @@ def single(astock):
         values.append(("last", last))
 
     table_print.store(values)
-
-#single("IVV")
-#exit()
-
-#problems = set()
-#def multiple(stocks, title = None, helpers = True, runinit = False, retval=None, cleartable=True):
-#    if args == None:
-#        init()
-#
-#    global problems
-#    if runinit:
-#        init()
-#
-#    if type(stocks) is str:
-#        if not title:
-#            title = stocks
-#        stocks = z.getp(stocks)
-#
-#    lots = len(stocks) > 15
-#    avgOneYear = list()
-##    if args.drop:
-##        print ("droppping")
-##        print (args.drop)
-##
-##        for idx, astock in enumerate(stocks):
-##            print("astock : {}".format( astock ))
-##
-##            if type(astock) is tuple:
-##                astock = astock[0] if type(astock[0]) is str else astock[1]
-##
-##            live = z.getLiveData(astock, key = "price")
-##            prev = getFrom("last_prices", astock)
-##            try:
-##                change = live/prev
-##                addSortedLow("show_these", change, astock, keeping = int(args.drop))
-##            except:
-##                pass
-##        stocks = getSorted("show_these")
-#
-#    for idx, value in enumerate(stocks):
-#            astock = value 
-#        if type(value) is tuple:
-#            astock = value[1]
-##            if not astock.startswith(args.helpers) and helpers:
-##                print("skipping astock : {}".format( astock ))
-##                continue
-#        try:
-#            ret = single(astock, avgOneYear, retval=retval, lots=lots)
-#            if ret == False:
-#                print("astock : {}".format( astock ))
-#        except Exception as e:
-#            z.trace(e)
-#            if type(value) is tuple:
-#                astock = value[1]
-#            else:
-#                astock = value
-#            problems.add(astock)
-#            continue
-#
-##    table_print.printTable(title)
-#    if cleartable:
-#        table_print.clearTable()
-#
-#    try:
-#        yearone = z.avgp(avgOneYear)
-#    except:
-#        yearone = "NA"
-#    print ("Annual Change {}".format(yearone))
-#    print ("Problems {}".format(", ".join(problems)))
-#
-#def multiplep(title):
-#    bar = z.getp(title)
-#    barl = int(len(bar)/2)
-#    multiple(bar[:-barl], helpers=False)
-#    multiple(bar[barl:], helpers=False)
-#    table_print.initiate()
-#    exit()
-
-#args = None
-#def init(live=False):
-##    import argparse
-#    global orders, torys, tory, mine, parser, args
-#    import args
-
-#    parser = argparse.ArgumentParser()
-#    parser.add_argument('--mode', default="default")
-#    parser.add_argument('--live', nargs='?', const=True, default=False)
-#    parser.add_argument('--drop', default=None)
-#    parser.add_argument('--nc', nargs='?', const=True, default=False)
-#    parser.add_argument('--section', default=None)
-#    parser.add_argument('helpers', type=str, nargs='?', default = [])
-#    args = parser.parse_args()
 
 portFolioValue.dict = z.getp("ports")
 orders = z.getp("orders")
@@ -1016,7 +963,6 @@ def old():
 
     if "mc" in args.args.mode:
         mcdic = z.getp("latestmc")
-
         mcs = list(mcdic.keys())
         for i in range(0, 5):
             print (i)
@@ -1071,9 +1017,20 @@ def old():
 #    multiple(stocks)
 
 if __name__ == '__main__':
-    for astock in stocks:
-        try:
+
+    if not args.args.mode:
+        for astock in stocks:
+            try:
+                single(astock)
+            except Exception as e:
+                z.trace(e)
+    else:
+        mcdic = z.getp("latestmc")
+        mcs = list(mcdic.keys())
+        idx = 0
+        end = idx + 50
+        for astock in mcs[idx:end]:
             single(astock)
-        except Exception as e:
-            z.trace(e)
+
+
     table_print.initiate()

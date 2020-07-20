@@ -62,15 +62,17 @@ getpd = set()
 @lru_cache(maxsize=40)
 def getp(name, override="pkl", retfile=False):
 
-    if getp.quick_list and name == "listofstocks":
+    if getp.quick_list == True and name == "listofstocks":
+        print ("getting quikc")
         return getp("quick")
 
     getpd.add(name)
     try:
         path = getPath("{}/{}.pkl".format(override, name))
         if not os.path.exists(path):
-            print ("does not exist {}".format(path))
+#            print ("does not exist {}".format(path))
             return None
+
         if retfile:
             return path
         return pickle.load(open(path, "rb"))
@@ -247,7 +249,7 @@ def getLiveData(astock, key = "price", andkey = None, force = False):
             csvmonth = csvdate.month
             ttoday = datetime.date.today().day
             tmonth = datetime.date.today().month
-            if not force and (csvday >= ttoday and tmonth == csvmonth):
+            if not force and (csvday >= ttoday and tmonth == csvmonth) and not args.args.flive:
                 ret = gyp(astock)
                 getLiveData.cached[astock] = ret
                 return float(ret[key])

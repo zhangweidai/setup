@@ -343,11 +343,11 @@ def batchdelete(stocks):
     gbuy.setlistofstocks()
 
 if __name__ == '__main__':
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--delete')
-    parser.add_argument('--updatestocks', default=False)
-    args = parser.parse_args()
+#    import argparse
+#    parser = argparse.ArgumentParser()
+#    parser.add_argument('--delete')
+#    parser.add_argument('--updatestocks', default=False)
+#    args = parser.parse_args()
     if args.delete:
         if "," not in args.delete:
             delstock(args.delete.upper(), update=args.updatestocks)

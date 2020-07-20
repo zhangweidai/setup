@@ -43,8 +43,8 @@ class WindowQueue(object):
         if len(self.main) > self.maxsize:
             self._remove_head()
     
-    def get(self):
-        return self.main[0]
+    def get(self, idx=0):
+        return self.main[idx]
 
     def _remove_head(self):
         val = self.main.popleft()

@@ -62,15 +62,20 @@ def updateStocks():
                 csvmonth = csvdate.month
                 ttoday = datetime.date.today().day
                 tmonth = datetime.date.today().month
+                if csvday == 17:
+                    already_updated += 1
+                    consecutive_misses = 0
+                    continue
 
                 if csvday >= ttoday and tmonth == csvmonth:
                     consecutive_misses = 0
                     already_updated += 1
+                    continue
 
 #                    readFile = open(apath)
 #                    lines = readFile.readlines()
 #                    readFile.close()
-#                    if lines[-1] == lines[-2]:
+#                    if lines[-1].split(",")[0] == lines[-2].split(",")[0]:
 #                        w = open(apath,'w')
 #                        w.writelines([item for item in lines[:-1]])
 #                        w.close()
@@ -79,6 +84,7 @@ def updateStocks():
 
             for row in csv.DictReader(open(apath)):
                 pass
+
 
             try:
                 date = row['Date']
@@ -106,6 +112,10 @@ def updateStocks():
                         first = False
                         continue
                     cdate = str(idx.to_pydatetime()).split(" ")[0]
+
+                    if date == cdate:
+                        continue
+
                     try:
                         opend = round(df.at[idx, "Open"],3)
                         high = round(df.at[idx, "High"],3)
@@ -150,19 +160,25 @@ def saveQuick():
     orders = z.getp("orders")
     quick += list(orders.keys())
     quick = list(set(quick))
-    z.setp(quick, "quick")
+    try:
+        quick.remove("TMUSR")
+    except:
+        pass
+    z.setp(quick, "quick", True)
 
 if __name__ == '__main__':
     import args
     args.args.bta = True
 
-    import datetime
-    cdate = dates[-1].split("-")
-    day_of_week = datetime.datetime(int(cdate[0]), int(cdate[1]),int(cdate[2])).weekday()
-
-    if day_of_week == 4:
-        args.args.noupdate = True
-
+#    import datetime
+#    cdate = dates[-1].split("-")
+#    day_of_week = datetime.datetime(int(cdate[0]), int(cdate[1]),int(cdate[2])).weekday()
+#
+#    print("day_of_week : {}".format( day_of_week ))
+#    if day_of_week == 4:
+#        args.args.noupdate = True
+#
+#    exit()
 #    import argparse
 #    parser = argparse.ArgumentParser()
 #    parser.add_argument('--noupdate', nargs='?', const=True, default=False)
@@ -179,39 +195,22 @@ if __name__ == '__main__':
             updateStocks()
             buy.updateDates()
 
+        import current
+        print ("current {} ".format(len(stocks)))
+        current.procs(stocks)
+#
+        buy.savePs("qq")
+
         print ("prob up 1 year")
         import prob_up_1_year
         prob_up_1_year.procs(stocks)
 
-        import current
-        print ("current")
-        current.procs(stocks)
+        import avgs
+        avgs.procs(stocks)
 
-        buy.savePs()
-        saveQuick()
-
-#        print ("gained discout")
-#        import gained_discount
-#        gained_discount.genUlt()
-
-#        print ("drop finder")
-#        import drop_finder2
-#        drop_finder2.procs()
-
-#        import next_day_drop_after_gain
-#        next_day_drop_after_gain.procs()
-
-#        import historical_changes
-#        historical_changes.generate()
-
-
-#        print ("slow and steady")
-#        import slow_and_steady
-#        slow_and_steady.procs()
-
-#        print ("recent stats")
-#        import buy
-#        buy.genRecentStats()
+        if not args.args.quick:
+            buy.savePs()
+            saveQuick()
 
     except Exception as e:
         print ("problem with gbuy")

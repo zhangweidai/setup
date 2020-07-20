@@ -1,9 +1,14 @@
+import args
 import z
+z.getp.quick_list = False
+
 import buy
 import os
 from sortedcontainers import SortedSet
 import gbuy
 import math
+
+date = "2000-01-01"
 
 def generateWorst30():
     dates = z.getp("dates")
@@ -53,6 +58,7 @@ def process(astock, one_at_a_time = True):
         f = None
         for idx in df.index:
             cdate = str(idx.to_pydatetime()).split(" ")[0]
+            print("cdate : {}".format( cdate ))
             cyear = cdate.split("-")[0]
             if cyear != lastyear:
                 if f is not None:
@@ -92,6 +98,7 @@ def process(astock, one_at_a_time = True):
             print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MISSING TODAY {}".format(astock))
 
         stocks = z.getp("listofstocks")
+        print("stocks : {}".format( stocks ))
         if astock not in stocks:
             import json_util
             json_util.parses([astock], addone = True)
@@ -104,7 +111,6 @@ def process(astock, one_at_a_time = True):
         z.trace(e)
 
 
-date = "2000-01-01"
 if __name__ == '__main__':
 
 
@@ -113,19 +119,18 @@ if __name__ == '__main__':
 #        process(astock, False)
 #    exit()
 
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--skips', default=False)
-    parser.add_argument('helpers', type=str, nargs='?', default = [])
-    args = parser.parse_args()
-    if not args.helpers:
-        exit()
+#    import argparse
+#    parser = argparse.ArgumentParser()
+#    parser.add_argument('--skips', default=False)
+#    parser.add_argument('helpers', type=str, nargs='?', default = [])
+#    args = parser.parse_args()
+#    if not args.helpers:
+#        exit()
 
-    astock = args.helpers.upper()
-    if astock == "DONE":
-        import gbuy
-        gbuy.setlistofstocks()
-        exit()
-    process(astock)
+#    args.args.full = True
+    import json_util
+    for astock in stocks:
+        process(astock)
+    json_util.parses(stocks, update=True, addone = True)
 
 

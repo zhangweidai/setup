@@ -10,11 +10,61 @@ from matplotlib.pyplot import figure
 from tkinter import simpledialog
 import os
 from rows import *
+from tkinter import *
+from tkinter import Menu, messagebox,simpledialog,ttk
+
+prevcommands = ["1 year", "1 month", "6 month"]
+
+recent = z.getp("recent_plots")
+recent = recent if recent else ["+IVV", "+VUG"]
+
+class SimpleChoiceBox:
+    def __init__(self,title,text,choices):
+        try:
+            print("choices: {}".format( choices))
+            self.t = Toplevel()
+            self.t.title(title if title else "")
+            self.selection = None
+            Label(self.t, text=text if text else "").grid(row=0, column=0)
+
+            self.shortcuts = Listbox(self.t)
+            self.shortcuts.grid(row=1,column=0)
+            for item in prevcommands:
+                self.shortcuts.insert(END, item)
+
+            self.recentplots = Listbox(self.t)
+            self.recentplots.grid(row=1,column=1)
+            for item in recent:
+                self.recentplots.insert(END, item)
+
+
+            self.entry = Entry(self.t)
+            self.entry.grid(row=2, column=0)
+
+#            self.c.grid(row=0, column=1)
+            self.shortcuts.bind("<<ListboxSelect>>", self.CurSelet)
+            self.recentplots.bind("<<ListboxSelect>>", self.CurSelet)
+            self.entry.bind('<Key-Return>', self.on_changed)
+#            self.c.bind("<<ListboxSelected>>", self.combobox_select)
+        except Exception as e:
+            z.trace(e)
+
+    def on_changed(self, event):
+        interpret(self.entry.get())
+        return True
+
+    def CurSelet(self,event):
+        widget = event.widget
+        selection = widget.curselection()
+        if selection:
+            picked = widget.get(selection[0])
+            interpret(picked)
+
 
 colors = ["tab:green", "tab:blue", "red", "black", "pink"]
 types = "ETFs"
 increment = 10
-default = 107 
+default = 700 
 start = default 
 dates = z.getp("dates")
 end = start
@@ -40,7 +90,7 @@ def roundup(x):
 
 startdate = None
 def rebuild():
-    global ax, fig, start, lastworking, ax2, axs, stocks, startdate
+    global ax, fig, start, lastworking, ax2, axs, stocks, startdate, recent
 
     vdict = dict()
     istart = start * -1
@@ -51,12 +101,15 @@ def rebuild():
 
     print("stocks: {}".format( stocks))
     for cstock in stocks:
+
+        if cstock in recent:
+            recent.remove(cstock)
+        recent.insert(0, cstock)
+
         values = list()
         print("startdate: {}".format( startdate))
         for i, row in enumerate(getRowsRange(cstock, count=end, date=startdate)):
-            print("row : {}".format( row ))
             c_close = float(row[z.closekey])
-            print("c_close : {}".format( c_close ))
             values.append(c_close)
         try:
             fv = values[0]
@@ -65,7 +118,6 @@ def rebuild():
             break
         v1 = [ round((i/fv)-1,3) for i in values ]
         vdict[cstock] = v1
-        print("cstock: {}".format( cstock))
         minv = min(v1)
         maxv = max(v1)
         tmaxv = max(maxv, tmaxv)
@@ -81,7 +133,8 @@ def rebuild():
         date_range = dates[istart:iend]
         xranges = [i for i in range(0, end, round(end/9))]
         xlabels = ["{}\n({})".format(i, date_range[i]) for i in xranges]
-    except:
+    except Exception as e:
+        z.trace(e)
         start = lastworking
         rebuild()
         return
@@ -106,7 +159,14 @@ def rebuild():
     fig.canvas.get_tk_widget().focus_set()
     plt.grid(color='black', linestyle='-', linewidth=0.5)
 
+
+import atexit
+@atexit.register
+def goodbye():
+    z.setp( recent[:20], "recent_plots", True)
+
 def restart_program():
+    z.setp( recent[:20], "recent_plots", True)
     try:
         p = Process(os.getpid())
         for handler in p.get_open_files() + p.connections():
@@ -141,9 +201,50 @@ def previ():
 marked = []
 def interpret(answer):
     global idx, previdx, stock_count, setstart_date, loadFrom
+    global start, end, stocks
     print("answer: {}".format( answer))
+
     if not answer:
         return
+
+    elif "save" in answer:
+        name = answer.split(" ")[1]
+        z.setp((stocks,start,end), name)
+        print ("saved {}".format(name))
+
+    elif "load" in answer:
+        name = answer.split(" ")[1]
+        prev_stocks, prev_start, prev_end = stocks, start, end
+        try:
+            stocks, start, end = z.getp(name)
+            print ("loaded {}".format(name))
+        except:
+            stocks, start, end = prev_stocks, prev_start, prev_end 
+        rebuild()
+
+    elif "end" in answer:
+        end = end - int(answer.split(" ")[1])
+        rebuild()
+
+    elif "-" in answer:
+        start = len(dates)
+        start = start - dates.index(answer)
+        print("start : {}".format( start ))
+        end = start
+        rebuild()
+
+    elif "year" in answer:
+        month = answer.split(" ")[0]
+        start = 252 * int(month)
+        end = start
+        rebuild()
+
+
+    elif "month" in answer:
+        month = answer.split(" ")[0]
+        start = 22 * int(month)
+        end = start
+        rebuild()
 
 #    if "regen" in answer:
 #        import regen_stock
@@ -160,14 +261,14 @@ def interpret(answer):
     elif "sets" in answer:
         setstart_date = df.at[0,"Date"]
 
-    elif "load" in answer:
-        pckl = answer.split(" ")[1]
-        loadFrom = pckl
-        resetStocks()
-
     else:
-        previdx = idx
+        idx = 0
         answer = answer.upper()
+        if answer[0] == "+":
+            stocks.append(answer[1:])
+        else:
+            stocks = answer.split(",") if "," in answer else [answer]
+        rebuild()
 
 def setCurrentMode(mode, build = True):
     if mode not in currentMode:
@@ -184,7 +285,9 @@ def handleSelectionMode(increment = 1):
     pass
 
 mode = ""
+answer = None
 def press(event):
+    global answer, recent
     if event.key and len(event.key) == 1:
         try: press.last += event.key
         except: press.last = event.key
@@ -282,9 +385,11 @@ def press(event):
     elif event.key == 'k':
         previ()
     elif event.key == ' ':
-        answer = simpledialog.askstring("Advanced", "cmd:", parent = None, initialvalue=None)
+
+        answer = simpledialog.askstring("Advanced", "cmd:", parent = None, initialvalue=answer)
         try:
             interpret(answer)
+            recent.insert(0,answer)
             press.prevanswer = answer
         except Exception as e:
             import traceback
@@ -348,7 +453,7 @@ def configurePlots(fig):
 #    adjust = 0.25
 #    fig.subplots_adjust(left=adjust, bottom=adjust, 
 #                        right=1-adjust, top=1-adjust)
-    move_figure(fig, 0, 0)
+#    move_figure(fig, 0, 0)
 #    move_figure(fig, 0, 0)
     fig.canvas.mpl_connect('key_press_event', press)
     fig.canvas.mpl_connect('scroll_event', handle_scroll)
@@ -364,6 +469,8 @@ def plot():
     configurePlots(fig)
     rebuild()
     fig.canvas.get_tk_widget().focus_set()
+
+    answer = SimpleChoiceBox("Advanced", "cmd:", stocks)
     plt.show(block=True)
 
 def preplot(astocks = None):
@@ -412,10 +519,9 @@ def preplot(astocks = None):
         pass
 
 if __name__ == "__main__":
-    import args
     stocks = ["BA", "AMD"]
-    print("args: {}".format( args.stocks))
-    if len(args.stocks) == 1:
-        stocks.append(args.stocks[0])
+    import args
+    if len(args.args.stocks) == 1:
+        stocks.append(args.args.stocks[0])
     print("stocks: {}".format( stocks))
     preplot(stocks)

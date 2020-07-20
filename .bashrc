@@ -170,6 +170,7 @@ alias ka="killall python3"
 alias checkout="git checkout --"
 alias st2="git status -uno"
 alias buy="py buy.py"
+alias buy2="py current.py"
 alias sell="py zen.py sell"
 alias rsell="py zen.py rsell"
 alias download="py z.py download"
@@ -177,8 +178,8 @@ alias wab="py zen.py wab"
 alias wabp="py zen.py wabp --s"
 alias buyl="py zen.py buy --date=l"
 alias gbuy="go1; py gbuy.py"
-alias owned="py buy.py --mode=owned"
-alias orders="py buy.py --mode=order"
+alias owned="py buy.py ports"
+alias orders="py buy.py orders"
 alias etfs="py buy.py --mode=etfs"
 alias better="py buy.py --mode=better_etf"
 alias mc="py buy.py --mode=mc"
@@ -207,7 +208,7 @@ alias well='cd ~/setup/csharp; mcs hello.cs; mono hello.exe'
 alias well='cd ~/setup/python/motivation; py main.py'
 alias mko='cd ~/setup/csharp; mcs hello.cs'
 alias gos='cd /mnt/c/Users/Zoe/SandBox'
-alias delstock='py gained_discount.py --updatestocks=1 --delete'
+alias delstock='py delstock.py'
 alias gos2='cd /mnt/c/Users/Zoe/3D_SandBox'
 #alias xdg-open='wsl-open'
 #sudo -S true

@@ -107,7 +107,7 @@ for account in accounts:
     except Exception as e:
         pass
 
-import historical_changes
+import current
 import table_print
-historical_changes.procs(orders.keys(), "orders", generate=True)
+current.procs(orders.keys(), "orders")
 table_print.initiate()

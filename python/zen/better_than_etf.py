@@ -16,7 +16,6 @@ req = start - 20
 dates = z.getp("dates")
 que = 12
 firstdate = dates[istart*15]
-print("firstdate : {}".format( firstdate ))
 
 def proc(astock):
     closes = sliding.WindowQueue(que)

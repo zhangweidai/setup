@@ -21,7 +21,6 @@ days_at_a_time = 5
 modme = start - days_at_a_time + 1
 iterations = 2
 firstdate = dates[-300]
-print("firstdate : {}".format( firstdate ))
 
 recovdate = "2020-03-23"
 #print("firstdate : {}".format( firstdate ))

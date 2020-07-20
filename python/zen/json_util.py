@@ -1,3 +1,4 @@
+full = True
 import urllib.request, json
 from bs4 import BeautifulSoup
 import z
@@ -29,7 +30,7 @@ tmonth = datetime.date.today().month
 print("tmonth : {}".format( tmonth ))
 
 billion = 1000000000
-def parsePage(astock, update=False):
+def parsePage(astock, update=False, force=False, iteration = 0):
 
     live = None
     if update:
@@ -42,9 +43,13 @@ def parsePage(astock, update=False):
 
             if csvday == ttoday and tmonth == csvmonth:
                 live = z.getp(astock, override="yahoo_mc")
-                update = False
+                if not args.args.live:
+                    update = False
+
+                if force:
+                    update = True
+
         except Exception as e:
-            z.trace(e)
             pass
     else: 
         live = z.getp(astock, override="yahoo_mc")
@@ -138,8 +143,11 @@ def parsePage(astock, update=False):
 
     if cap:
         return (cap, beta, pe, dividend, fcf)
-    print ("didint find cap for {}".format(astock))
-    return True
+
+    if iteration == 2:
+        return True
+
+    return parsePage(astock, update=True, force=True, iteration=iteration+1)
 
 import calendar
 import time
@@ -521,18 +529,16 @@ def parses(stocks, update=True, addone = False):
             mcs.add((cap, astock))
             divdict[astock] = div, cap, pe
         except Exception as e:
+            print("PROBLEM astock: {}".format( astock))
             z.trace(e)
             continue
 #
-    z.setp(divdict, "mcdivdict")
-    if not addone:
+    if len(stocks) > 1000:
+        z.setp(divdict, "mcdivdict")
         buy.sortedSetToRankDict("latestmc", mcs, reverse=True)
-
+    
 if __name__ == '__main__':
-#    updateOldYahoos()
-#    iterateStocks()
-    stocks = z.getp("listofstocks")
-#    stocks = ["BA"]
+    import args
     parses(stocks, update=True)
 #    remaining()
 

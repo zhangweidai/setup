@@ -6,9 +6,10 @@ import buy
 import sliding
 import statistics
 from sortedcontainers import SortedSet
-import args
 
 debug = None
+import args
+
 ETF = "IVV"
 etf_wc, etf_bc, etf_ly, etf_l2y, etf_avg = 0, 0, 0, 0, 0
 
@@ -93,10 +94,27 @@ def proc(astock):
 #        z.trace(e)
 #        exit()
 
-    wc, bc, avg, ly, l2y, avg8 = annuals(astock)
-    if args.args.bta:
+#    if debug:
+#        print("debuggin astock: {}".format( astock))
+#        print("closes_252: {}".format( closes_252.main))
+
+    consideration = list(closes_252.main)[:240]
+    try:
+        high = max(consideration)
+    except:
+        return
+    low = min(consideration)
+    dfh1y = round(c_close / high,3)
+    gfl1y = round(c_close / low,3)
+
+    if debug:
+        print("dfh1y : {}".format( dfh1y ))
+        print("gfl1y : {}".format( gfl1y ))
+
+    wc, bc, avg, ly, l2y, avg8, newstock = annuals(astock)
+
+    if args.args.bta and not newstock:
         buy.addPDic(astock, "ly", ly)
-        buy.addPDic(astock, "avg8", avg8)
         buy.addPDic(astock, "l2y", l2y)
         buy.addPDic(astock, "avg", avg)
         buy.addPDic(astock, "wc", wc)
@@ -119,7 +137,7 @@ def proc(astock):
             pass
 
         rank = buy.getMCRank(astock)
-        if rank < 1200 and c_close > 1:
+        if rank < 2600 and c_close > 1:
             buy.addSorted("ly", ly, astock)
             try:
                 buy.addSorted("wc", wc, astock)
@@ -130,14 +148,13 @@ def proc(astock):
                     buy.addSorted("avg8", avg8, astock)
             except:
                 pass
-    return y1u, ivvb, wc, bc, avg, ly, l2y, avg8
+
+    return y1u, ivvb, wc, bc, avg, ly, l2y, avg8, dfh1y, gfl1y
 
 etf_dates = list()
 missing_days = list()
 
 def annuals(astock):
-    if debug:
-        print("astock: {}".format( astock))
     global etf_dates, missing_days
     closes_252 = sliding.WindowQueue(252)
     if debug:
@@ -168,8 +185,6 @@ def annuals(astock):
                 print("myidx : {}".format( myidx ))
 
             if myidx > indexdate_4:
-                if debug:
-                    print ("I'm new")
                 newstock = True
 
             # stock as not available 8 years ago
@@ -182,7 +197,7 @@ def annuals(astock):
             adjusted = i + i_adjust
 #            print("{} i {} {} etf_dates: {}".format( adjusted, i, i_adjust, len(etf_dates)))
 #            print("c_date : {}".format( c_date ))
-            if not days_missing and etf_dates[adjusted] != c_date:
+            if etf_dates and not days_missing and etf_dates[adjusted] != c_date:
                 days_missing += 1
 
         c_close = float(row[z.closekey])
@@ -198,8 +213,8 @@ def annuals(astock):
             if closes_252.full():
                 annual_change = round(closes_252.main[-1]/closes_252.main[0],3)
 
-                if annual_change > 3:
-                    annual_change = 3
+                if annual_change > 3.2:
+                    annual_change = 3.2
 
                 annual_list.append(annual_change)
 #                if debug:
@@ -237,22 +252,15 @@ def annuals(astock):
     wc = "NA"
     bc = "NA"
     avg = "NA"
-    if started_annuals:
+    if annual_list and (started_annuals or newstock):
         wc = min(annual_list)
         bc = max(annual_list)
         median = statistics.median(annual_list)
         mean = statistics.mean(annual_list)
         avg = round((median + median + mean) / 3,3)
-#        print("mean : {}".format( mean ))
-#        print("median : {}".format( median ))
-#        print("avg : {}".format( avg ))
 
-    return wc, bc, avg, ly, l2y, avg8
-#
-#if debug:
-#    bar = annuals(debug)
-#    print("bar : {}".format( bar ))
-#    exit()
+    return wc, bc, avg, ly, l2y, avg8, newstock
+
 import sys
 def procs(astocks = None):
     global better_etf, missing_days
@@ -265,17 +273,18 @@ def procs(astocks = None):
         stocks.pop(stocks.index(ETF))
     except:
         pass
+
     stocks.insert(0, ETF) 
     prob_dic = dict()
     for i, astock in enumerate(stocks):
 
         if not i % 100:
-            print("astock: {}".format( astock))
+            print(": {}".format( astock))
 
         try:
             prob_dic[astock] = proc(astock)
         except Exception as e:
-            print("astock: {}".format( astock))
+            print("problem astock: {}".format( astock))
             z.trace(e)
             pass
 
@@ -288,8 +297,6 @@ def procs(astocks = None):
     else:
         print("prob_dic: {}".format( prob_dic))
         print("wc, bc, avg, ly, l2y, avg8")
-
-    print("missing_days : {}".format( missing_days ))
 
 if __name__ == '__main__':
 

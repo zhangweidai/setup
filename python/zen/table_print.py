@@ -148,11 +148,22 @@ def printTable(tablename ="default"):
     mm = dict()
     for key in dics.keys():
         ctitle = store.title[key]
+
+        if ctitle == "pd1":
+            print("ctitle : {}".format( ctitle ))
+
         try:
             m1 = round(min(dics[key]),3)
             m2 = round(max(dics[key]),3)
-            avg = round(statistics.mean(dics[key]),1)
 
+            roundme = 1 if ctitle not in use_percentages else 3
+            if ctitle in use_often:
+                roundme = 2
+            avg = round(statistics.mean(dics[key]),roundme)
+            if ctitle == "pd1":
+                print("ctitle : {}".format( ctitle ))
+                print("dics: {}".format( dics[key]))
+                print("avg : {}".format( avg ))
             width = len(str(avg))
             if width > headerWidths[ctitle]:
                 headerWidths[ctitle] = width
@@ -196,7 +207,7 @@ def printTable(tablename ="default"):
 
         clist.append(items[0].replace("*", ""))
 
-        saveme = list()
+        joinme = list()
         have = False
 
         if not x % 40 and x > 0:
@@ -247,24 +258,24 @@ def printTable(tablename ="default"):
                         print("useme : {}".format( len(useme)))
                         print("ctitle: {}".format( ctitle))
                         exit()
-                    saveme.append(bar.format(useme))
+                    joinme.append(bar.format(useme))
                 elif ctitle in use_often:
                     try:
-                        saveme.append(bar.format("{}%".format(round(individual*100,2))))
+                        joinme.append(bar.format("{}%".format(round(individual*100,2))))
                     except:
-                        saveme.append(bar.format(individual))
+                        joinme.append(bar.format(individual))
                 else:
-                    saveme.append(bar.format(individual))
+                    joinme.append(bar.format(individual))
             except:
                 print ("problem with {} {}".format(ctitle, individual))
                 exit()
 
 
-        saveme.append("{:>3}".format(str(x)))
+        joinme.append("{:>3}".format(str(x)))
 #        if not have:
-#        print("  ".join(saveme))
+#        print("  ".join(joinme))
 #        else:
-        print("  ".join(saveme))
+        print("  ".join(joinme))
 
     avgs = list()
     for i, ctitle in enumerate(store.title):
@@ -282,8 +293,9 @@ def printTable(tablename ="default"):
                 useme = z.percentage(val)
                 useme = useme[:width]
                 avgs.append(bar.format(useme))
+
             elif ctitle in use_often:
-                avgs.append(bar.format("{}%".format(round(individual*100))))
+                avgs.append(bar.format("{}%".format(val)))
             else:
                 avgs.append(bar.format(val))
         except:
@@ -292,8 +304,8 @@ def printTable(tablename ="default"):
     print(titleColor + Style.BRIGHT + "  ".join(avgs) + Style.RESET_ALL  + "\nStocks Shown: " +str(len(store.items[cidx])))
     if not ivv:
         for anetf in ["IVV", "IUSG", "VUG"]:
-            y1pu, ivvb, wc, bc, avg, ly, l2y, avg8 = buy.getFrom("probs", anetf)
-            print("{:>4}:  {:>5} wc:{:>5} bc:{:>5}: avg:{:>5}, avg8:{:>5}".format(anetf, z.percentage(ly), z.percentage(wc), z.percentage(bc), z.percentage(avg), z.percentage(avg8)))
+            y1pu, ivvb, wc, bc, avg, ly, l2y, avg8, dfh1y, gfl1y = buy.getFrom("probs", anetf)
+            print("{:>4}:  {:>5} wc:{:>5} bc:{:>5}: avg:{:>5}, avg8:{:>5}".format(anetf, z.percentage(ly), z.percentage(wc), z.percentage(bc), z.percentage(avg), z.percentage(avg8), z.percentage(dfh1y), z.percentage(gfl1y)))
 
 def resetAll():
     global use_percentages, use_often
