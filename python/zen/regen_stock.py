@@ -5,7 +5,7 @@ z.getp.quick_list = False
 import buy
 import os
 from sortedcontainers import SortedSet
-import gbuy
+import gbuy_old
 import math
 
 date = "2000-01-01"
@@ -48,7 +48,7 @@ def process(astock, one_at_a_time = True):
         latestprices = dict()
         problems = [] 
         print("date: {}".format( date))
-        df = gbuy.getDataFromYahoo(astock, date)
+        df = gbuy_old.getDataFromYahoo(astock, date)
         if df is None:
             problems.append(astock)
             print("problem dl astock: {}".format( astock))
@@ -107,7 +107,7 @@ def process(astock, one_at_a_time = True):
 
         
     except Exception as e:
-        print ("problem with gbuy")
+        print ("problem with gbuy_old")
         z.trace(e)
 
 

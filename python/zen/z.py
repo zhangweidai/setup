@@ -6,6 +6,7 @@ import datetime
 
 closekey = "Close"
 YEAR = 2020
+gonna_need_alot = False
 
 def getStocks(title):
     stocks = getp(title)
@@ -20,8 +21,6 @@ def getStocks(title):
         else:
             rebuilt.append(value)
     return title, rebuilt
-
-
 
 def getPath(path, allowmake = True):
     path = "{}/../zen_dump/{}".format(os.getcwd(), path)
@@ -58,12 +57,47 @@ def syp(data, name):
         os.remove(path)
     pickle.dump(data, open(path, "wb"))
 
+def trace(e):
+    import traceback
+    print (traceback.format_exc())
+    print (str(e))
+
+special = os.path.abspath("../zen_dump/special")
+if not os.path.exists(special):
+    os.makedirs(special)
+
+def savepp():
+    setp(savepp.dic, "savepp")
+
+savepp.dic = dict()
+
+def setpp(data, name, override = ""):
+    pickle.dump(data, open( os.path.join(special, "{}{}.pkl".format(name, override)) , "wb"))
+    if name in getp("quick"):
+        savepp.dic[name] = data
+
+def getpp(name, override = ""):
+    if gonna_need_alot and name in getp("quick"):
+        try:
+            return getpp.dic[name]
+        except:
+            try:
+                getpp.dic = getp("savepp")
+                return getpp.dic[name]
+            except:
+                pass
+    return pickle.load(open( os.path.join(special, "{}{}.pkl".format(name, override)) , "rb"))
+getpp.dic = dict()
+
 getpd = set()
 @lru_cache(maxsize=40)
-def getp(name, override="pkl", retfile=False):
+def getp(name, override="pkl", retfile=False, real = False):
 
-    if getp.quick_list == True and name == "listofstocks":
-        print ("getting quikc")
+    if not real and (getp.quick_list == True and name == "listofstocks"):
+        if getp.override:
+            print ("getting {}".format(getp.override))
+            return getp(getp.override)
+        print ("getting quick")
         return getp("quick")
 
     getpd.add(name)
@@ -83,6 +117,7 @@ def getp(name, override="pkl", retfile=False):
             pass
     return None
 getp.quick_list = False
+getp.override = None
 
 import atexit
 gsave = False
@@ -212,10 +247,6 @@ def breaker(count):
         print("breaker: {}".format(breaker.count))
 breaker.count = None
 
-def trace(e):
-    import traceback
-    print (traceback.format_exc())
-    print (str(e))
 
 
 def getLiveData(astock, key = "price", andkey = None, force = False):
@@ -249,7 +280,7 @@ def getLiveData(astock, key = "price", andkey = None, force = False):
             csvmonth = csvdate.month
             ttoday = datetime.date.today().day
             tmonth = datetime.date.today().month
-            if not force and (csvday >= ttoday and tmonth == csvmonth) and not args.args.flive:
+            if (not force and (csvday >= ttoday and tmonth == csvmonth) and not args.args.flive):
                 ret = gyp(astock)
                 getLiveData.cached[astock] = ret
                 return float(ret[key])

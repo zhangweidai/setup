@@ -27,24 +27,25 @@ firstdate = "2018-03-23"
 recovdate = "2020-03-23"
 special = dict()
 
-def percentile(array, flip = False, neg_only=False):
+def percentile(array, flip = False, neg_only=False, considerate = None):
+    considerate = considerate if considerate else array[-1]
     if neg_only :
         consideration = array[:-1]
 
-        if array[-1] < 1:
+        if considerate < 1:
             nchgs = [b for b in consideration if b < 1 ]
-            return round(100-stats.percentileofscore(nchgs, array[-1], kind ='strict'),1)
+            return round(100-stats.percentileofscore(nchgs, considerate, kind ='strict'),1)
         else:
             nchgs = [b for b in consideration if b > 1 ]
-            return round(stats.percentileofscore(nchgs, array[-1], kind ='strict'),1)
+            return round(stats.percentileofscore(nchgs, considerate, kind ='strict'),1)
 
     if not flip:
-        return round(100 - stats.percentileofscore(array[:-1], array[-1], kind ='strict'),1)
+        return round(100 - stats.percentileofscore(array[:-1], considerate, kind ='strict'),1)
 
-    return round(stats.percentileofscore(array[:-1], array[-1], kind ='strict'),1)
+    return round(stats.percentileofscore(array[:-1], considerate, kind ='strict'),1)
 
 recent_size = 4
-def proc(astock, title):
+def proc(astock, title = None, store = True):
     global special
     if debug:
         print("days_at_a_time: {}".format( days_at_a_time))
@@ -136,13 +137,15 @@ def proc(astock, title):
     lows_list = list(lows.main)
 
     if args.args.live:
-        live_price = z.getLiveData(astock, key = "price")
-        one_day_changes.append(live_price/c_close)
-
-        month_ago = list(closes.main)[-22]
-        one_month_changes.append(live_price/month_ago)
-        closes_list.append(live_price)
-        lows_list.append(live_price)
+        try:
+            live_price = z.getLiveData(astock, key = "price")
+            one_day_changes.append(live_price/c_close)
+            month_ago = list(closes.main)[-22]
+            one_month_changes.append(live_price/month_ago)
+            closes_list.append(live_price)
+            lows_list.append(live_price)
+        except:
+            pass
 
     items = list()
     for i, close in enumerate(closes_list):
@@ -156,16 +159,20 @@ def proc(astock, title):
         buy.addSortedHigh("m6_m_m", statistics.median(month6_changes), astock, keeping = 40)
 
     try:
-        rm1 = statistics.median(items)
+        md1 = statistics.median(items)
     except:
         return
 
-    drop_from = drop_froms[-1]
+    try:
+        drop_from = drop_froms[-1]
+    except:
+        return
+
     drop_from_p = percentile(drop_froms)
     drop_from_p = drop_from_p if drop_from_p > 75 else None
 
-    n_one_day_changes_p = percentile(one_day_changes, neg_only=True)
-    n_one_day_changes_p = n_one_day_changes_p if n_one_day_changes_p > 75 else None
+    chg1p = percentile(one_day_changes, neg_only=True)
+    chg1p = chg1p if chg1p > 75 else None
     beta = round(statistics.median(betas),2)
 
     one_month_negs = sum([1 if change < 1 else 0 for change in one_month_changes])
@@ -174,10 +181,11 @@ def proc(astock, title):
     more20d = sum([1 if change < .80 else 0 for change in one_month_changes])
 
     wc1 = min(lowChanges)
-    m1 = round(statistics.median(lowChanges),4)
-    m2 = round(statistics.median(highChanges),4)
-    r21 = round((((m2-1)*100)+(m1-1)*100),4)
-    target = round(c_close * m1,2)
+    md = round(statistics.median(lowChanges),4)
+    md2 = round(statistics.median(lowChanges[-40:]),4)
+    mg = round(statistics.median(highChanges),4)
+    gddif = round((((mg-1)*100)+(md-1)*100),4)
+    target = round(c_close * md,2)
     m30c = round(statistics.median(one_month_changes),3)
 
     p20 = round(float(np.percentile(lowChanges, 20)),3)
@@ -187,32 +195,33 @@ def proc(astock, title):
     chg30p = chg30p if chg30p > 75 else None
 
     if bta:
-        buy.addPDic(astock, "m1", m1)
+        buy.addPDic(astock, "md", md)
         buy.addPDic(astock, "more20d", more20d)
         buy.addPDic(astock, "wc1", wc1)
         buy.addPDic(astock, "p20", p20)
-        buy.addPDic(astock, "r21", r21)
+        buy.addPDic(astock, "gddif", gddif)
 #        buy.addPDic(astock, "beta", beta, True)
         buy.addPDic(astock, "m30c", m30c)
         buy.addPDic(astock, "pd1", pd1, True)
         return
 
-
+    chg1 = one_day_changes[-1] 
     values = [
     ("stock",astock),
     ("price",c_close),
     ("target",target),
-    ("m1",m1,'%'),
-    ("rm1",rm1, '%'),
-    ("m2",m2,'%'),
-    ("r21",r21),
+    ("md",md,'%'),
+    ("md1",md1, '%'),
+    ("md2",md2, '%'),
+    ("mg",mg,'%'),
+    ("gddif",gddif),
     ("wc1",wc1,'%'),
     ("p20",p20,'%'),
     ("more20d",more20d),
     ("mc", mc),
     ("beta",beta) ,
-    ("chg1",one_day_changes[-1],'%'),
-    ("chg1p", n_one_day_changes_p),
+    ("chg1",chg1,'%'),
+    ("chg1p", chg1p),
     ("dropf",drop_from,'%'),
     ("dropfp",drop_from_p),
     ("pd1",pd1,'o'),
@@ -244,11 +253,16 @@ def proc(astock, title):
 #        exit()
 
     if args.came_from_list:
-        values.append((args.args.stocks, args.came_from_dict[astock], "%"))
+        values.append((args.args.stocks, args.came_from_dict[astock]))
 
     if not args.args.bta:
         values.append(("bta", buy.getFrom("savePsdic", astock)))
-    table_print.store(values)
+
+    if store:
+        table_print.store(values)
+    else:
+        chg5 = round(closes_list[-1] / closes_list[-5],3)
+        return md, md1, md2, mg, gddif, chg1, chg1p, chg30, chg30p, chg5, wc1, target, c_close
 
 def procs(astocks = None, title = None):
     if astocks:

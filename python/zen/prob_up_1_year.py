@@ -91,18 +91,12 @@ def proc(astock):
     except Exception as e:
         ivvb = None
         print("problem astock: {}".format( astock))
-#        z.trace(e)
-#        exit()
-
-#    if debug:
-#        print("debuggin astock: {}".format( astock))
-#        print("closes_252: {}".format( closes_252.main))
 
     consideration = list(closes_252.main)[:240]
     try:
         high = max(consideration)
     except:
-        return
+        return "NA", "NA", "NA","NA", "NA", "NA", "NA", "NA","NA", "NA"
     low = min(consideration)
     dfh1y = round(c_close / high,3)
     gfl1y = round(c_close / low,3)
@@ -143,9 +137,6 @@ def proc(astock):
                 buy.addSorted("wc", wc, astock)
                 buy.addSorted("bc", bc, astock)
                 buy.addSorted("avg", avg, astock)
-                buy.addSorted("ivvb", ivvb, astock)
-                if avg8 != "NA":
-                    buy.addSorted("avg8", avg8, astock)
             except:
                 pass
 

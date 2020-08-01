@@ -295,8 +295,8 @@ def delstock(astock, update = False):
         pass
 
     if not update == False:
-        import gbuy
-        gbuy.setlistofstocks()
+        import gbuy_old
+        gbuy_old.setlistofstocks()
 
 def cleanup(astock, date):
     tokens = date.split("-")
@@ -338,9 +338,9 @@ def batchdelete(stocks):
             pass
         delstock(astock, update=False)
 
-    import gbuy
+    import gbuy_old
     z.setp(data, "div_mc_dict")
-    gbuy.setlistofstocks()
+    gbuy_old.setlistofstocks()
 
 if __name__ == '__main__':
 #    import argparse

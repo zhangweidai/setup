@@ -1,4 +1,5 @@
 import collections
+import statistics
 
 class WindowQueue(object):
     
@@ -27,6 +28,17 @@ class WindowQueue(object):
 
     def get_maximum(self):
         return self.maxdeque[0]
+
+    def score(self, more_last = True):
+        if not more_last:
+            return statistics.median(self.main)
+
+        last_part = round(self.maxsize/4)
+        try:
+            rm1 = statistics.median(self.main + self.main[-1*last_part:])
+        except:
+            rm1 = statistics.median(self.main)
+        return round(rm1,3), round(min(self.main),3), round(self.main[-1],3)
     
     def add_tail(self, val):
         if self.needMin:

@@ -160,10 +160,10 @@ def printTable(tablename ="default"):
             if ctitle in use_often:
                 roundme = 2
             avg = round(statistics.mean(dics[key]),roundme)
-            if ctitle == "pd1":
-                print("ctitle : {}".format( ctitle ))
-                print("dics: {}".format( dics[key]))
-                print("avg : {}".format( avg ))
+#            if ctitle == "pd1":
+#                print("ctitle : {}".format( ctitle ))
+#                print("dics: {}".format( dics[key]))
+#                print("avg : {}".format( avg ))
             width = len(str(avg))
             if width > headerWidths[ctitle]:
                 headerWidths[ctitle] = width
@@ -396,23 +396,23 @@ def initiate(allow_clearing = True):
                 print("currentsort : {}".format( currentsort ))
                 printTable()
 
-            elif key == "w":
-                stocks = [ bar[0].replace("*", "") for bar in store.items[0] ]
-                resetAll()
-                g_allow_clearing = False
-                use_stock_order = True
-
-                if mode == 0:
-                    current.procs(stocks)
-                    mode += 1
-                else:
-                    for astock in stocks:
-                        buy.single(astock)
-                    mode -= 1
-
-                cidx = 0
-                printTable()
-
+#            elif key == "w":
+#                stocks = [ bar[0].replace("*", "") for bar in store.items[0] ]
+#                resetAll()
+#                g_allow_clearing = False
+#                use_stock_order = True
+#
+#                if mode == 0:
+#                    current.procs(stocks)
+#                    mode += 1
+#                else:
+#                    for astock in stocks:
+#                        buy.single(astock)
+#                    mode -= 1
+#
+#                cidx = 0
+#                printTable()
+#
             elif key == "l":
                 ticker = clist[-1]
                 webpage = 'https://snapshot.fidelity.com/fidresearch/snapshot/landing.jhtml#/research?symbol={}&appCode='.format(ticker)

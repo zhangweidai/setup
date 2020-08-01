@@ -470,14 +470,14 @@ def genRecentStat(astock):
         wcc = round(min(wc_lows)/ max(wc_highs),3)
         lchange = round(c_close / firstPrice,3)
         diff = round(wcc / lchange,2)
+        min5 = round(min(avg5Change),3)
+        last5 = round(avg5Change[-1],3)
     except:
         wcc = "NA"
         lchange = "NA"
+        min5 = "NA"
         diff = "NA"
-
-
-    min5 = round(min(avg5Change),3)
-    last5 = round(avg5Change[-1],3)
+        last5 = "NA"
 
     meandrop = "NA"
     if mins:
@@ -487,15 +487,22 @@ def genRecentStat(astock):
     dayup = "NA"
     lengs = len(daysup)
     bar = lengs-start 
-    if lengs-start < 2:
-        dayup = round(sum(daysup)/lengs,2)
-    last = round(c_close/seen[-2],3)
+    last = "NA"
+    if lengs:
+        if lengs-start < 2:
+            dayup = round(sum(daysup)/lengs,2)
+        last = round(c_close/seen[-2],3)
 
-    be = round(sum(bchanges)/len(bchanges),2)
-    ravg = round(statistics.mean(prices[-20:]),2)
-
-    above_cprice.pop(-1)
-    abov_cprice = round(sum(above_cprice) / len(above_cprice),3)
+    try:
+        be = round(sum(bchanges)/len(bchanges),2)
+        ravg = round(statistics.mean(prices[-20:]),2)
+        above_cprice.pop(-1)
+        abov_cprice = round(sum(above_cprice) / len(above_cprice),3)
+    except:
+        be = "NA"
+        ravg = "NA"
+        above_cprice = "NA"
+        abov_cprice = "NA"
 
     return c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last, prices, be, ravg, abov_cprice
 
@@ -559,14 +566,19 @@ def calcPs():
 #addPDic("B", "cat2", 6)
 #addPDic("C", "cat2", 7)
 #calcPs()
+extraPsScore = defaultdict(int)
+def addPDicRaw(astock, score):
+    global extraPsScore
+    extraPsScore[astock] += score
+
 def savePs(save_name = "savePs"):
     scores = calcPs()
     savedScores = dict()
     for astock, values in scores.items():
-        addSortedHigh(save_name, round(sum(values),1), astock, keeping = 100, savingall = True)
+        addSortedHigh(save_name, round(sum(values) + extraPsScore.get(astock, 0),1), astock, keeping = 100, savingall = True)
 
     saveSorted(save_name)
-    bar = z.getp("{}dic".format(save_name))
+    z.getp("{}dic".format(save_name))
 
 #bar  = z.getp("savePs")
 
@@ -668,7 +680,10 @@ def single(astock):
 
 
 #    hld, hlr = getFrom("hldic", astock, ("",""))
-    apd1, apd2, apdc, apd = getapds(prices)
+    if prices:
+        apd1, apd2, apdc, apd = getapds(prices)
+    else:
+        apd1, apd2, apdc, apd = "NA", "NA", "NA", "NA"
 
 #        ("maxu", maxup),
 #        ("maxd", maxdown),
@@ -714,11 +729,18 @@ def single(astock):
         import avgs
         m2y, wc2y, avg1, wc1, avg82, avg83 = avgs.proc(astock)
 
+    try:
+        change = c_close/ravg
+        fromt = (lowFromHigh/high)
+    except:
+        change = "NA"
+        fromt = "NA"
+
     values = [
         ("stock", inPortfolio(astock)),
         ("price", c_close),
         ("avg20", ravg),
-        ("change", c_close/ravg),
+        ("change", change),
         ("score", score),
         ("y1pu", y1pu),
         ("daily", dayup),
@@ -737,7 +759,7 @@ def single(astock):
         ("gfl1y",gfl1y, "%"),
         ("abov_cprice",abov_cprice, "o"),
 
-        (fromtop, (lowFromHigh/high)),
+        (fromtop, fromt),
         ("owned", portFolioValue(astock)),
         ("volp", getFrom("volp", astock)),
         ("name", name) ]
@@ -761,10 +783,14 @@ def single(astock):
     values.append(("order", orderstr))
     values.append(("orderc", orderchange))
 
+    uselast = last
     if args.args.live:
-        values.append(("last", (c_close/prev_close)))
-    else:
-        values.append(("last", last))
+        try:
+            uselast = (c_close/prev_close)
+        except:
+            uselast = last
+
+    values.append(("last", uselast))
 
     table_print.store(values)
 

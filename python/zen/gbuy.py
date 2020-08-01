@@ -1,51 +1,69 @@
 import z
-import math
-import readchar
-import csv
-import buy
+import args
 import os
-from sortedcontainers import SortedSet
-import glob
-import yfinance as yf
-from pandas_datareader import data as pdr
 
-year = "2020"
+mcmap = z.getp("mcdic2")
+import prob_up_1_year
 
-yf.pdr_override()
-def getDataFromYahoo(astock, cdate):
-    df = None
+revmcs = list()
+
+billion = 1000000000
+million = 1000000
+year = 2020
+
+def saveQuick():
+    z.getp.cache_clear()
+
+    portFolioValue= z.getp("ports")
+    quick = z.getp("savePs")
+
+    print("quick : {}".format( len(quick )))
+    quick = [ stock[1] for stock in quick ]
+
+    print("quick : {}".format( len(quick )))
+    quick += list(portFolioValue.keys())
+
+    print("quick : {}".format( len(quick )))
+    orders = z.getp("orders")
+    quick += list(orders.keys())
+    print("quick : {}".format( len(quick )))
+
+    quick += z.getp("top95")
+
+    print("quick : {}".format( len(quick )))
+    quick = list(set(quick))
+
+    print("quick : {}".format( len(quick )))
     try:
-        print("dl astock: {}".format( astock))
-        df = pdr.get_data_yahoo([astock], start=cdate)
-    except Exception as e:
-        z.trace(e)
-        exit()
+        quick.remove("TMUSR")
+    except:
+        pass
+
+    z.setp(quick, "quick", True)
+
+    if len(quick) > 600:
+        print ("TOO MANY in QUICK")
+
+mcs = z.getp("mcs")
+if not mcs:
+    savemeinfo = z.getp("savemeinfo2")
+    for pair in savemeinfo.values():
         try:
-            df = pdr.get_data_yahoo([astock], start=cdate)
-        except Exception as e:
-            z.trace(e)
-            return None
-    return df
+            mc = pair["Market Cap"]/billion
+            mcs.append(mc)
+        except:
+            pass
 
-def setlistofstocks():
-    path = z.getPath("split/*/*{}.csv".format(year))
-    files = glob.glob(path)
-    stocks = [ os.path.splitext(os.path.basename(entry))[0].replace("_{}".format(year), "") for entry in files ]
-    z.setp(stocks, "listofstocks")
-
-    etfs = z.getEtfList()
-    listofs = list()
-    for astock in stocks:
-        if astock in etfs:
-            continue;
-        listofs.append(astock)
-    z.setp(listofs, "listofs")
-
+divdict = z.getp("mcdivdict")
+print("stocks: {}".format( len(stocks)))
 problems = set()
+
 def updateStocks():
     global problems
     import datetime
-    stocks = z.getp("listofstocks")
+    import math
+    import csv
+
     already_updated = 0
     try:
         now = datetime.datetime.now()
@@ -56,16 +74,13 @@ def updateStocks():
         added = False
         for astock in stocks:
             apath = z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
+
             try:
                 csvdate = datetime.datetime.fromtimestamp(os.path.getmtime(apath))
                 csvday = csvdate.day
                 csvmonth = csvdate.month
                 ttoday = datetime.date.today().day
                 tmonth = datetime.date.today().month
-                if csvday == 17:
-                    already_updated += 1
-                    consecutive_misses = 0
-                    continue
 
                 if csvday >= ttoday and tmonth == csvmonth:
                     consecutive_misses = 0
@@ -79,12 +94,13 @@ def updateStocks():
 #                        w = open(apath,'w')
 #                        w.writelines([item for item in lines[:-1]])
 #                        w.close()
-            except:
+            except Exception as e:
+                problems.add(astock)
+                z.trace(e)
                 continue
 
             for row in csv.DictReader(open(apath)):
                 pass
-
 
             try:
                 date = row['Date']
@@ -93,7 +109,9 @@ def updateStocks():
                 continue
 
             print("date: {}".format( date))
-            df = getDataFromYahoo(astock, date)
+            import gbuy_old
+
+            df = gbuy_old.getDataFromYahoo(astock, date)
             if df is None:
                 print("problem downloading: {}".format( astock))
                 consecutive_misses += 1
@@ -146,81 +164,142 @@ def updateStocks():
                 print ("problem with {}".format(astock))
 
     except Exception as e:
-        print ("problem with gbuy")
+        print ("problem with gbuy_old")
         z.trace(e)
+        print("problems: {}".format( problems))
         exit()
+
     print("already_updated : {}".format( already_updated ))
 
-
-def saveQuick():
-    portFolioValue= z.getp("ports")
-    quick = z.getp("savePs")
-    quick = [ stock[1] for stock in quick ]
-    quick += list(portFolioValue.keys())
-    orders = z.getp("orders")
-    quick += list(orders.keys())
-    quick = list(set(quick))
-    try:
-        quick.remove("TMUSR")
-    except:
-        pass
-    z.setp(quick, "quick", True)
-
 if __name__ == '__main__':
-    import args
-    args.args.bta = True
+    import buy
 
-#    import datetime
-#    cdate = dates[-1].split("-")
-#    day_of_week = datetime.datetime(int(cdate[0]), int(cdate[1]),int(cdate[2])).weekday()
-#
-#    print("day_of_week : {}".format( day_of_week ))
-#    if day_of_week == 4:
-#        args.args.noupdate = True
-#
-#    exit()
-#    import argparse
-#    parser = argparse.ArgumentParser()
-#    parser.add_argument('--noupdate', nargs='?', const=True, default=False)
-#    parser.add_argument('--quick', nargs='?', const=True, default=True)
-#    args = parser.parse_args()
-#    print("args : {}".format( args ))
+    final_dic = dict()
 
-#    if args.quick == True:
-#        z.getp.quick_list = True
-
-#    stocks = z.getp("listofstocks")
-    try:
-        if not args.args.noupdate:
-            updateStocks()
-            buy.updateDates()
-
-        import current
-        print ("current {} ".format(len(stocks)))
-        current.procs(stocks)
-#
-        buy.savePs("qq")
-
-        print ("prob up 1 year")
-        import prob_up_1_year
-        prob_up_1_year.procs(stocks)
-
-        import avgs
-        avgs.procs(stocks)
-
-        if not args.args.quick:
-            buy.savePs()
-            saveQuick()
-
-    except Exception as e:
-        print ("problem with gbuy")
-        z.trace(e)
-        exit()
+    if not args.args.noupdate:
+        updateStocks()
+        buy.updateDates()
 
     if problems:
-        print("delete problems: {}".format( problems))
+        import readchar
+        print("problems: c/d ? {} {}".format( problems, len(problems)))
         key = readchar.readkey()
-        if key == "y":
-            import gained_discount
-            gained_discount.batchdelete(problems)
+        if key == "d":
+            print("stocks : {}".format( len(stocks) ))
+            import delstock
+            delstock.batchdelete(problems)
+            z.getp.cache_clear()
+            stocks = z.getp("listofstocks")
+            print("stocks : {}".format( len(stocks) ))
+            print("continue y/n")
+            key = readchar.readkey()
+            if key == "n":
+                exit()
+        if key != "c":
+            exit()
 
+#    if args.args.full:
+#        print ("generating volp")
+#        import volume_change
+#        volp = volume_change.proc(stocks)
+#    else:
+    volp = z.getp("volp")
+
+    import current
+    for idx, astock in enumerate(stocks):
+        if not idx % 100:
+            print("astock : idx {} {}".format( idx, astock ))
+
+        try:
+            items = mcmap[astock]
+            mcp, revmcp, div = items[0], items[1], items[2]
+        except:
+            try:
+                bar = divdict[astock]
+                cap = bar[1]
+                div = bar[0]
+                revmcp = None
+                mcp = current.percentile(mcs, flip = True, considerate = cap)
+            except:
+                pass
+    
+        mymap = dict()
+    
+        args.args.bta = False
+
+        myvolp = volp.get(astock, 0)
+
+        try:
+            md, md1, md2, mg, gddif, chg1, chg1p, chg30, chg30p, chg5, wc1, target, c_close =  current.proc(astock, store = False)
+            y1u, ivvb, wc, bc, avg, ly, l2y, avg8, dfh1y, gfl1y = prob_up_1_year.proc(astock)
+
+        except Exception as e:
+            print("astock: {}".format( astock))
+            continue
+    
+        if args.args.full:
+            buy.addPDic(astock, "md", round((md + md1 + md2)/3,3))
+            buy.addPDic(astock, "wc", wc)
+            buy.addPDic(astock, "ly", ly)
+            buy.addPDic(astock, "l2y", l2y)
+            buy.addPDic(astock, "ivvb", ivvb)
+            buy.addPDic(astock, "avg", avg)
+            buy.addPDic(astock, "gddif", gddif)
+
+            divscore = div * 65 if div else 0
+            buy.addPDicRaw(astock, divscore)
+
+            try:
+                y1u_score = round(30  * y1u,3)
+            except:
+                y1u_score = 0
+                
+            try:
+                myvolpscore = round((myvolp - 50)/2,3) if myvolp <= 50 and mcp < 250 else 0
+            except:
+                myvolpscore = 0
+
+            buy.addPDicRaw(astock, y1u_score)
+            buy.addPDicRaw(astock, myvolpscore)
+
+        mymap["mcp"] = mcp
+        mymap["revmcp"] = revmcp
+        mymap["div"] = round(div,3) if div else None
+        mymap["md"] = md
+        mymap["md1"] = md1
+        mymap["md2"] = md2
+        mymap["mg"] = mg
+        mymap["gddif"] = gddif
+        mymap["chg1"] = chg1
+        mymap["chg1p"] = chg1p
+        mymap["chg30"] = chg30
+        mymap["chg30p"] = chg30p
+        mymap["chg5"] = chg5
+        mymap["target"] = target
+        mymap["last"] = c_close
+        mymap["y1u"] = y1u
+        mymap["ivvb"] = ivvb
+        mymap["wc"] = wc
+        mymap["bc"] = bc
+        mymap["avg"] = avg
+        mymap["ly"] = ly
+        mymap["l2y"] = l2y
+        mymap["avg8"] = avg8
+        mymap["dfh1y"] = dfh1y
+        mymap["gfl1y"] = gfl1y
+        mymap["volp"] = myvolp
+
+        final_dic[astock] = mymap
+    
+    if args.args.full:
+        buy.savePs()
+        saveQuick()
+
+
+    for astock, valmap in final_dic.items():
+        valmap['bta'] = buy.getFrom("savePsdic", astock)
+        z.setpp(valmap, astock)
+
+    z.savepp()
+
+    print("stocks: {}".format( len(stocks)))

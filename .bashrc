@@ -169,7 +169,6 @@ alias python="python3"
 alias ka="killall python3"
 alias checkout="git checkout --"
 alias st2="git status -uno"
-alias buy="py buy.py"
 alias buy2="py current.py"
 alias sell="py zen.py sell"
 alias rsell="py zen.py rsell"
@@ -178,8 +177,11 @@ alias wab="py zen.py wab"
 alias wabp="py zen.py wabp --s"
 alias buyl="py zen.py buy --date=l"
 alias gbuy="go1; py gbuy.py"
-alias owned="py buy.py ports"
-alias orders="py buy.py orders"
+alias buy="go1; py newbuy.py"
+
+alias owned="buy ports"
+alias orders="buy orders"
+
 alias etfs="py buy.py --mode=etfs"
 alias better="py buy.py --mode=better_etf"
 alias mc="py buy.py --mode=mc"
@@ -225,3 +227,4 @@ alias  bd='python ~/setup2/python/bd.py'
 # awk '{ print $1 }'
 #go1
 alias well='cd ~/setup2/python/; python watchfile.py'
+alias what="python -i whatis.py"
