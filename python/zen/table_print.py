@@ -390,6 +390,12 @@ def initiate(allow_clearing = True):
                 types = titles[cidx]
                 os.execl(python, python, "stock_plot.py", types)
 
+            elif key == "d":
+                bar = input("Date : ")
+                import stock_plot
+                print("clist: {}".format( clist))
+                stock_plot.preplot(clist, date=bar)
+
             elif key == "s":
                 bar = input("Enter Column: ")
                 currentsort = store.title.index(bar)

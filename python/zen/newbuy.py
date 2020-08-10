@@ -69,43 +69,52 @@ def single(astock):
         except:
             pass
 
-    owned = buy.portFolioValue(astock)
-    values.append(("owned", owned))
-
-    where = ""
     try:
-        order = buy.getFrom("orders", astock)
-        order = buy.getFrom("orders", astock)[0]
-        order,value = order[1], round(order[0])
-        ochg = order/mydic["last"]
+        loc, portvalue = buy.getFrom("owned", astock)
+    except:
+        where = ""
+        portvalue = ""
+        loc = ""
+    values.append(("owned", portvalue))
+
+#    owned = buy.portFolioValue(astock)
+#    values.append(("owned", owned))
+
+#    if owned:
+#        loc += "P" if astock in mine else ""
+#        loc += "T" if astock in tory else ""
+
+    try:
+#        combined[astock] = (buyprice, buy_value[astock], col_valus[astock])
+        buyprice, buy_value, loct = buy.getFrom("combined", astock)
+        loc = "{}{}".format(loc,loct)
+#        order = buy.getFrom("orders", astock)[0]
+#        order,value = order[1], round(order[0])
+        ochg = buyprice/mydic["last"]
         values.insert(3, ("ochg", ochg, "%"))
-        values.insert(4, ("value", value))
+        values.insert(4, ("value", buy_value))
 
     except Exception as e:
-        loc = ""
         ochg = ""
         value = "NA"
         values.insert(3, ("ochg", ochg, "%"))
         values.insert(4, ("value", value))
 
-    loc = ""
-    if ochg:
-        try:
-            loc = "t" if astock in z.getp("torys") else "p"
-        except:
-            pass
-
-    if owned:
-        where += "P" if astock in mine else ""
-        where += "T" if astock in tory else ""
-
-    loc = "{}{}".format(where, loc)
+#    loc = ""
+#    if ochg:
+#        try:
+#            loc = "t" if astock in z.getp("torys") else "p"
+##        except:
+#            pass
+#
+#
     values.append(("location", loc))
 
     table_print.store(values)
 
 if __name__ == '__main__':
 
+    print("stocks: {}".format( stocks))
     if not args.args.mode:
         for astock in stocks:
             try:

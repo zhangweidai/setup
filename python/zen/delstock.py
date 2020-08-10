@@ -111,30 +111,24 @@ if __name__ == '__main__':
 #    args = parser.parse_args()
 
     z.getp.cache_clear()
-    if len(stocks) == 1:
-        top95 = z.getp("top95")
-        data = z.getp("listofstocks", real=True)
-        quick = z.getp("quick", real=True)
+    top95 = z.getp("top95")
+    data = z.getp("listofstocks", real=True)
+    quick = z.getp("quick", real=True)
 
-        for astock in stocks:
-            delstock(astock, True)
-            if astock in data:
-                print("removed from listofstocks : {}".format( astock ))
-                data.remove(astock)
+    for astock in stocks:
+        delstock(astock, True)
+        if astock in data:
+            print("removed from listofstocks : {}".format( astock ))
+            data.remove(astock)
 
-            if astock in quick:
-                print("removed from quick : {}".format( astock ))
-                quick.remove(astock)
+        if astock in quick:
+            print("removed from quick : {}".format( astock ))
+            quick.remove(astock)
 
-            if astock in top95:
-                print("removed from top95 : {}".format( astock ))
-                top95.remove(astock)
+        if astock in top95:
+            print("removed from top95 : {}".format( astock ))
+            top95.remove(astock)
 
-        z.setp(data, "listofstocks")
-        z.setp(quick, "quick")
-        z.setp(top95, "top95")
-
-    else:
-        print("stock: {}".format( stocks))
-
-
+    z.setp(data, "listofstocks")
+    z.setp(quick, "quick")
+    z.setp(top95, "top95")

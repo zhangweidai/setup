@@ -237,17 +237,16 @@ def avg(lists, p=4):
 #
 #raise SystemExit
 
-def breaker(count):
+def breaker(count, printme = True):
     if breaker.count == 0:
         exit()
     if not breaker.count:
         breaker.count = count
     else:
         breaker.count -= 1
-        print("breaker: {}".format(breaker.count))
+        if printme:
+            print("breaker: {}".format(breaker.count))
 breaker.count = None
-
-
 
 def getLiveData(astock, key = "price", andkey = None, force = False):
     from pandas_datareader import data as pdr

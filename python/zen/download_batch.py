@@ -14,7 +14,6 @@ import delstock
 def process(astock, one_at_a_time = True):
     global problems
     try:
-        latestprices = dict()
         problems = [] 
         print("date: {}".format( date))
         df = gbuy_old.getDataFromYahoo(astock, date)

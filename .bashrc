@@ -179,7 +179,7 @@ alias buyl="py zen.py buy --date=l"
 alias gbuy="go1; py gbuy.py"
 alias buy="go1; py newbuy.py"
 
-alias owned="buy ports"
+alias owned="buy owned"
 alias orders="buy orders"
 
 alias etfs="py buy.py --mode=etfs"

@@ -3,7 +3,6 @@ Show how to connect to keypress events
 """
 import sys
 import math
-import matplotlib
 import matplotlib.pyplot as plt
 import z
 from matplotlib.pyplot import figure
@@ -94,6 +93,8 @@ def rebuild():
 
     vdict = dict()
     istart = start * -1
+    print("start : {}".format( start ))
+    print("end : {}".format( end ))
     startdate = dates[istart]
     tmaxv = 0
     tminv = 1
@@ -473,9 +474,23 @@ def plot():
     answer = SimpleChoiceBox("Advanced", "cmd:", stocks)
     plt.show(block=True)
 
-def preplot(astocks = None):
-    global stocks
+def preplot(astocks = None, date=None):
+    global stocks, start, end
 
+    if date:
+        if date[0] == '-':
+            start = -1 * int(date)
+        else:
+            try:
+                tstart = len(dates) - dates.index(date)
+                start = tstart
+            except Exception as e:
+                z.trace(e)
+                pass
+        end = start
+        print("start: {}".format( start))
+        print("end : {}".format( end ))
+    
     if astocks:
         stocks = astocks
 
@@ -485,7 +500,6 @@ def preplot(astocks = None):
         xcount = 7
     else:
         plt.rcParams["figure.figsize"] = [11,8]
-#        plt.rcParams["figure.figsize"] = [16,10]
         xcount = 10
 
     import argparse
@@ -523,5 +537,4 @@ if __name__ == "__main__":
     import args
     if len(args.args.stocks) == 1:
         stocks.append(args.args.stocks[0])
-    print("stocks: {}".format( stocks))
-    preplot(stocks)
+    preplot(stocks, date="-100")

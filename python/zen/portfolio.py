@@ -253,6 +253,8 @@ def simple(path, dontknow, etfs, total):
             continue
 
         if len(astock) >= 1 and astock not in skips:
+            if not astock.isalpha():
+                continue
 
             try:
                 quant = float(row['Quantity'])

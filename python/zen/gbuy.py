@@ -176,6 +176,10 @@ if __name__ == '__main__':
 
     final_dic = dict()
 
+    last_price = z.getp("last_price")
+    if type(last_price) is not dict:
+        last_price = dict()
+
     if not args.args.noupdate:
         updateStocks()
         buy.updateDates()
@@ -198,14 +202,15 @@ if __name__ == '__main__':
         if key != "c":
             exit()
 
-#    if args.args.full:
-#        print ("generating volp")
-#        import volume_change
-#        volp = volume_change.proc(stocks)
-#    else:
-    volp = z.getp("volp")
+    if args.args.full:
+        print ("generating volp")
+        import volume_change
+        volp = volume_change.proc(stocks)
+    else:
+        volp = z.getp("volp")
 
     import current
+    last_price = dict()#z.getp("last_price")
     for idx, astock in enumerate(stocks):
         if not idx % 100:
             print("astock : idx {} {}".format( idx, astock ))
@@ -290,11 +295,13 @@ if __name__ == '__main__':
         mymap["volp"] = myvolp
 
         final_dic[astock] = mymap
+        last_price[astock] = c_close
     
     if args.args.full:
         buy.savePs()
         saveQuick()
 
+    z.setp(last_price, "last_price")
 
     for astock, valmap in final_dic.items():
         valmap['bta'] = buy.getFrom("savePsdic", astock)
