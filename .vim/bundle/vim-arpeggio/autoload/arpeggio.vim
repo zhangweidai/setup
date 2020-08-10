@@ -1,7 +1,7 @@
 " arpeggio - Mappings for simultaneously pressed keys
-" Version: @@VERSION@@
-" Copyright (C) 2008-2010 kana <http://whileimautomaton.net/>
-" License: So-called MIT/X license  {{{
+" Version: 0.0.10
+" Copyright (C) 2008-2019 Kana Natsuno <https://whileimautomaton.net/>
+" License: MIT license  {{{
 "     Permission is hereby granted, free of charge, to any person obtaining
 "     a copy of this software and associated documentation files (the
 "     "Software"), to deal in the Software without restriction, including
@@ -189,7 +189,7 @@ function! s:do_map(mode, options, remap_p, keys, rhs)  "{{{2
   for key in a:keys
     let rhs = maparg(key, a:mode)
     if rhs != '' && rhs !=# ('<SNR>' . matchstr(s:SID, '\d\+') . '_'
-    \                        . 'chord_key(' . string(key) . ')')
+    \                        . 'chord_key(' . string(s:normalize_key_for_rhs(key)) . ')')
       echohl WarningMsg
       echomsg 'Key' string(key) 'is already mapped in mode' string(a:mode)
       echohl None
@@ -274,6 +274,25 @@ let s:SID = "\<SNR>" . s:SID() . '_'
 function! s:each_char(s)  "{{{2
   return split(a:s, '.\zs')
 endfunction
+
+
+
+
+function! s:normalize_key_for_rhs(s)  "{{{2
+  " {rhs} of key mappings is "normalized" in Vim.
+  " So that some keys must be "normalized" to compare with maparg() result.
+  let s = a:s ==? '<leader>' ? get(g:, 'mapleader', '\') :
+  \       a:s ==? '<localleader>' ? get(g:, 'maplocalleader', '\') :
+  \       a:s
+  return get(s:NORMALIZED_KEY_FOR_RHS_TABLE, tolower(s), s)
+endfunction
+
+let s:NORMALIZED_KEY_FOR_RHS_TABLE = {
+\   '<bar>': '|',
+\   '<bslash>': '\',
+\   '<lt>': '<',
+\   '<space>': ' ',
+\ }
 
 
 
@@ -414,6 +433,7 @@ endfunction
 function! s:unescape_lhs(escaped_lhs)  "{{{2
   let keys = s:split_to_keys(a:escaped_lhs)
   call map(keys, 'v:val =~ "^<.*>$" ? eval(''"\'' . v:val . ''"'') : v:val')
+  call map(keys, 'v:val == "|" ? "<Bar>" : v:val')
   return join(keys, '')
 endfunction
 
