@@ -285,8 +285,10 @@ endf
 fu! ExecExtension()
    let path = expand('%:p')
 
-    if l:path =~ ".ahk"
-      :silent !"C:\Program Files\AutoHotkey\AutoHotkey.exe" %:p
+    if l:path =~ ".bat"
+      :exec "!powershell.exe -Command //wsl$/Ubuntu-18.04/home/zoe/setup/windows_setup/exec.bat " expand("%:t")
+    elseif l:path =~ ".ahk"
+      :exec "!powershell.exe -Command //wsl$/Ubuntu-18.04/home/zoe/setup/windows_setup/exec.bat " expand("%:t")
     elseif l:path =~ ".py"
       :!python3  %:p
     elseif l:path =~ ".reg"
@@ -339,3 +341,6 @@ if executable('ag')
   let g:ackprg = 'ag --vimgrep'
 endif
 
+"set encoding=utf-16
+"set isprint=
+"set display+=uhex

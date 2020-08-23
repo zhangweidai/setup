@@ -65,7 +65,6 @@ def process():
                 value = buyprice * count
                 try:
                     cdate = bar[-1].split('\n')[1]
-                    print("{} {} cdate : {}".format( astock, value, cdate ))
                     cdate = cdate.split("/")
                     f_date = date(int(cdate[2]), int(cdate[0]), int(cdate[1]))
                     delta = f_date - date.today()

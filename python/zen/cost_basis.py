@@ -22,10 +22,59 @@ from sortedcontainers import SortedSet
 gdates = z.getp("dates")
 ports = defaultdict(int)
 owned = defaultdict(str)
+ownedmap = dict()
 
 parentdir = "/mnt/c/Users/Zoe/Documents"
 if not os.path.exists(parentdir):
     parentdir = "/mnt/c/Users/pzhang/Downloads"
+
+def process2():
+    listOfFiles = os.listdir(parentdir)
+    dic = dict()
+    stocks = list()
+    cost_dict = defaultdict(list)
+    for entry in listOfFiles:  
+        if not entry.endswith("csv"):
+            continue
+        if "ports" not in entry:
+            continue
+
+        col_val = "T" if "tory" in entry else "P"
+        fullpath = os.path.join(parentdir, entry)
+        print("fullpath : {}".format( fullpath ))
+
+        with open(fullpath, "r", errors='replace') as f:
+            lines = f.readlines()
+
+        valueidx = 0
+        for idx, aline in enumerate(lines):
+            if idx <= 3:
+                aline = aline.split('","')
+                try:
+                    valueidx = aline.index('Value')
+                except:
+                    pass
+                continue
+
+            try:
+                aline = aline.split("\",\"")
+                astock = aline[0][1:]
+                if not astock or " " in astock:
+                    continue
+                value = float(aline[valueidx])
+                if astock in ownedmap:
+                    owned, evalue = ownedmap[astock]
+                    newowned = owned + col_val if col_val not in owned else owned
+                    ownedmap[astock] = (newowned, round(evalue + value))
+                else:
+                    ownedmap[astock] = (col_val, round(value))
+            except Exception as e:
+                pass
+
+    print("owned: {}".format( ownedmap))
+    print("ownedmap: {}".format( ownedmap["VUG"]))
+    z.setp(ownedmap, "owned")
+
 
 def process():
 
@@ -37,7 +86,7 @@ def process():
     for entry in listOfFiles:  
         if not entry.endswith("csv"):
             continue
-        if "port" not in entry:
+        if "ports" not in entry:
             continue
 #        if "adr" not in entry:
 #            continue
@@ -47,11 +96,11 @@ def process():
         print("fullpath : {}".format( fullpath ))
 
         with open(fullpath, "r", errors='replace') as f:
-            bar = f.readlines()
+            lines = f.readlines()
 
         cstock = None
         valueidx = 0
-        for idx, aline in enumerate(bar):
+        for idx, aline in enumerate(lines):
             if idx <= 3:
                 aline = aline.split('","')
                 try:
@@ -81,6 +130,7 @@ def process():
 #                    print("aline: {}".format( aline))
                 if not first_arg == "Quantity" and not first_arg == "ASSOCIATED LOTS":
                     cstock = first_arg
+                    print("aline: {}".format( aline))
                     try:
                         ports[cstock] += float(aline[valueidx])
                         owned[cstock] += col_val
@@ -110,12 +160,10 @@ def processVan():
                 pass
     print("van: {}".format( van))
 
-if __name__ == '__main__':
-    ivv_better_value = 0
-    based_on = 0
-    processVan()
+def after_process_van():
     last_price = z.getp("last_price")
-
+    based_on = 0
+    ivv_better_value = 0
     cost_dict = process()
 
     ivv_dates = dict()
@@ -180,4 +228,11 @@ if __name__ == '__main__':
 #    print("saveem: {}".format( saveem))
 #            z.breaker(10, printme=False)
             
+
+if __name__ == '__main__':
+    process2()
+#    processVan()
+#
+#    after_process_van()
+
 

@@ -2,6 +2,12 @@ Open Terminal Here:
     ctrl + l
     type cmd or bash
 
+powershell.exe -File "c:\users\ray\Desktop\restorescreenres.ps1" 
+"\\wsl$\Ubuntu-18.04\home\zoe\setup\windows_setup"
+explorer.exe .
+powershell.exe -File \\wsl$\Ubuntu-18.04\home\zoe\setup\windows_setup\exec.bat args
+cmd.exe /c "\\wsl$\Ubuntu-18.04\home\zoe\setup\windows_setup\exec.bat args"
+
 TensorFlow upgrade
 pip3 install --upgrade tensorflow-gpu
 
@@ -16,5 +22,11 @@ sudo pip3 install pandas_datareader
 sudo pip3 install matplotlib
 sudo apt-get install python3-tk
 
+sudo pip3 install psd-tools
+pip install git+https://github.com/pokepetter/ursina.git
+
+
 sudo apt install libpython3.8-dev
 pip3 install psutil
+
+

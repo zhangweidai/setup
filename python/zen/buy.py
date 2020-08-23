@@ -527,8 +527,13 @@ diffS = "{}diff".format(start)
 
 pdics = defaultdict(list)
 pmap = defaultdict(dict)
-pneg = dict()
-def addPDic(astock, category, value, neg_is_good = False):
+#pneg = dict()
+partials = dict()
+
+def setPartial(category, partial = 1):
+    partials[category] = partial
+
+def addPDic(astock, category, value):
     try:
         value = float(round(value,3))
     except:
@@ -536,7 +541,7 @@ def addPDic(astock, category, value, neg_is_good = False):
 
     pdics[category].append(value)
     pmap[astock][category] = value
-    pneg[category] = neg_is_good
+#    pneg[category] = neg_is_good
 
 def calcPs():
     score = defaultdict(list)
@@ -545,14 +550,10 @@ def calcPs():
             try:
                 value = pmap[astock][cat]
                 mycp = round(stats.percentileofscore(values, value, kind='rank'),3)
-#                mycp = round(stats.percentileofscore(values, value, kind ='strict'),3)
-
-                if pneg[cat]:
-                    mycp = 100 - mycp
-
+                mycp = mycp * partials.get(cat, 1)
                 score[astock].append(mycp)
             except Exception as e:
-#                z.trace(e)
+                z.trace(e)
                 score[astock].append(0)
     return score
 

@@ -228,3 +228,5 @@ alias  bd='python ~/setup2/python/bd.py'
 #go1
 alias well='cd ~/setup2/python/; python watchfile.py'
 alias what="python -i whatis.py"
+alias desktop="cd /mnt/c/Users/Zoe/Desktop"
+alias go2="cd $SETUP/../gits"

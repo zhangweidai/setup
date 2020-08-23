@@ -1,6 +1,7 @@
 import z
 import args
 import os
+import buy
 
 mcmap = z.getp("mcdic2")
 import prob_up_1_year
@@ -25,7 +26,7 @@ def saveQuick():
 
     print("quick : {}".format( len(quick )))
     orders = z.getp("orders")
-    quick += list(orders.keys())
+    quick += list(orders)
     print("quick : {}".format( len(quick )))
 
     quick += z.getp("top95")
@@ -39,7 +40,7 @@ def saveQuick():
     except:
         pass
 
-    z.setp(quick, "quick", True)
+    z.setp(quick, "quick")
 
     if len(quick) > 600:
         print ("TOO MANY in QUICK")
@@ -55,7 +56,6 @@ if not mcs:
             pass
 
 divdict = z.getp("mcdivdict")
-print("stocks: {}".format( len(stocks)))
 problems = set()
 
 def updateStocks():
@@ -171,9 +171,14 @@ def updateStocks():
 
     print("already_updated : {}".format( already_updated ))
 
-if __name__ == '__main__':
-    import buy
+buy.setPartial("w30", 0.5)
+buy.setPartial("chg30", 0.5)
+buy.setPartial("l2y", 0.7)
+buy.setPartial("md", 0.7)
+buy.setPartial("avg", 1.1)
 
+def doit():
+    global stocks
     final_dic = dict()
 
     last_price = z.getp("last_price")
@@ -184,23 +189,22 @@ if __name__ == '__main__':
         updateStocks()
         buy.updateDates()
 
-    if problems:
-        import readchar
-        print("problems: c/d ? {} {}".format( problems, len(problems)))
-        key = readchar.readkey()
-        if key == "d":
-            print("stocks : {}".format( len(stocks) ))
-            import delstock
-            delstock.batchdelete(problems)
-            z.getp.cache_clear()
-            stocks = z.getp("listofstocks")
-            print("stocks : {}".format( len(stocks) ))
-            print("continue y/n")
+        if problems:
+            import readchar
+            print("problems: c/d ? {} {}".format( problems, len(problems)))
             key = readchar.readkey()
-            if key == "n":
+            if key == "d":
+                import delstock
+                delstock.batchdelete(problems)
+                z.getp.cache_clear()
+                stocks = z.getp("listofstocks")
+                print("stocks : {}".format( len(stocks) ))
+                print("continue y/n")
+                key = readchar.readkey()
+                if key == "n":
+                    exit()
+            if key != "c":
                 exit()
-        if key != "c":
-            exit()
 
     if args.args.full:
         print ("generating volp")
@@ -235,7 +239,7 @@ if __name__ == '__main__':
         myvolp = volp.get(astock, 0)
 
         try:
-            md, md1, md2, mg, gddif, chg1, chg1p, chg30, chg30p, chg5, wc1, target, c_close =  current.proc(astock, store = False)
+            md, md1, md2, mg, gddif, chg1, chg1p, chg30, chg30p, chg5, wc1, target, c_close, m30c, w30, dl =  current.proc(astock, store = False)
             y1u, ivvb, wc, bc, avg, ly, l2y, avg8, dfh1y, gfl1y = prob_up_1_year.proc(astock)
 
         except Exception as e:
@@ -245,6 +249,9 @@ if __name__ == '__main__':
         if args.args.full:
             buy.addPDic(astock, "md", round((md + md1 + md2)/3,3))
             buy.addPDic(astock, "wc", wc)
+            buy.addPDic(astock, "m30c", m30c)
+            buy.addPDic(astock, "w30", w30)
+            buy.addPDic(astock, "chg30", chg30)
             buy.addPDic(astock, "ly", ly)
             buy.addPDic(astock, "l2y", l2y)
             buy.addPDic(astock, "ivvb", ivvb)
@@ -260,7 +267,8 @@ if __name__ == '__main__':
                 y1u_score = 0
                 
             try:
-                myvolpscore = round((myvolp - 50)/2,3) if myvolp <= 50 and mcp < 250 else 0
+                myvolpscore = round((((myvolp - 100)**2)/(1*80))**1.25 , 2)
+                myvolpscore = -1*myvolpscore if myvolpscore < 150 else -150
             except:
                 myvolpscore = 0
 
@@ -283,6 +291,7 @@ if __name__ == '__main__':
         mymap["target"] = target
         mymap["last"] = c_close
         mymap["y1u"] = y1u
+        mymap["dl"] = dl
         mymap["ivvb"] = ivvb
         mymap["wc"] = wc
         mymap["bc"] = bc
@@ -290,6 +299,8 @@ if __name__ == '__main__':
         mymap["ly"] = ly
         mymap["l2y"] = l2y
         mymap["avg8"] = avg8
+        mymap["m30c"] = m30c
+        mymap["w30"] = w30
         mymap["dfh1y"] = dfh1y
         mymap["gfl1y"] = gfl1y
         mymap["volp"] = myvolp
@@ -308,5 +319,7 @@ if __name__ == '__main__':
         z.setpp(valmap, astock)
 
     z.savepp()
-
     print("stocks: {}".format( len(stocks)))
+
+if __name__ == '__main__':
+    doit()

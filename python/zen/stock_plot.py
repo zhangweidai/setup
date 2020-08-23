@@ -12,7 +12,7 @@ from rows import *
 from tkinter import *
 from tkinter import Menu, messagebox,simpledialog,ttk
 
-prevcommands = ["1 year", "1 month", "6 month"]
+prevcommands = ["1 year", "1 month", "6 month", "5 year", "3 year"]
 
 recent = z.getp("recent_plots")
 recent = recent if recent else ["+IVV", "+VUG"]

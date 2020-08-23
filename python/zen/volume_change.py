@@ -32,7 +32,6 @@ def proc(istocks = None):
 
             volcdict[astock] = round(statistics.median(avg))
         except Exception as e:
-            z.trace(e)
             continue
 
     vols =  list(volcdict.values())[::2]
@@ -43,7 +42,7 @@ def proc(istocks = None):
             z.trace(e)
             pass
     if not args.args.debug:
-        z.setp(volp, "volp", True)
+        z.setp(volp, "volp")
     return volp
 
 if __name__ == '__main__':

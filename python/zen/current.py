@@ -70,6 +70,7 @@ def proc(astock, title = None, store = True):
     drop_froms = list()
     one_year_changes = list()
     month6_changes = list()
+    one_day_lows = list()
 
     mc = buy.getFrom("latestmc", astock, 9999)
     bta = args.args.bta
@@ -86,6 +87,7 @@ def proc(astock, title = None, store = True):
 
         if prevclose:
             one_day_changes.append(round(c_close/prevclose,3))
+            one_day_lows.append(round(c_low/prevclose,3))
 
         prevclose = c_close
 
@@ -184,9 +186,11 @@ def proc(astock, title = None, store = True):
     md = round(statistics.median(lowChanges),4)
     md2 = round(statistics.median(lowChanges[-40:]),4)
     mg = round(statistics.median(highChanges),4)
+    dl = round(statistics.median(one_day_lows),4)
     gddif = round((((mg-1)*100)+(md-1)*100),4)
     target = round(c_close * md,2)
     m30c = round(statistics.median(one_month_changes),3)
+    w30 = min(one_month_changes)
 
     p20 = round(float(np.percentile(lowChanges, 20)),3)
 
@@ -262,7 +266,7 @@ def proc(astock, title = None, store = True):
         table_print.store(values)
     else:
         chg5 = round(closes_list[-1] / closes_list[-5],3)
-        return md, md1, md2, mg, gddif, chg1, chg1p, chg30, chg30p, chg5, wc1, target, c_close
+        return md, md1, md2, mg, gddif, chg1, chg1p, chg30, chg30p, chg5, wc1, target, c_close, m30c, w30, dl
 
 def procs(astocks = None, title = None):
     if astocks:

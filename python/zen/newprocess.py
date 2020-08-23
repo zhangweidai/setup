@@ -32,7 +32,7 @@ def process():
     for entry in listOfFiles:  
         if not entry.endswith("csv"):
             continue
-        if "port" not in entry:
+        if "ports" not in entry:
             continue
 #        if "adr" not in entry:
 #            continue
