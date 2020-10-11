@@ -108,8 +108,11 @@ def updateStocks():
             except:
                 continue
 
-            print("date: {}".format( date))
             import gbuy_old
+
+#            if date == "2020-08-28":
+#                already_updated += 1
+#                continue
 
             df = gbuy_old.getDataFromYahoo(astock, date)
             if df is None:
@@ -117,7 +120,7 @@ def updateStocks():
                 consecutive_misses += 1
                 if consecutive_misses > 5:
                     problems.add(astock)
-                    print("problems : {}".format( problems ))
+                    print("got 5 problems already problems : {}".format( problems ))
                     z.setp(problems, "problems")
                     exit()
                 continue
@@ -204,6 +207,8 @@ def doit():
                 if key == "n":
                     exit()
             if key != "c":
+                exit()
+            if key == "x":
                 exit()
 
     if args.args.full:

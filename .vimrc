@@ -71,6 +71,7 @@ imap <c-j>   (<Esc>ea)<Esc>
 imap <c-k>   ()<esc>
 "imap <c-i>   []<esc>
 
+nmap <leader>e   :exec "!powershell.exe -Command //wsl$/Ubuntu-18.04/home/zoe/setup/windows_setup/python.bat " expand("%:t")<cr>
 
 " exec extension / reload vimrc
 nmap <leader>b   :call ExecExtension()<cr>
@@ -92,6 +93,9 @@ nmap <s-l>          0i<tab><esc>
 nmap <s-h>          0xxxx<esc>
 nmap <leader>ex     0iraise SystemExit<esc>
 nmap ;;             A:<esc>
+"nmap <leader>t   :exec "!powershell.exe -Command //wsl$/Ubuntu-18.04/home/zoe/setup/windows_setup/wsl_terminal_here.bat " expand("%:t")<cr>
+nmap <leader>t   :exec "!cd /mnt/c; cmd.exe /c start /D C:\Fraps bash"<cr>
+nmap <leader>r   :exec "!python3 "  expand("%:t")<cr>
 
 
 
@@ -160,8 +164,8 @@ else
 endif
 set undofile 
 
-"nmap <silent><S-Down> <C-T>
-"nmap <silent><S-Up> <C-]>
+nmap <silent><S-Down> <C-T>
+nmap <silent><S-Up> <C-]>
 "
 " File navigation macros - Jump to the declaration of the function with holding Shift and Up/Down while cursor is on a function name. "
 
@@ -344,3 +348,7 @@ endif
 "set encoding=utf-16
 "set isprint=
 "set display+=uhex
+" ctags -R  -h ".i.h.H.hh.hpp.hxx.h++.inc.def" --language-force=python -f ../tagme.tag `pwd`
+"set tags+=$HOME/gits/ursina/ursina.ctag
+set tags=/home/zoe/gits/pybox2d/cbox.tags
+set tags+=/home/zoe/gits/pybox2d/tagme.tag

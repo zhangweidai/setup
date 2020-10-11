@@ -57,7 +57,6 @@ def process(astock, one_at_a_time = True):
         f = None
         for idx in df.index:
             cdate = str(idx.to_pydatetime()).split(" ")[0]
-            print("cdate : {}".format( cdate ))
             cyear = cdate.split("-")[0]
             if cyear != lastyear:
                 if f is not None:

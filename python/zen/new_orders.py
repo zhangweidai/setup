@@ -32,7 +32,7 @@ def process():
     combined = dict()
     buy_value = defaultdict(int)
     col_valus = defaultdict(str)
-    saveem3 = defaultdict(int)
+    order_total = defaultdict(int)
     orders = set()
     for entry in listOfFiles:  
         if not entry.endswith("csv"):
@@ -72,24 +72,25 @@ def process():
 
                     buy_value[astock] += value
                     col_valus[astock] += "{}{}".format(col_val,delta)
-                    saveem3[col_val] = value
+                    order_total[col_val] += value
 
                     combined[astock] = buyprice
                     orders.add(astock)
 
                 except Exception as e:
-                    z.trace(e)
+                    if "CANCEL" not in bar[1]:
+                        z.trace(e)
                     pass
                 continue
 
     for astock, buyprice in combined.items():
-        combined[astock] = (buyprice, buy_value[astock], col_valus[astock])
+        combined[astock] = (buyprice, round(buy_value[astock],2), col_valus[astock])
 
 #    z.setp(buy_value, "order_vals", True)
 #    z.setp(col_valus, "order_keys", True)
     z.setp(combined, "combined", True)
     z.setp(orders, "orders")
-    print("saveem3: {}".format( saveem3))
+    print("order_total: {}".format( order_total))
 
 if __name__ == '__main__':
     process()

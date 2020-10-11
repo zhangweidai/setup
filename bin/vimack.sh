@@ -1,9 +1,13 @@
 #!/bin/bash
-
 pysearch=""
 csearch=0
 filesonly=""
 searchstr="$1"
+ignores=""
+if [ -d ./zen ]; then
+    ignores="--ignore-dir=zen_*"
+fi
+
 
 while test $# -gt 0
 do
@@ -29,8 +33,8 @@ elif [ -d ./zen ]; then
 fi
 
 #sed -i "1i$1" $TS/search_history.list
-ag --hidden --follow -C 1 --color "${searchstr}" ${pysearch} >& $TS/prevGrepResults
-
+ag --hidden --follow -C 1 --color "${searchstr}" ${pysearch} ${ignores} >& $TS/prevGrepResults
+#if [ $? == 1 ];
+#then
 cat -n $TS/prevGrepResults
 cat $TS/prevGrepResults | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" > $TS/prevGrepResults.noColor
-
