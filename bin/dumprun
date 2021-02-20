@@ -1,0 +1,4 @@
+#!/bin/bash
+
+xclip -o >& $1
+python3 $1

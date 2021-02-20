@@ -1,0 +1,3 @@
+readlink -f $1 | xclip
+readlink -f $1 
+

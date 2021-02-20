@@ -93,7 +93,7 @@ def game_loop():
                     print("saved_fonts: {}".format( saved_fonts))
                     next_font += 1
                     CURRENT_FONT = update_font()
-                    TextSurf, TextRect = text_objects("abcdefg", CURRENT_FONT)
+                    TextSurf, TextRect = text_objects("()abcdefg,.", CURRENT_FONT)
                     TextRect.center = (lefty, centerd)
                     gameDisplay.blit(TextSurf, TextRect)
                     pygame.display.update()

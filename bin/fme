@@ -1,0 +1,69 @@
+  
+cfdg $1 --width=2560 --height=1440 --minimumsize=2 -DloopN=3 -o /mnt/c/temp/bar.jpg
+
+#cfdg {OPTIONS} [CFDG FILE] [OUTPUT FILE]
+#
+#    cfdg - 3.2(v32) - Context Free Design Grammar
+#
+#  OPTIONS:
+#
+#      -?, --help                        Show this help menu.
+#      --version                         Output version and quit.
+#      -w[WIDTH], --width=[WIDTH]        Output width
+#      -h[HEIGHT], --height=[HEIGHT]     Output height
+#      -s[SIZE or WIDTHxHEIGHT],
+#      --size=[SIZE or WIDTHxHEIGHT]     Set output size to SIZExSIZE or
+#                                        WIDTHxHEIGHT
+#      -T[SIZE or WIDTHxHEIGHT],
+#      --tile=[SIZE or WIDTHxHEIGHT]     Multiply output by SIZExSIZE or
+#                                        WIDTHxHEIGHT
+#      -m[MAXSHAPES],
+#      --maxshapes=[MAXSHAPES]           Maximum number of shapes
+#      -x[MINIMUM SIZE],
+#      --minimumsize=[MINIMUM SIZE]      Minimum size of shapes in pixels/mm
+#                                        (default 0.3)
+#      -b[BORDER SIZE],
+#      --bordersize=[BORDER SIZE]        Border size [-1,2]: -1=-8 pixel border,
+#                                        0=no border, 1=8 pixel border,
+#                                        2=variable-sized border
+#      -v[VARIATION],
+#      --variation=[VARIATION]           Set the variation code (default is
+#                                        random)
+#      -D[NAME=VALUE...]                 Define a variable, configuration, or
+#                                        function. Overrides definitions in the
+#                                        input file.
+#      -o[NAME TEMPLATE],
+#      --outputtemplate=[NAME TEMPLATE]  Set the output file name, supports
+#                                        variable expansion %f expands to the
+#                                        animation frame number, %v and %V
+#                                        expands to the variation code in lower
+#                                        or upper case, %% expands to %
+#      -a[NUM or TIMExFPS],
+#      --animate=[NUM or TIMExFPS]       Generate NUM animation frames at 15fps
+#                                        or TIMExFPS animation frames
+#      -f[FRAME], --frame=[FRAME]        Animate a particular frame
+#      -z, --zoom                        Zoom out during animation
+#      -V, --svg                         Generate SVG output (not allowed for
+#                                        animation)
+#      -J, --json                        Generate JSON output of parsed cfdg file
+#      -Q, --quicktime                   Make QuickTime output
+#      --prores                          Use ProRes codec for QuickTime output
+#      -c, --crop                        Crop output
+#      -q, --quiet                       Quiet mode, suppress non-error output
+#      -C, --check                       Check syntax of cfdg file and exit
+#      -t, --time                        Output the time taken to render the cfdg
+#                                        file
+#      -P, --paramdebug                  Parameter allocation debug, test whether
+#                                        all the parameter blocks were cleaned up
+#      -d, --cleanup                     Delete old temporary files
+#      CFDG FILE                         Input cfdg file
+#      OUTPUT FILE                       Output image file
+#      "--" can be used to terminate flag options and force all following
+#      arguments to be treated as positional options
+#
+#    If '-' is specified for the CFDG FILE then the input cfdg file is piped from
+#    standard input. If the output file name is omitted and the -o option and the
+#    -C option are not used then the output will be sent to stdout.
+#
+## cd /mnt/c/temp
+## wslview output.jpg

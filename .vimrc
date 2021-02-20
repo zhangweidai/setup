@@ -97,7 +97,7 @@ nmap ;;             A:<esc>
 nmap <leader>t   :exec "!cd /mnt/c; cmd.exe /c start /D C:\Fraps bash"<cr>
 nmap <leader>r   :exec "!python3 "  expand("%:t")<cr>
 
-
+nnoremap <leader><leader><leader> :source $MYVIMRC<CR>
 
 " split tabbing
 nmap <tab>        <c-w>w
@@ -141,9 +141,10 @@ nmap <leader>go   :exe "!firefox -search '<cword>' &"<cr>
 "nmap <leader>t    :let @d = expand('%:p:h')<cr>o<esc>"dp<esc>:set clipboard=unnamed<cr>dd<esc>:set clipboard=<cr>
 
 " work specific
-nmap ,s           :find  %:t:r.c*<cr>
-nmap ,h           :find  %:t:r.h<cr>
-nmap ,H           :sfind %:t:r.h<cr>
+"nmap ,s           :find  %:t:r.c*<cr>
+"nmap ,h           :find  %:t:r.h<cr>
+nmap ,s           :find  %:t:r.cfdg<cr>
+nmap ,h           :find  %:t:r.cf<cr>
 " cnoreabbrev w :echo noop please use "s"
 " cnoreabbrev w! :echo noop please use "s"
 noremap! <C-Y> <Esc>klyWjpa
@@ -158,7 +159,7 @@ if has("win32")
     set undodir=~\Documents\undo
     let MRU_File="C:\\Users\\Peter\\.vim_mru_files"
 else
-    let MRU_File="/home/zoe/.vim_mru_files"
+    let MRU_File="/home/peter/.vim_mru_files"
 "    let MRU_File=expand("~/.vim_mru_files")
     set undodir=~/.undo
 endif
@@ -287,20 +288,26 @@ fu! MoreScope()
 endf
 
 fu! ExecExtension()
-   let path = expand('%:p')
-
+    let path = expand('%:p')
+      :echo l:path
     if l:path =~ ".bat"
       :exec "!powershell.exe -Command //wsl$/Ubuntu-18.04/home/zoe/setup/windows_setup/exec.bat " expand("%:t")
     elseif l:path =~ ".ahk"
       :exec "!powershell.exe -Command //wsl$/Ubuntu-18.04/home/zoe/setup/windows_setup/exec.bat " expand("%:t")
     elseif l:path =~ ".py"
       :!python3  %:p
+"    elseif path =~ '\.cfdg'
+"      :!fme %:p
+    elseif path =~ 'cfdg'
+      :!cfme.py %:p
     elseif l:path =~ ".reg"
       :silent !%:p
     elseif l:path =~ ".bat"
    	    :silent !wscript "C:\Users\Peter\Documents\send.vbs"
     else
-   	    :silent !wscript "C:\Users\Peter\Documents\send.vbs"
+      :!fme %:p
+"    else
+"   	    :silent !wscript "C:\Users\Peter\Documents\send.vbs"
    endif 
 endf
 
@@ -350,5 +357,9 @@ endif
 "set display+=uhex
 " ctags -R  -h ".i.h.H.hh.hpp.hxx.h++.inc.def" --language-force=python -f ../tagme.tag `pwd`
 "set tags+=$HOME/gits/ursina/ursina.ctag
-set tags=/home/zoe/gits/pybox2d/cbox.tags
-set tags+=/home/zoe/gits/pybox2d/tagme.tag
+set tags=/home/peter/tagme.tag
+"set tags+=/home/zoe/gits/pybox2d/tagme.tag
+"set tags+=/home/zoe/gits/pybox2d/tagme.tag
+"
+let zz = "hh"
+au WinEnter,BufRead,BufNewFile */gits/Crypto-Tax-Calculator/*  set tags=/home/peter/gits/tagme.tag

@@ -1,0 +1,4 @@
+#!/bin/bash
+ag --hidden --follow -C 1 --color -G "py$" $1 >& $TS/prevGrepResults
+cat -n $TS/prevGrepResults
+cat $TS/prevGrepResults | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" > $TS/prevGrepResults.noColor

@@ -1,0 +1,20 @@
+firstR = 100
+xMove = 1
+secondR = 10
+scaleAll = 0.50
+scaleShape = 0.94
+
+startshape foo[]
+CF::Background = [b -1]
+shape foo
+{
+    bar []
+    loop 2 [r firstR] foo [x xMove r secondR s scaleAll]
+}
+
+shape bar
+{
+    CIRCLE [b 1]
+    CIRCLE [s scaleShape]
+}
+

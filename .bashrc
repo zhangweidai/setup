@@ -117,7 +117,7 @@ if ! shopt -oq posix; then
 fi
 alias rg="ag"
 export PATH=/usr/local/bin:/usr/bin:/home/pzhang/apps/gvim8/vim/src/bin:${PATH}
-export PATH=/home/zoe/.local/bin:${PATH}
+export PATH=/home/peter/.local/bin:${PATH}
 
 if [ -f ~/.bash_local ]; then
     . ~/.bash_local
@@ -126,8 +126,8 @@ fi
 alias well='cd ~/setup2/python/zen; py bles.py'
 alias welltf='python3 ~/setup/python/tf_check.py'
 alias gopf='cd /mnt/c/Program\ Files'
-alias gomc='cd /mnt/c/Users/pzhang'
-alias gomc2='cd /mnt/c/Users/Zoe'
+alias gomc2='cd /mnt/c/Users/Peter'
+alias gomc='cd /mnt/c/Users/Peter'
 export DL='/mnt/c/Users/zoe/Documents'
 export ANDROID_HOME='/mnt/c/Users/pzhang/AppData/Local/Android/Sdk'
 alias go='source ~/setup/bin/go.bash'
@@ -235,4 +235,17 @@ alias well='cd /home/zoe/gits/my_new_examples; python hello.py'
 alias wa='cd /home/zoe/gits/my_new_examples'
 alias grf2='grep -rsHn'
 alias p='powershell.exe -Command //wsl$/Ubuntu-18.04/home/zoe/setup/windows_setup/python.bat'
-alias wa='cd /home/zoe/setup2/python/recall'
+alias wa='cd /home/peter/setup/python/recall'
+alias any='find . | grep'
+export prevrecall='/mnt/d/old/Users/Zoe/Ubuntu/rootfs/home/zoe/setup/python/recall'
+alias godoc='gomc2; cd Documents'
+alias re='. ~/.bashrc'
+export old='/mnt/d/old/Users/Zoe/Ubuntu/rootfs/home/zoe/setup'
+export new='/home/peter/setup'
+alias wa1='cd /mnt/c/temp'
+alias dump='xclip -o >&'
+alias cdd='cd `cdd.py`'
+alias go5='cd ~/.local/lib/python3.8/site-packages/PyQt5'
+unalias grf
+alias tagmehere='ctags -R --language-force=python -f ../tagme.tag `pwd`'
+alias gobin='cd ~/setup/bin'

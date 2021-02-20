@@ -1,0 +1,52 @@
+#!/bin/bash
+pysearch=""
+csearch=0
+filesonly=""
+searchstr="$1"
+ignores=""
+if [ -d ./zen ]; then
+    ignores="--ignore-dir=zen_*"
+fi
+
+dry=0
+while test $# -gt 0
+do
+    case "$1" in
+        -py) 
+        pysearch="-g \"py$\""
+        ;;
+
+        -dry) 
+        dry=1
+            ;;
+
+        --files) 
+        filesonly="--files"
+        searchstr=""
+        ;;
+
+        default)
+        searchstr="$1"
+        ;;
+    esac
+    shift
+done
+
+#sed -i "1i$1" $TS/search_history.list
+wd=`pwd`
+skipD=""
+
+if [ -d ./all ]; then
+    pysearch="--py"
+elif [ -d ./zen ]; then
+    pysearch="--py"
+fi
+
+#sed -i "1i$1" $TS/search_history.list
+if [ $dry -eq 1 ]; then
+    echo "ag --hidden --follow -C 1 --color "${searchstr}" ${pysearch} ${ignores} >& $TS/prevGrepResults"
+else
+    ag --hidden --follow -C 1 --color "${searchstr}" ${pysearch} ${ignores} >& $TS/prevGrepResults
+fi
+cat -n $TS/prevGrepResults
+cat $TS/prevGrepResults | sed -r "s/\x1B\[([0-9]{1,2}(;[0-9]{1,2})?)?[m|K]//g" > $TS/prevGrepResults.noColor
