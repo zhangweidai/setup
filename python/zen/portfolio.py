@@ -129,7 +129,7 @@ def process_adr():
 
 def getFidelities():
     import fnmatch
-    parentdir = "/mnt/c/Users/Zoe/Downloads"
+    parentdir = "/mnt/c/Users/Peter/Downloads"
     if not os.path.exists(parentdir):
         parentdir = "/mnt/c/Users/pzhang/Downloads"
 
@@ -303,7 +303,7 @@ def simple(path, dontknow, etfs, total):
             ports[astock] = round(ports[astock] + c_value,2)
     return dontknow, etfs, total, ccash
 
-ports = None
+ports = defaultdict(int)
 tory = None
 mine = None
 sset = None
@@ -318,7 +318,6 @@ def getPorts():
         exit()
 
     global ports, second, ports, tory, mine, sset, saved_gain, cost_change
-    ports = defaultdict(int)
     mine = list()
     tory = list()
     sset = defaultdict(int)
@@ -342,12 +341,18 @@ def getPorts():
     print("        : {}".format(round(ccash/(total2+ccash),2)))
     total += total2
 
+    print ("staring alight")
+    ag = round(alight())
+    print("Alight: {}".format(locale.currency( ag , grouping=True )))
+
     vg = round(vanguard())
     print("Vanguard: {}".format(locale.currency( vg , grouping=True )))
+    total += ag
     total += vg
     etfs += vg
     total += cash
     total = round(total)
+
     print("Total  : {}".format(locale.currency( total , grouping=True )))
 
     z.setp(cost_change, "cost_change")
@@ -355,6 +360,14 @@ def getPorts():
     z.setp(down_gain, "down_gain")
     z.setp(downps, "downps")
     z.setp(accounts, "accounts")
+
+    ports['SXC'] = 0
+    ports['PLTR'] = 0
+    ports['PSTH'] = 0
+    ports['GEO'] = 0
+    ports['TAP'] = 0
+    ports['LUMN'] = 0
+    ports['DNOW'] = 0
 
     z.setp(ports,"ports")
     z.setp(mine, "mine")
@@ -385,9 +398,35 @@ def getPorts():
 
     z.setp(sset, "mcranges")
 
+def alight():
+    global ports, cash, cashlist
+    parentdir = "/mnt/c/Users/Peter/Documents"
+    csvfile = "alight.csv"
+    path = "{}/{}".format(parentdir, csvfile)
+    ret = 0
+    for row in csv.DictReader(open(path)):
+        try:
+            val = float(row["Quantity"].replace(",", ""))
+            price = float(row["Price"].replace(",", ""))
+            val = round(val * price,3)
+            astock = row["Security ID"]
+            if astock == "HMM":
+                cash += val
+                cashlist.append(val)
+                continue
+        except Exception as e:
+            print (e)
+            val = 0
+            pass
+
+        if val:
+            ports[astock] = round(ports[astock] + val, 2)
+            ret += val
+    return ret
+
 def vanguard():
     global ports, cash, cashlist
-    parentdir = "/mnt/c/Users/Zoe/Downloads"
+    parentdir = "/mnt/c/Users/Peter/Downloads"
     if not os.path.exists(parentdir):
         parentdir = "/mnt/c/Users/pzhang/Downloads"
     csvfile = "ofxdownload.csv"
@@ -400,7 +439,7 @@ def vanguard():
             astock = row["Symbol"]
             if astock == "VMFXX":
                 cash += val
-                cashlist.append(c_value)
+                cashlist.append(val)
                 continue
         except:
             val = 0

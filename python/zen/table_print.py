@@ -303,7 +303,7 @@ def printTable(tablename ="default"):
 
     print(titleColor + Style.BRIGHT + "  ".join(avgs) + Style.RESET_ALL  + "\nStocks Shown: " +str(len(store.items[cidx])))
     if not ivv:
-        for anetf in ["IVV", "IUSG", "VUG"]:
+        for anetf in ["VOO", "VUG"]:
             y1pu, ivvb, wc, bc, avg, ly, l2y, avg8, dfh1y, gfl1y = buy.getFrom("probs", anetf)
             print("{:>4}:  {:>5} wc:{:>5} bc:{:>5}: avg:{:>5}, avg8:{:>5}".format(anetf, z.percentage(ly), z.percentage(wc), z.percentage(bc), z.percentage(avg), z.percentage(avg8), z.percentage(dfh1y), z.percentage(gfl1y)))
 

@@ -42,7 +42,10 @@ def generateWorst30():
 problems = list()
 
 def process(astock, one_at_a_time = True):
-    dates = z.getp("dates")
+    try:
+        dates = z.getp("dates")
+    except:
+        pass
     global problems
     try:
         problems = [] 
@@ -92,16 +95,22 @@ def process(astock, one_at_a_time = True):
             if not math.isnan(opend):
                 f.write("{},{},{},{},{},{},{}\n".format(cdate, opend, high, low, closed, adj, vol)) 
 
-        if cdate != dates[-1]:
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MISSING TODAY {}".format(astock))
+        try:
+            if cdate != dates[-1]:
+                print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! MISSING TODAY {}".format(astock))
+        except:
+            pass
 
-        stocks = z.getp("listofstocks")
-        print("stocks : {}".format( stocks ))
-        if astock not in stocks:
-            import json_util
-            json_util.parses([astock], addone = True)
-            stocks.append(astock)
+        liststocks = z.getp("listofstocks")
+        if liststocks is None or not liststocks:
             z.setp(stocks, "listofstocks")
+
+        if astock not in liststocks:
+            print("astock : {}".format( astock ))
+#            import json_util
+#            json_util.parses([astock], addone = True)
+#            liststocks.append(astock)
+#            z.setp(liststocks, "listofstocks")
 
         
     except Exception as e:
@@ -126,9 +135,17 @@ if __name__ == '__main__':
 #        exit()
 
 #    args.args.full = True
+
     import json_util
     for astock in stocks:
         process(astock)
-    json_util.parses(stocks, update=True, addone = True)
+
+    dates = z.getp("dates")
+    if dates is None or not dates:
+        from buy import updateDates
+        process("VOO")
+        updateDates()
+
+#    json_util.parses(stocks, update=True, addone = True)
 
 

@@ -1,5 +1,5 @@
 @echo off
-set dest= "%USERPROFILE%\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1" 
+set dest= "%USERPROFILE%\Documents\PowerShell\profile.ps1" 
 set src="%~dp0\Microsoft.PowerShell_profile.ps1"
 
 if not exist %src% (

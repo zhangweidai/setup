@@ -1,7 +1,10 @@
+debug = None
 import z
 import args
 import os
+import numpy
 import buy
+import one_year_moving_average
 
 mcmap = z.getp("mcdic2")
 import prob_up_1_year
@@ -10,13 +13,18 @@ revmcs = list()
 
 billion = 1000000000
 million = 1000000
-year = 2020
+year = 2021
 
+mcdata = z.getp("mcdata")
 def saveQuick():
     z.getp.cache_clear()
 
     portFolioValue= z.getp("ports")
-    quick = z.getp("savePs")
+
+    z.setp(portFolioValue, "quick")
+
+    return
+#    quick = z.getp("savePs")
 
     print("quick : {}".format( len(quick )))
     quick = [ stock[1] for stock in quick ]
@@ -45,15 +53,15 @@ def saveQuick():
     if len(quick) > 600:
         print ("TOO MANY in QUICK")
 
-mcs = z.getp("mcs")
-if not mcs:
-    savemeinfo = z.getp("savemeinfo2")
-    for pair in savemeinfo.values():
-        try:
-            mc = pair["Market Cap"]/billion
-            mcs.append(mc)
-        except:
-            pass
+#mcs = z.getp("mcs")
+#if not mcs:
+#    savemeinfo = z.getp("savemeinfo2")
+#    for pair in savemeinfo.values():
+#        try:
+#            mc = pair["Market Cap"]/billion
+#            mcs.append(mc)
+#        except:
+#            pass
 
 divdict = z.getp("mcdivdict")
 problems = set()
@@ -74,6 +82,10 @@ def updateStocks():
         added = False
         for astock in stocks:
             apath = z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
+            if not os.path.exists(apath):
+                import regen_stock
+                regen_stock.process(astock)
+                continue
 
             try:
                 csvdate = datetime.datetime.fromtimestamp(os.path.getmtime(apath))
@@ -97,6 +109,7 @@ def updateStocks():
             except Exception as e:
                 problems.add(astock)
                 z.trace(e)
+                exit()
                 continue
 
             for row in csv.DictReader(open(apath)):
@@ -188,9 +201,10 @@ def doit():
     if type(last_price) is not dict:
         last_price = dict()
 
+    buy.updateDates()
+
     if not args.args.noupdate:
         updateStocks()
-        buy.updateDates()
 
         if problems:
             import readchar
@@ -233,7 +247,7 @@ def doit():
                 cap = bar[1]
                 div = bar[0]
                 revmcp = None
-                mcp = current.percentile(mcs, flip = True, considerate = cap)
+#                mcp = current.percentile(mcs, flip = True, considerate = cap)
             except:
                 pass
     
@@ -241,15 +255,60 @@ def doit():
     
         args.args.bta = False
 
-        myvolp = volp.get(astock, 0)
+#        myvolp = volp.get(astock, 0)
+
+#        print("mcdata : {}".format( mcdata.keys() ))
+#        exit()
+#    mcdata : Index(['language', 'region', 'quoteType', 'triggerable', 'quoteSourceName',
+#       'currency', 'shortName', 'regularMarketPrice', 'regularMarketTime',
+#       'regularMarketChange', 'regularMarketOpen', 'regularMarketDayHigh',
+#       'regularMarketDayLow', 'regularMarketVolume', 'exchange', 'market',
+#       'postMarketChangePercent', 'postMarketTime', 'postMarketPrice',
+#       'postMarketChange', 'regularMarketChangePercent',
+#       'regularMarketDayRange', 'regularMarketPreviousClose', 'bid', 'ask',
+#       'bidSize', 'askSize', 'messageBoardId', 'fullExchangeName', 'longName',
+#       'financialCurrency', 'averageDailyVolume3Month',
+#       'averageDailyVolume10Day', 'fiftyTwoWeekLowChange',
+#       'fiftyTwoWeekLowChangePercent', 'fiftyTwoWeekRange',
+#       'fiftyTwoWeekHighChange', 'fiftyTwoWeekHighChangePercent',
+#       'fiftyTwoWeekLow', 'fiftyTwoWeekHigh', 'earningsTimestamp',
+#       'earningsTimestampStart', 'earningsTimestampEnd', 'trailingPE',
+#       'epsTrailingTwelveMonths', 'epsForward', 'epsCurrentYear',
+#       'priceEpsCurrentYear', 'sharesOutstanding', 'bookValue',
+#       'fiftyDayAverage', 'fiftyDayAverageChange',
+#       'fiftyDayAverageChangePercent', 'twoHundredDayAverage',
+#       'twoHundredDayAverageChange', 'twoHundredDayAverageChangePercent',
+#       'marketCap', 'forwardPE', 'priceToBook', 'sourceInterval',
+#       'exchangeTimezoneName', 'exchangeTimezoneShortName',
+#       'gmtOffSetMilliseconds', 'priceHint', 'marketState',
+#       'exchangeDataDelayedBy', 'esgPopulated', 'tradeable', 'price',
+#       'firstTradeDateMilliseconds', 'trailingAnnualDividendRate',
+#       'trailingAnnualDividendYield', 'dividendDate', 'displayName',
+#       'ipoExpectedDate', 'ytdReturn', 'trailingThreeMonthReturns',
+#       'trailingThreeMonthNavReturns'],
+        div = mcdata['trailingAnnualDividendRate'].get(astock, 0)
+#        print("{} div : {}".format( astock div ))
 
         try:
             md, md1, md2, mg, gddif, chg1, chg1p, chg30, chg30p, chg5, wc1, target, c_close, m30c, w30, dl =  current.proc(astock, store = False)
             y1u, ivvb, wc, bc, avg, ly, l2y, avg8, dfh1y, gfl1y = prob_up_1_year.proc(astock)
-
+            ma, mav = buy.getFrom("mas", astock)
         except Exception as e:
-            print("astock: {}".format( astock))
+            print("PROBLEM astock: {}".format( astock))
+            import traceback
+            traceback.print_exc()
+            exit()
             continue
+
+        try:
+            ma1y, ma1yv, ma1c = one_year_moving_average.proc(astock)
+#            ma1y, ma1yv, ma1c = buy.getFrom("avgs", astock)
+        except Exception as e:
+            ma1y, ma1yv, ma1c = "NA", "NA", "NA"
+
+        if debug:
+            print (y1u, ivvb, wc, bc, avg, ly, l2y, avg8, dfh1y, gfl1y)
+            print (md, md1, md2, mg, gddif, chg1, chg1p, chg30, chg30p, chg5, wc1, target, c_close, m30c, w30, dl)
     
         if args.args.full:
             buy.addPDic(astock, "md", round((md + md1 + md2)/3,3))
@@ -271,18 +330,11 @@ def doit():
             except:
                 y1u_score = 0
                 
-            try:
-                myvolpscore = round((((myvolp - 100)**2)/(1*80))**1.25 , 2)
-                myvolpscore = -1*myvolpscore if myvolpscore < 150 else -150
-            except:
-                myvolpscore = 0
-
             buy.addPDicRaw(astock, y1u_score)
-            buy.addPDicRaw(astock, myvolpscore)
 
-        mymap["mcp"] = mcp
-        mymap["revmcp"] = revmcp
-        mymap["div"] = round(div,3) if div else None
+        if numpy.isnan(div):
+            div = 0
+        mymap["div"] = round(div,3) if div else 0
         mymap["md"] = md
         mymap["md1"] = md1
         mymap["md2"] = md2
@@ -308,14 +360,15 @@ def doit():
         mymap["w30"] = w30
         mymap["dfh1y"] = dfh1y
         mymap["gfl1y"] = gfl1y
-        mymap["volp"] = myvolp
-
+        mymap['ma1y']  = ma1y
+        mymap['ma1yv' ] = ma1yv
+        mymap['ma1c'] = ma1c
         final_dic[astock] = mymap
         last_price[astock] = c_close
     
     if args.args.full:
         buy.savePs()
-        saveQuick()
+    saveQuick()
 
     z.setp(last_price, "last_price")
 
@@ -327,4 +380,8 @@ def doit():
     print("stocks: {}".format( len(stocks)))
 
 if __name__ == '__main__':
+    if args.args.noupdate:
+        coindata = z.getp("coins") 
+        stocks = stocks + [ data['symbol'].upper() for data in coindata if data['market_cap_rank'] <= 60 ]
+        print("stocks : {}".format( stocks ))
     doit()

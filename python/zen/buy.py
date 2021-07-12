@@ -86,6 +86,8 @@ thirty = start - 25
 ten_from_start = start - 10
 five_from_start = start - 5
 dates = z.getp("dates")
+if not dates:
+    dates = ["2019-01-09"]
 
 def getChangeStats(astock, idx=1):
     try:
@@ -143,6 +145,9 @@ def getMCDiv(astock):
         except:
             pass
     return ["NA", 3999, "NA"]
+
+#def isCrypto(astock):
+#    coindata = z.getp("coins") 
 
 def getMCRank(astock):
     return getFrom("latestmc", astock, 3999)
@@ -244,9 +249,8 @@ getPrice.recent = dict()
 #                yield row
 
 def updateDates():
-    dates = z.getp("dates")
     new = list()
-    for row in getRows("IVV", dates[0]):
+    for row in getRows("VOO", "2000-01-01"):
         new.append(row['Date'])
     z.setp(new, "dates")
     z.getp.cache_clear()
@@ -399,7 +403,7 @@ def genRecentStat(astock):
 
     prices = list()
     bchanges = list()
-    last = getFrom("last_prices", astock)
+    last = getFrom("last_price", astock)
 
     above_cprice = list()
 
@@ -594,7 +598,7 @@ def single(astock):
         c_close, wcc, lchange, diff, min5, last5, meandrop, dayup, maxup, maxdown, lowFromHigh, high, last, prices, be, ravg, abov_cprice = genRecentStat(astock)
     except Exception as e:
         z.trace(e)
-        print("problem astock: \"{}\"".format( astock))
+        print("buy problem astock: \"{}\"".format( astock))
         return
 
     mc = "NA"
@@ -606,7 +610,7 @@ def single(astock):
         pe = both[2]
         div = round(both[0]*100,2)
     except:
-        div = "NA"
+        div = 0
 
     prev_close = c_close
     if args.args.live:
@@ -1045,7 +1049,11 @@ def old():
 
 if __name__ == '__main__':
 
-    if not args.args.mode:
+    if not args.args.mode or args.args.mode == 'single':
+
+        coindata = z.getp("coins") 
+        stocks = stocks + [ data['symbol'].upper() for data in coindata if data['market_cap_rank'] <= 60 ]
+
         for astock in stocks:
             try:
                 single(astock)
@@ -1056,6 +1064,9 @@ if __name__ == '__main__':
         mcs = list(mcdic.keys())
         idx = 0
         end = idx + 50
+        stocks = mcs[idx:end]
+
+
         for astock in mcs[idx:end]:
             single(astock)
 

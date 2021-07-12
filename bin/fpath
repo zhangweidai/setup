@@ -1,3 +1,4 @@
-readlink -f $1 | xclip
+#!/bin/bash
+readlink -f $1 | clip.exe
 readlink -f $1 
 

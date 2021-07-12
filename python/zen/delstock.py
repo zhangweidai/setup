@@ -76,7 +76,7 @@ def batchdelete(stocks):
         try:
             del(data[astock])
         except:
-            print("problem astock : {}".format( astock ))
+            print("dell stock problem astock : {}".format( astock ))
             pass
 
         try:
@@ -92,7 +92,7 @@ def batchdelete(stocks):
                 print("removed from top95 : {}".format( astock ))
                 top95.remove(astock)
         except:
-            print("problem astock : {}".format( astock ))
+            print("del problem astock : {}".format( astock ))
             pass
 
         delstock(astock, update=False)

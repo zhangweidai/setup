@@ -145,6 +145,8 @@ def parsePage(astock, update=False, force=False, iteration = 0):
         return (cap, beta, pe, dividend, fcf)
 
     if iteration == 2:
+        print("live: {}".format( live))
+        exit()
         return True
 
     return parsePage(astock, update=True, force=True, iteration=iteration+1)
@@ -539,7 +541,12 @@ def parses(stocks, update=True, addone = False):
     
 if __name__ == '__main__':
     import args
-    parses(stocks, update=True)
+#    parses(stocks, update=True)
+    mcdata = z.getp("mcdata")
+    if mcdata is None:
+        from pandas_datareader import data
+        mcdata = data.get_quote_yahoo(stocks)
+        z.setp(mcdata, "mcdata")
 #    remaining()
 
 #    print (parsePage("EC"))

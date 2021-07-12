@@ -2,6 +2,17 @@ import z
 import os
 import csv
 
+transmap = dict()
+transmap["bitcoin"] = "btc"
+transmap["ethereum"] = "eth"
+transmap["binancecoin"] = "bnb"
+transmap["cardano"] = "ada"
+transmap["polkadot"] = "dot"
+map2 = dict()
+for key, symbol in transmap.items():
+    map2[symbol.upper()] = key
+#exit()
+
 def getYears(date):
     away_year = int(date.split("-")[0])
     while int(away_year) != z.YEAR:
@@ -10,6 +21,9 @@ def getYears(date):
     yield away_year
 
 def getFiles(astock, date = "2000"):
+#    if astock in map2.keys():
+#        yield z.getPath("coins/{}.csv".format(astock))
+#    else:
     for year in getYears(date):
         yield z.getPath("split/{}/{}_{}.csv".format(astock[0], astock, year))
 

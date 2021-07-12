@@ -32,6 +32,8 @@ def proc(astock):
         try:
             c_low = float(row['Low'])
         except:
+            print("firstdate: {}".format( firstdate))
+            print("astock: {}".format( astock))
             print("no low? astock: {}".format( astock))
             return "NA", "NA", "NA"
 

@@ -82,6 +82,9 @@ def proc(astock, title = None, store = True):
             date = row['Date']
             c_close = float(row[z.closekey])
         except:
+            print("row : {}".format( row ))
+            print("astock: {}".format( astock))
+            print("firstdate: {}".format( firstdate))
             print("no low? astock: {}".format( astock))
             return None
 
@@ -163,11 +166,14 @@ def proc(astock, title = None, store = True):
     try:
         md1 = statistics.median(items)
     except:
+        print("items: {}".format( items))
+        print ("problem1")
         return
 
     try:
         drop_from = drop_froms[-1]
     except:
+        print ("problem2")
         return
 
     drop_from_p = percentile(drop_froms)
@@ -282,7 +288,7 @@ def procs(astocks = None, title = None):
         try:
             proc(astock, title)
         except Exception as e:
-            print("problem astock: {}".format( astock))
+            print(" current problem astock: {}".format( astock))
             z.trace(e)
             pass
 
@@ -292,8 +298,9 @@ def procs(astocks = None, title = None):
 
 if __name__ == '__main__':
     procs()
-    if not debug:
-        print ("NOT DEBUGGING")
-        table_print.initiate()
-        if args.args.bta:
-            buy.savePs()
+
+#    if not debug:
+#        print ("NOT DEBUGGING")
+#        table_print.initiate()
+#        if args.args.bta:
+#            buy.savePs()

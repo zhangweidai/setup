@@ -1,16 +1,15 @@
 # how often does it beat ivv given 50 days? 
 # how often is 1 year up?
+debug = None
 import z
 import queue
 import buy
 import sliding
 import statistics
 from sortedcontainers import SortedSet
-
-debug = None
 import args
 
-ETF = "IVV"
+ETF = "VOO"
 etf_wc, etf_bc, etf_ly, etf_l2y, etf_avg = 0, 0, 0, 0, 0
 
 start = 650
@@ -34,7 +33,7 @@ better_etf = list()
 def getetfChanges():
     changes = list()
     closes_50 = sliding.WindowQueue(50)
-    for i, row in enumerate(buy.getRows("IVV", sdate)):
+    for i, row in enumerate(buy.getRows("VOO", sdate)):
         c_close = float(row[z.closekey])
         closes_50.add_tail(c_close)
         if closes_50.full():
@@ -42,10 +41,12 @@ def getetfChanges():
     return changes
 
 etfchanges = getetfChanges()
-#print("etfchanges : {}".format( etfchanges ))
+
 last_prices = dict()
 
 def proc(astock):
+    if debug:
+        print("astock: {}".format( astock))
     global etf_wc, etf_bc, etf_ly, etf_l2y, etf_avg, better_etf, last_prices
     prev_close = None
     closes_252 = sliding.WindowQueue(252)
@@ -57,22 +58,32 @@ def proc(astock):
 
     firstdate = None
     index_adjust = 0
+
     for i, row in enumerate(buy.getRows(astock, sdate)):
 
         # adjust for first available date
         if i == 0:
-            myidx = dates.index(row['Date']) 
-            index_adjust = myidx - dates.index(sdate)
+            try:
+                myidx = dates.index(row['Date']) 
+                index_adjust = myidx - dates.index(sdate)
+            except:
+                continue
+                
 
-        c_close = float(row[z.closekey])
+        try:
+            c_close = float(row[z.closekey])
+        except:
+            print("row: {}".format( row))
+            pass
+
         closes_50.add_tail(c_close)
         closes_252.add_tail(c_close)
 
         # ive got a year worth of closes_252
         if closes_50.full():
             interval_change = round(closes_50.main[-1]/closes_50.main[0],3)
-            if debug:
-                date = row["Date"]
+#            if debug:
+#                date = row["Date"]
 #                print("etf_idx : {} date : {} interval_change : {} close : {}".format( etf_idx, date, interval_change, c_close ))
             try:
                 beativv.append(1 if interval_change >= etfchanges[etf_idx + index_adjust] else 0)
@@ -86,11 +97,11 @@ def proc(astock):
     try:
         ivvcounts = len(beativv)
         ivvb = round(sum(beativv) / ivvcounts,3)
-        if debug:
-            print("beativv: {}".format( beativv))
+#        if debug:
+#            print("beativv: {}".format( beativv))
     except Exception as e:
+        print("e: {}".format( e))
         ivvb = None
-        print("problem astock: {}".format( astock))
 
     consideration = list(closes_252.main)[:240]
     try:
@@ -130,15 +141,15 @@ def proc(astock):
         except:
             pass
 
-        rank = buy.getMCRank(astock)
-        if rank < 2600 and c_close > 1:
-            buy.addSorted("ly", ly, astock)
-            try:
-                buy.addSorted("wc", wc, astock)
-                buy.addSorted("bc", bc, astock)
-                buy.addSorted("avg", avg, astock)
-            except:
-                pass
+#        rank = buy.getMCRank(astock)
+#        if rank < 2600 and c_close > 1:
+#            buy.addSorted("ly", ly, astock)
+#            try:
+#                buy.addSorted("wc", wc, astock)
+#                buy.addSorted("bc", bc, astock)
+#                buy.addSorted("avg", avg, astock)
+#            except:
+#                pass
 
     return y1u, ivvb, wc, bc, avg, ly, l2y, avg8, dfh1y, gfl1y
 
@@ -169,19 +180,23 @@ def annuals(astock):
             first_date = c_date
 
         if i == 0 and asdate8 != c_date:
-            myidx = dates.index(c_date)
+            try:
+                myidx = dates.index(c_date)
+            except:
+                continue
+
             index_adjust = myidx - dates.index(sdate)
-            if debug:
-                print("index_adjust : {}".format( index_adjust ))
-                print("myidx : {}".format( myidx ))
+#            if debug:
+#                print("index_adjust : {}".format( index_adjust ))
+#                print("myidx : {}".format( myidx ))
 
             if myidx > indexdate_4:
                 newstock = True
 
             # stock as not available 8 years ago
             i_adjust = dates.index(c_date) - dates.index(asdate8)
-            if debug:
-                print("i_adjust : {} first date {}".format( i_adjust, c_date ))
+#            if debug:
+#                print("i_adjust : {} first date {}".format( i_adjust, c_date ))
 
 
         if astock != ETF:
@@ -191,7 +206,11 @@ def annuals(astock):
             if etf_dates and not days_missing and etf_dates[adjusted] != c_date:
                 days_missing += 1
 
-        c_close = float(row[z.closekey])
+
+        try:
+            c_close = float(row[z.closekey])
+        except:
+            continue
 
         if not (i+i_adjust) % 252:
             annualprices8.append(c_close)
@@ -204,8 +223,8 @@ def annuals(astock):
             if closes_252.full():
                 annual_change = round(closes_252.main[-1]/closes_252.main[0],3)
 
-                if annual_change > 3.2:
-                    annual_change = 3.2
+#                if annual_change > 3.2:
+#                    annual_change = 3.2
 
                 annual_list.append(annual_change)
 #                if debug:
@@ -225,8 +244,8 @@ def annuals(astock):
             pass
         prevprice = price
 
-    if debug:
-        print("annuals8: {}".format( annuals8))
+#    if debug:
+#        print("annuals8: {}".format( annuals8))
     avg8 = round((statistics.mean(annuals8) + statistics.median(annuals8))/2,3) if len(annuals8) > 4 and days_missing < 20 else "NA"
 
     try:
@@ -253,20 +272,31 @@ def annuals(astock):
     return wc, bc, avg, ly, l2y, avg8, newstock
 
 import sys
-def procs(astocks = None):
+def procs():
     global better_etf, missing_days
 
-    if astocks:
-        current_module = sys.modules[__name__]
-        current_module.stocks = astocks
+#    if astocks:
+#        current_module = sys.modules[__name__]
+#        current_module.stocks = astocks
         
     try:
         stocks.pop(stocks.index(ETF))
     except:
         pass
 
-    stocks.insert(0, ETF) 
-    prob_dic = dict()
+#    try:
+#        stocks.insert(0, ETF) 
+#    except:
+#        stocks.insert(0, ETF) 
+
+    try:
+        prob_dic = z.getp("probs")
+    except:
+        pass
+
+    if prob_dic is None:
+        prob_dic = dict()
+
     for i, astock in enumerate(stocks):
 
         if not i % 100:
@@ -275,22 +305,24 @@ def procs(astocks = None):
         try:
             prob_dic[astock] = proc(astock)
         except Exception as e:
-            print("problem astock: {}".format( astock))
+            print("procs problem astock: {}".format( astock))
             z.trace(e)
             pass
 
     if not debug:
-        z.setp( prob_dic, "probs")
+        z.setp(prob_dic, "probs")
         for cat in buy.sortcats:
             buy.saveSorted(cat)
         z.setp(better_etf, "better_etf", True)
         z.setp(last_prices, "last_prices")
-    else:
-        print("prob_dic: {}".format( prob_dic))
-        print("wc, bc, avg, ly, l2y, avg8")
+#    else:
+#        print("prob_dic: {}".format( prob_dic))
+#        print("wc, bc, avg, ly, l2y, avg8")
 
+import args
 if __name__ == '__main__':
 
+    print (stocks)
     procs()
     if args.args.bta:
         buy.savePs()

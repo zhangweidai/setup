@@ -5,7 +5,8 @@ import time
 import datetime
 
 closekey = "Close"
-YEAR = 2020
+YEAR = datetime.datetime.now().year
+
 gonna_need_alot = False
 
 def getStocks(title):
@@ -73,8 +74,11 @@ savepp.dic = dict()
 
 def setpp(data, name, override = ""):
     pickle.dump(data, open( os.path.join(special, "{}{}.pkl".format(name, override)) , "wb"))
-    if name in getp("quick"):
-        savepp.dic[name] = data
+    try:
+        if name in getp("quick"):
+            savepp.dic[name] = data
+    except:
+        pass
 
 def getpp(name, override = ""):
     if gonna_need_alot and name in getp("quick"):
@@ -97,14 +101,14 @@ def getp(name, override="pkl", retfile=False, real = False):
         if getp.override:
             print ("getting {}".format(getp.override))
             return getp(getp.override)
-        print ("getting quick")
-        return getp("quick")
+        ret = getp("quick")
+        return ret
 
     getpd.add(name)
     try:
         path = getPath("{}/{}.pkl".format(override, name))
         if not os.path.exists(path):
-#            print ("does not exist {}".format(path))
+            print ("does not exist {}".format(path))
             return None
 
         if retfile:
@@ -122,9 +126,11 @@ getp.override = None
 import atexit
 gsave = False
 gsavedir = None
-
+showSaved = True
 @atexit.register
 def goodbye():
+    if not showSaved:
+        return
     if getpd:
         print("\n---pickle report---")
 

@@ -20,13 +20,12 @@ import buy
 
 cols = ["last",
         "target",
-        ("md", "%"),
-        ("md1", "%"),
-        ("md2", "%"),
-        ("mg", "%"),
-        "gddif",
+#        ("md", "%"),
+#        ("md1", "%"),
+#        ("md2", "%"),
+#        ("mg", "%"),
+#        "gddif",
         ("dl", "%"),
-        "mcp",
         ("chg1", "%"),
         "chg1p",
         ("chg5", "%"),
@@ -42,10 +41,14 @@ cols = ["last",
         ("avg8", "%"),
         ("dfh1y", "%"),
         ("gfl1y", "%"),
-        "volp",
         ("m30c", "%"),
         ("w30", "%"),
-        "revmcp",
+        ("ma1y"),
+        ("ma1yv"),
+        ("ma1c", "%"),
+#        "ma",
+#        "mav",
+#        "revmcp",
         "div",
         "bta" ]
 
@@ -94,14 +97,14 @@ def single(astock):
 #        order = buy.getFrom("orders", astock)[0]
 #        order,value = order[1], round(order[0])
         ochg = buyprice/mydic["last"]
-        values.insert(3, ("ochg", ochg, "%"))
-        values.insert(4, ("value", buy_value))
+#        values.insert(3, ("ochg", ochg, "%"))
+#        values.insert(4, ("value", buy_value))
 
     except Exception as e:
         ochg = ""
         value = "NA"
-        values.insert(3, ("ochg", ochg, "%"))
-        values.insert(4, ("value", value))
+#        values.insert(3, ("ochg", ochg, "%"))
+#        values.insert(4, ("value", value))
 
 #    loc = ""
 #    if ochg:
@@ -116,6 +119,9 @@ def single(astock):
     table_print.store(values)
 
 if __name__ == '__main__':
+
+#    coindata = z.getp("coins") 
+#    stocks = stocks + [ data['symbol'].upper() for data in coindata if data['market_cap_rank'] <= 60 ]
 
     print("stocks: {}".format( stocks))
     if not args.args.mode:

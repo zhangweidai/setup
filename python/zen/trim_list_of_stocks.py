@@ -28,7 +28,7 @@ yearago = dates[-252]
 #"KO" : { 'Stock Symbol': 'KO', 'Prev. Close': 176.45, 'Todays Range': '173.6 - 181.1', 'Revenue': 78810000000.0, 'Open': 175.68, '52 wk Range': '89.07 - 391', 'EPS': '- 6.05', 'Volume': 28548036.0, 'Market Cap': 8060000000.0, 'Div': '8.22 (8.65%)', 'Average Vol. (3m)': 45769388.0, 'P/E Ratio': None, 'Beta': 1.44, '1-Year Change': '- 50.08%', 'Shares Outstanding': 564325344.0, 'Next Earnings Date': '29/07/2020'}
 
 print("stocks: {}".format( len(stocks)))
-last_prices = z.getp("last_prices")
+last_prices = z.getp("last_price")
 
 if __name__ == '__main__':
 

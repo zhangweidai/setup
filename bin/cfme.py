@@ -11,6 +11,18 @@ print("cf_path : {}".format( cf_path ))
 cfdg_path = "{}.cfdg".format(cpath)
 print("cfdg_path : {}".format( cfdg_path ))
 
+name = os.path.splitext(cfdg_path)[0]
+name = os.path.basename(name)
+new_file = "/mnt/c/temp/{}.png".format(name)
+cmd="cfdg {} --width=2560 --height=1440 --minimumsize=2 -o {}".format(cfdg_path, new_file)
+os.system(cmd)
+
+#print("new_file: {}".format( new_file))
+#parent = os.path.dirname(new_file)
+#cmd="cd {}; wslview {}.png".format(parent, name)
+#os.system(cmd)
+exit()
+
 #print (sys.argv[1])
 #destination = "/tmp/out.cfdg"
 with open(cf_path, "r") as f:

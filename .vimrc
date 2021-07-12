@@ -74,6 +74,8 @@ imap <c-k>   ()<esc>
 nmap <leader>e   :exec "!powershell.exe -Command //wsl$/Ubuntu-18.04/home/zoe/setup/windows_setup/python.bat " expand("%:t")<cr>
 
 " exec extension / reload vimrc
+nmap <leader>v   :call ExecExtension2()<cr>
+nmap <leader>a   :call ExecExtension3()<cr>
 nmap <leader>b   :call ExecExtension()<cr>
 "nmap <leader>b   :let @* = expand('%:p')<cr>:call ExecExtension()<cr>
 nmap <silent> <leader><leader><leader> :source %:p<cr>
@@ -286,6 +288,22 @@ endf
 fu! MoreScope()
     cs add $CSCOPE_DB
 endf
+fu! ExecExtension2()
+    let path = expand('%:p')
+      :echo l:path
+    if path =~ 'cfdg'
+      :!cfme_view.py %:p
+   endif 
+endf
+fu! ExecExtension3()
+    let path = expand('%:p')
+      :echo l:path
+    if path =~ 'cfdg'
+      :!cfme_animation.py %:p
+   endif 
+endf
+
+
 
 fu! ExecExtension()
     let path = expand('%:p')
@@ -361,5 +379,6 @@ set tags=/home/peter/tagme.tag
 "set tags+=/home/zoe/gits/pybox2d/tagme.tag
 "set tags+=/home/zoe/gits/pybox2d/tagme.tag
 "
-let zz = "hh"
-au WinEnter,BufRead,BufNewFile */gits/Crypto-Tax-Calculator/*  set tags=/home/peter/gits/tagme.tag
+au WinEnter,BufRead,BufNewFile */manim/* set tags=
+au WinEnter,BufRead,BufNewFile */gits/Crypto-Tax-Calculator/* set tags=/home/peter/gits/Crypto-Tax-Calculator.tag
+au WinEnter,BufRead,BufNewFile */gits/manim/* set tags=/home/peter/gits/manim.tag

@@ -3,7 +3,7 @@ function Do-ActualThing {
 }
 
 function Do-ActualThing2 {
-    cd \\wsl$\Ubuntu-18.04\home\zoe\setup
+    cd \\wsl$\Ubuntu-20.04\home\peter\setup
 }
 function profilesetup {
     . $profile
@@ -29,3 +29,5 @@ Set-PSReadLineKeyHandler -Chord Ctrl+u -ScriptBlock {
 #    [Microsoft.PowerShell.PSConsoleReadLine]::Insert('build')
 #    [Microsoft.PowerShell.PSConsoleReadLine]::AcceptLine()
 }
+Set-PSReadLineOption -EditMode Emacs
+

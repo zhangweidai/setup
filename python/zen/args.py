@@ -2,6 +2,7 @@ import argparse
 import z
 import __main__
 from collections import defaultdict
+__main__.debug = None 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode', default=None)
@@ -107,5 +108,12 @@ if "," not in args.stocks:
 __main__.debug = args.debug
 __main__.dates = z.getp("dates")
 
-if len(__main__.stocks) >= 5:
-    z.gonna_need_alot = True
+try:
+    if len(__main__.stocks) >= 5:
+        z.gonna_need_alot = True
+except:        
+    pass
+
+if type(__main__.stocks) is not list:
+    __main__.stocks = list(__main__.stocks)
+    print("__main__: {}".format( sorted(__main__.stocks)))

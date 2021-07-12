@@ -128,6 +128,7 @@ alias welltf='python3 ~/setup/python/tf_check.py'
 alias gopf='cd /mnt/c/Program\ Files'
 alias gomc2='cd /mnt/c/Users/Peter'
 alias gomc='cd /mnt/c/Users/Peter'
+alias gomt='cd /mnt/c/Users/Peter'
 export DL='/mnt/c/Users/zoe/Documents'
 export ANDROID_HOME='/mnt/c/Users/pzhang/AppData/Local/Android/Sdk'
 alias go='source ~/setup/bin/go.bash'
@@ -141,7 +142,9 @@ export CSCOPE_DB='/usr/local/lib/python2.7/dist-packages/cscope.out'
 alias scopeme='find "$PWD/" -name "*.py" -o -iname "*.cfg" > cscope.files && cscope -bv -i cscope.files -f cscope.out'
 alias pysite='python -m site'
 alias vgitrc='vim ~/.gitconfig'
+export SETUP="/home/peter/setup"
 
+export PYTHONPATH=~/setup/python/myutils
 if [ `whoami` ==  "zoe" ]; then
     alias pl="cds; b; cd setup2; cd python/zen; py ~/setup2/python/zen/stock_plot.py"
     export PYTHONSTARTUP=~/setup2/python/zen/.pystart
@@ -159,6 +162,7 @@ alias goh="cds; cd python/zen_dump/holdings"
 alias god="cds; cd python/zen_dump"
 export SPLIT="$SETUP/python/zen_dump/split"
 alias goc="cd $SPLIT"
+alias gos="cd $SPLIT"
 alias gop="cds; cd python/zen_dump/pkl"
 alias goj="cds; cd java;"
 alias gok="cds; cd kotlin;"
@@ -191,7 +195,6 @@ alias two="better --live=True --drop=12"
 alias accounts="py buy.py --mode=accounts"
 alias bench="py buy.py --mode=benchmark"
 alias live="py buy.py --live=True"
-alias single="py buy.py --mode=single"
 alias plot="py stock_plot.py"
 alias multiple="py buy.py --mode=multiple"
 alias special="py buy.py --mode=special"
@@ -209,9 +212,8 @@ alias well2='wsl-open /home/zoe/gits/manim/media/videos/example_scenes/480p15/AA
 alias well='cd ~/setup/csharp; mcs hello.cs; mono hello.exe'
 alias well='cd ~/setup/python/motivation; py main.py'
 alias mko='cd ~/setup/csharp; mcs hello.cs'
-alias gos='cd /mnt/c/Users/Zoe/SandBox'
 alias delstock='py delstock.py'
-alias gos2='cd /mnt/c/Users/Zoe/3D_SandBox'
+alias wo='~/gits/wsl-open/wsl-open.sh'
 #alias xdg-open='wsl-open'
 #sudo -S true
 set bell-style none
@@ -228,7 +230,9 @@ alias  bd='python ~/setup2/python/bd.py'
 #go1
 alias well='cd ~/setup2/python/; python watchfile.py'
 alias what="python -i whatis.py"
-alias desktop="cd /mnt/c/Users/Zoe/Desktop"
+export desktop="/mnt/c/Users/peter/Desktop"
+alias desktop="cd /mnt/c/Users/peter/Desktop"
+alias godesktop='desktop'
 alias go2="cd $SETUP/../gits/ursina"
 alias vmux="vi ~/.tmux.conf"
 alias well='cd /home/zoe/gits/my_new_examples; python hello.py'
@@ -247,5 +251,32 @@ alias dump='xclip -o >&'
 alias cdd='cd `cdd.py`'
 alias go5='cd ~/.local/lib/python3.8/site-packages/PyQt5'
 unalias grf
-alias tagmehere='ctags -R --language-force=python -f ../tagme.tag `pwd`'
+#alias tagmehere='ctags -R --language-force=python -f ../tagme.tag `pwd`'
+alias tagthis_impl='ctags -R --language-force=python -f '
+alias tagthis='order tagthis_impl 1 `pwd`'
+alias cls='git clean -x -d -f .'
 alias gobin='cd ~/setup/bin'
+alias simp='python simple.py'
+export downloads="/mnt/c/Users/peter/Downloads"
+alias gocf='cd ~/gits/context-free/input'
+
+alias single="buy"
+
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/home/peter/anaconda3/bin/conda' 'shell.bash' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/home/peter/anaconda3/etc/profile.d/conda.sh" ]; then
+        . "/home/peter/anaconda3/etc/profile.d/conda.sh"
+    else
+        export PATH="/home/peter/anaconda3/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
+
+export DISPLAY="$(grep nameserver /etc/resolv.conf | sed 's/nameserver //'):0"
+alias mani='docker run --rm -it  --user="$(id -u):$(id -g)" -v "$(pwd)":/manim manimcommunity/manim manim'
+
