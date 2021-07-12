@@ -1,0 +1,7 @@
+#!/bin/sh
+
+export cwd=`pwd`
+export path=`wslpath -w $cwd`
+echo $path
+powershell.exe -Command "& {python -c \"print('$bar')\"}"
+powershell.exe -Command "& {manim -c \"print('$bar')\"}"
