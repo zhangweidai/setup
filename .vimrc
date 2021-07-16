@@ -73,9 +73,29 @@ imap <c-k>   ()<esc>
 
 nmap <leader>e   :exec "!powershell.exe -Command //wsl$/Ubuntu-18.04/home/zoe/setup/windows_setup/python.bat " expand("%:t")<cr>
 
+fu! GetThisFile()
+  return expand('%:p') 
+endfunction
+
+fu! GetThisLineNumber()
+  return line('.') 
+endfunction
+
+fu! GetThisLineNumber()
+  return expand("<cword>")
+endfunction
+
+fu! ExecTwoArgs(arg, arg1, arg2)
+    :exec "!/home/peter/setup/bin/".a:arg." ".a:arg1. " ".a:arg2
+endfunction
+
+nmap <leader>a   :exec "!/home/peter/setup/bin/mn" GetThisFile() GetThisLineNumber()<cr>
+nmap <leader>a   :call ExecTwoArgs("mn", GetThisFile(), GetThisLineNumber())<cr>
+nmap <leader>a   :call ExecTwoArgs("mn", GetThisFile(), GetThisLineNumber())<cr>
+
 " exec extension / reload vimrc
 nmap <leader>v   :call ExecExtension2()<cr>
-nmap <leader>a   :call ExecExtension3()<cr>
+"nmap <leader>a   :call ExecExtension3()<cr>
 nmap <leader>b   :call ExecExtension()<cr>
 "nmap <leader>b   :let @* = expand('%:p')<cr>:call ExecExtension()<cr>
 nmap <silent> <leader><leader><leader> :source %:p<cr>
@@ -131,7 +151,9 @@ nmap dc           yyp<m-up>kkw
 nmap [{           ][=%''zz
 vmap i            I
 nmap <leader>]    [[=%''zz
-map <m-up>        :call CommentStr()<cr>0i<C-r>=comment_str<Esc><Esc>j
+noremap <leader>c        :call CommentStr()<cr>0i<C-r>=comment_str<Esc><Esc>j
+nnoremap <silent> <A-up>        :call CommentStr()<cr>0i<C-r>=comment_str<Esc><Esc>j
+noremap <C-up>        :call CommentStr()<cr>0i<C-r>=comment_str<Esc><Esc>j
 map <m-down>      0xxj
 map <m-h>         0xxx
 map <m-l>         0i<tab><Esc>
@@ -382,3 +404,4 @@ set tags=/home/peter/tagme.tag
 au WinEnter,BufRead,BufNewFile */manim/* set tags=
 au WinEnter,BufRead,BufNewFile */gits/Crypto-Tax-Calculator/* set tags=/home/peter/gits/Crypto-Tax-Calculator.tag
 au WinEnter,BufRead,BufNewFile */gits/manim/* set tags=/home/peter/gits/manim.tag
+
